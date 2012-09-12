@@ -160,7 +160,8 @@ enyo.kind({
     minValue: undefined
   },
   errorMessages: {
-    'invalid': _i('Enter a whole number.')
+    required: _i('This field is required.'),
+    invalid: _i('Enter a whole number.')
   },
   create: function() {
     this.inherited(arguments);
@@ -189,18 +190,8 @@ enyo.kind({
   name: "FloatField",
   kind: "IntegerField",
   errorMessages: {
-    'invalid': _i('Enter a number.')
+    required: _i('This field is required.'),
+    invalid: _i('Enter a number.')
   },
   parseFn: parseFloat
 });
-
-enyo.kind({
-  errorMessages: {
-    'invalid': _i('Enter a number.'),
-    'max_value': _i('Ensure this value is less than or equal to %(limit_value)s.'),
-    'min_value': _i('Ensure this value is greater than or equal to %(limit_value)s.'),
-    'max_digits': _i('Ensure that there are no more than %s digits in total.'),
-    'max_decimal_places': _i('Ensure that there are no more than %s decimal places.'),
-    'max_whole_digits': _i('Ensure that there are no more than %s digits before the decimal point.')
-  }
-})
