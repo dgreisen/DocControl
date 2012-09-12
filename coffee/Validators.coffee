@@ -109,19 +109,19 @@ ip_address_validator_map =
   }
 
 ip_address_validators = (protocol, unpack_ipv4) ->
-    ###
-    Depending on the given parameters returns the appropriate validators for
-    the GenericIPAddressField.
+  ###
+  Depending on the given parameters returns the appropriate validators for
+  the GenericIPAddressField.
 
-    This code is here, because it is exactly the same for the model and the form field.
-    ###
-    if protocol != 'both' and unpack_ipv4
-        raise ValueError(
-            "You can only use `unpack_ipv4` if `protocol` is set to 'both'")
-    try
-        return ip_address_validator_map[protocol.lower()]
-    catch e
-        raise ValueError(interpolate("The protocol '%s' is unknown. Supported: 'both', 'ipv4', 'ipv6'", [protocol]))
+  This code is here, because it is exactly the same for the model and the form field.
+  ###
+  if protocol != 'both' and unpack_ipv4
+    raise ValueError(
+      "You can only use `unpack_ipv4` if `protocol` is set to 'both'")
+  try
+    return ip_address_validator_map[protocol.lower()]
+  catch e
+    raise ValueError(interpolate("The protocol '%s' is unknown. Supported: 'both', 'ipv4', 'ipv6'", [protocol]))
 
 class CommaSeparatedIntegerListValidator extends RegexValidator
   regex = /^[\d,]+$/
@@ -130,7 +130,7 @@ class CommaSeparatedIntegerListValidator extends RegexValidator
 class BaseValidator
   compare: (a,b) -> return (a isnt b)
   clean: (x) -> return x
-  message: _("Ensure this value is %(limit_value)s (it is %(show_value)s).")
+  message: _i("Ensure this value is %(limit_value)s (it is %(show_value)s).")
   code: 'limit_value'
   
   constructor: (@limit_value) ->
@@ -138,30 +138,31 @@ class BaseValidator
   validate: (value) ->
     cleaned = @clean(value)
     params = {limit_value:@limit_value, show_value:cleaned}
-    if (self.compare(cleaned, @limit_value))
-      throw ValidationError( interpolate(self.message, params), self.code, params )
+    if (@compare(cleaned, @limit_value))
+      throw ValidationError( interpolate(@message, params), @code, params )
 
 class MaxValueValidator extends BaseValidator
-  compare: (a,b) -> return a > b
+  compare: (a,b) -> return (a > b)
   message: _i('Ensure this value is less than or equal to %(limit_value)s.')
   code: 'max_value'
   
 class MinValueValidator extends BaseValidator
-    compare: (a, b) -> return a < b
-    message: _i('Ensure this value is greater than or equal to %(limit_value)s.')
-    code: 'min_value'
+  compare: (a, b) -> return (a < b)
+  message: _i('Ensure this value is greater than or equal to %(limit_value)s.')
+  code: 'min_value'
 
 class MinLengthValidator extends BaseValidator
-    compare: (a, b) -> return a < b
-    clean: (x) -> return x.length
-    message: _i('Ensure this value has at least %(limit_value)d characters (it has %(show_value)d).')
-    code: 'min_length'
+  x: 53
+  compare: (a, b) -> return (a < b)
+  clean: (x) -> return x.length
+  message: _i('Ensure this value has at least %(limit_value)d characters (it has %(show_value)d).')
+  code: 'min_length'
 
 class MaxLengthValidator extends BaseValidator
-    compare = (a, b) -> return a > b
-    clean   = (x) -> x.length
-    message = _i('Ensure this value has at most %(limit_value)d characters (it has %(show_value)d).')
-    code = 'max_length'
+  compare: (a, b) -> return (a > b)
+  clean: (x) -> x.length
+  message: _i('Ensure this value has at most %(limit_value)d characters (it has %(show_value)d).')
+  code: 'max_length'
 
 isEmpty = (val) ->
   emptyValues = [null, undefined, '']

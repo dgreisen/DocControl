@@ -11,10 +11,12 @@
 		<script src="enyo/enyo.js"></script>
 		<!-- application (debug) -->
 		<script src="sample/package.js" type="text/javascript"></script>
+		<script src="source/package.js" type="text/javascript"></script>
 	</head>
 	<body class="enyo-unselectable">
 		<script>
-			new App().renderInto(document.body);
+			app = new App()
+			app.renderInto(document.body);
 		</script>
 	</body>
 </html>

@@ -2,16 +2,20 @@ enyo.kind({
   name: "Widget",
   kind: "Control",
   published: {
+    //* whether this widget requires a value
+    required: true,
     //* widget label
     label: "",
     //* the initial value of the widget
-    initial: undefined,
+    initial: "",
     //* the current value of the widget
-    value: undefined,
+    value: "",
     //* widget help text
     helpText: "",
     //* whether the current widget is in valid state. IMPORTANT: just because `valid` is true, doesn't mean value passes field's validation method. Just specifies whether widget displays error messages or not.
     valid: true,
+    //* error message to display
+    errorMessage: "",
     //* the validation strategy for this widget.
     // - `"defaultValidation"` strategy does not validate on value change until field's getClean() called.
     validationStrategy: "defaultValidation",
@@ -43,13 +47,13 @@ enyo.kind({
   ],
   onInputChange: function() {
     this.value = this.$.input.getValue();
-    this.dochange();
+    this.doChange();
     this.validate();
     return true;
   },
   onInputKey: function() {
     this.value = this.$.input.getValue();
-    this.dochange();
+    this.doChange();
     if (this.validationInstant) {
       this.validate();
     }
@@ -58,7 +62,7 @@ enyo.kind({
   //* whether the field has been validated before - used by some validationStrategies
   validatedOnce: false,
   validate: function() {
-    if (this.validationStrategy instanceof String) {
+    if (typeof(this.validationStrategy) == "string") {
       this[this.validationStrategy]();
     } else {
       this.validationStrategy.call(this);
@@ -73,6 +77,9 @@ enyo.kind({
   },
   setValue: function() {
     this.$.input.setValue(this.value);
+  },
+  getValue: function() {
+    return this.$.input.getValue();
   },
   helpTextChanged: function() {
     this.$.helpText.setContent(this.helpText);
@@ -94,6 +101,12 @@ enyo.kind({
     this.$.label.setAttribute("for", this.name);
     this.render();
   },
+  initialChanged: function() {
+    if (validators.isEmpty(this.$.input.getValue())) {
+      this.$.input.setValue(this.initial);
+    }
+  },
+  //* validation strategies
   defaultValidation: function() {
     if (this.validatedOnce) {
       this.doRequestValidation();
