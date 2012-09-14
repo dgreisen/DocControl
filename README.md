@@ -55,19 +55,18 @@ The following will create a simple user field:
     })
 
 In the default configuration, validation will not occur until you call
-`getClean`, `toJSON`, or `isValid`. Once one of these functions has 
-been called once, validation will run very time data changes. 
-`getClean` returns the `field`'s data in native javascript formats. 
-`toJSON` returns the data in a format suitable for serializing. 
+the `UserField`'s `getClean`, `toJSON`, or `isValid`. Once one of 
+these functions has been called once, validation will run very time data 
+changes. `getClean` returns the `field`'s data in native javascript 
+formats. `toJSON` returns the data in a format suitable for serializing. 
 `isValid` returns `true` or `false`. `setValue` to set a `field`'s value.
 
 Installation
 ------------
 First, download or clone DocControl from github 
 (https://github.com/dgreisen/DocControl). You can immediately run the
-demo by visiting `demo.html` in a browser. To include in your project,
-copy or link the `source` directory into project's lib directory and
-add a reference to it in your project`s `package.js` file.
+sample application by visiting `sample.html` in a browser. To include 
+in your project, copy or link the `source` directory into project's lib directory and add a reference to it in your project's `package.js` file.
 
 Development
 -----------
@@ -82,5 +81,6 @@ in DocControl's root directory.
 TODO
 ----
 1. I would like to remove the coffeescript dependencies for two reasons:
+
   a. validators are directly ported from Django, complicating the license
   b. it is silly to require coffeescript to compile one file
