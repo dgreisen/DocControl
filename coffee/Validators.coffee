@@ -11,7 +11,7 @@ class RegexValidator
     ###
     Validates that the input matches the regular expression.
     ###
-    if not @regex.test()
+    if not value.match(@regex)
       throw new ValidationError(@message, @code)
 
 # DJANGODIFF - Cannot ensure url exists
@@ -163,6 +163,21 @@ class MaxLengthValidator extends BaseValidator
   clean: (x) -> x.length
   message: _i('Ensure this value has at most %(limit_value)d characters (it has %(show_value)d).')
   code: 'max_length'
+
+class MaxDecimalPlacesValidator extends BaseValidator
+  compare: (a, b) -> return (a > b)
+  clean: (x) -> String(x.split(".")[1] || "").length
+  message: _i('Ensure this value has at most %(limit_value)d digits after the decimal.')
+
+class MinDecimalPlacesValidator extends BaseValidator
+  compare: (a, b) -> return (a < b)
+  clean: (x) -> String(x.split(".")[1] || "").length
+  message: _i('Ensure this value has at least %(limit_value)d digits after the decimal.')
+
+class MaxDigitsValidator extends BaseValidator
+  compare: (a, b) -> return (a > b)
+  clean: (x) -> String(x).replace('.','').length
+  message: _i('Ensure this value has at most %(limit_value)d digits.')
 
 isEmpty = (val) ->
   emptyValues = [null, undefined, '']

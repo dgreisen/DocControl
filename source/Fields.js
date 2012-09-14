@@ -10,38 +10,28 @@ enyo.kind({
     clean: undefined,
     //* list of validators
     validators: [],
-    //* widget label
-    label: "",
-    //* the initial value of the widget
-    initial: "",
-    //* widget help text
-    helpText: "",
+    //* kind definition for widget (eg { kind: "Widget"})
+    widget: { kind: "Widget" },
+    //* hash of attibutes to set on widget (eg `label`, `initial`)
+    widgetAttrs: {},
     //* hash of error messages
     errorMessages: {
       required: _i('This field is required.')
-    },
-    //* the validation strategy for this widget.
-    // - `"defaultValidation"` strategy does not validate on value change until getClean() called.
-    validationStrategy: "defaultValidation",
-    //* whether to validate every time the value changes or only when the user finishes editing (onchange)
-    validationInstant: false,
-    //* whether to display the widget in its compact form
-    compact: false
+    }
   },
+  events: {
+    onValidation: ""
+  },
+  beforeWidgetInit: function () {},
   create: function() {
     this.inherited(arguments);
+    this.setWidget(this.widget);
+    this.beforeWidgetInit();
     this.requiredChanged();
     this.setValue(this.value);
-    this.labelChanged();
-    this.initialChanged();
-    this.helpTextChanged();
-    this.validationStrategyChanged();
-    this.validationInstantChanged();
-    this.compactChanged();
+    this.widgetAttrs.fieldName = this.getName();
+    this.setWidgetAttrs(this.widgetAttrs);
   },
-  components: [
-    { name: "widget", kind: "Widget" }
-  ],
   handlers: {
     onRequestValidation: "onRequestValidation"
   },
@@ -87,6 +77,7 @@ enyo.kind({
     this.$.widget.setErrorMessage(this.errors[0]);
     this.$.widget.setValid(valid);
     this.$.widget.validatedOnce = true;
+    this.doValidation({valid: valid});
     return valid;
   },
   getClean: function() {
@@ -108,25 +99,128 @@ enyo.kind({
   getValue: function() {
     return this.$.widget.getValue();
   },
-  labelChanged: function() {
-    this.$.widget.setLabel(this.label);
+  setWidget: function(widget) {
+    this.destroyComponents();
+    widget.name = "widget";
+    this.createComponent(widget);
   },
-  initialChanged: function() {
-    this.$.widget.setInitial(this.initial);
+  getWidget: function() {
+    return this.$.widget;
   },
-  helpTextChanged: function() {
-    this.$.widget.setHelpText(this.helpText);
-  },
-  validationStrategyChanged: function() {
-    this.$.widget.setValidationStrategy(this.validationStrategy);
-  },
-  validationInstantChanged: function() {
-    this.$.widget.setValidationInstant(this.validationInstant);
-  },
-  compactChanged: function() {
-    this.$.widget.setCompact(this.compact);
+  setWidgetAttrs: function(attrs) {
+    var k;
+    for (k in attrs) {
+      var v = attrs[k];
+      k = "set" + k[0].toUpperCase()+k.substring(1);
+      this.$.widget[k](v);
+    }
   }
 });
+
+
+
+
+
+enyo.kind({
+  name: "ListField",
+  kind: "Field",
+  published: {
+    //* either a single instance of, or a list of, kind definition object. If a single object, such as `{kind: "CharField", maxLength: 50 }`, then the list will consist of an arbitrary number of a single kind of that field. If a list, such as `[{kind: "CharField", maxLength: 50 }, {kind:IntegerField }`, it will contain the specified list of heterogenious fields.
+    fields: undefined
+  },
+  beforeWidgetInit: function() {
+    this.$.widget.setFields(this.fields);
+  },
+  errorMessages: {
+    required: _i('There must be at least one %s.'),
+    invalid: _i('Please fix the errors indicated below.')
+  },
+  widget: { kind: "ListWidget" },
+  validate: function() {
+    if (this.fieldKind && !this.listFields().length && this.required) {
+      this.errors.push(this.errorMessages.required);
+      return;
+    }
+  },
+  handlers: {
+    onValidation: "onValidation"
+  },
+  validCounter: 0,
+  invalidFields: {},
+  onValidation: function(inSender, inEvent) {
+    if (inEvent.valid && inSender in this.invalidFields) {
+      delete this.invalidFields[inSender];
+      if (!--this.validCounter) {
+        this.errors = [];
+      }
+    } else if (!inEvent.valid) {
+      this.invalidFields[inSender] = true;
+      this.errors = [this.errorMessages.invalid];
+    }
+  },
+  isValid: function() {
+    // reset the errors array
+    this.errors = [];
+    this.validate();
+    valid = this.listFields().reduce(function(x, y) {return y.isValid() && x;}, true);
+    if (!valid) {
+      this.errors = [this.errorMessages.invalid];
+    }
+    this.$.widget.setErrorMessage(this.errors[0]);
+    this.$.widget.setValid(valid);
+    this.$.widget.validatedOnce = true;
+    return valid;
+  },
+  getClean: function() {
+    valid = this.isValid();
+    if (!valid) {
+      throw this.errors;
+    }
+    if (this.fieldKind) {
+      return this.listFields().map(function(x) {x.getClean();});
+    } else {
+      var out = {};
+      this.listFields().forEach(function(x) { out[x.getName()] = x.getClean(); });
+      return out;
+    }
+  },
+  getFields: function() {
+    return this.$.widget.getFields();
+  },
+  listFields: function() {
+    return this.$.widget.listFields();
+  },
+  // whether this is a list or hash container
+  listContainer: true,
+  setFields: function(val) {
+    this.listContainer = val instanceof Array;
+    return this.$.widget.setFields(val);
+  },
+  fieldKindChanged: function() {
+    this.$.widget.setFieldKind(this.fieldKind);
+  },
+  fieldsChanged: function() {
+    this.$.widgetAttrs.setFields(this.fields);
+  },
+  toJSON: function() {
+    valid = this.isValid();
+    if (!valid) {
+      throw this.errors;
+    }
+    if (this.fieldKind) {
+      return this.listFields().map(function(x) {x.toJSON();});
+    } else {
+      var out = {};
+      this.listFields().forEach(function(x) { out[x.getName()] = x.toJSON(); });
+      return out;
+    }
+  }
+});
+
+
+
+
+
 
 enyo.kind({
   name: "CharField",
@@ -189,9 +283,77 @@ enyo.kind({
 enyo.kind({
   name: "FloatField",
   kind: "IntegerField",
+  published: {
+    maxDecimals: undefined,
+    minDecimals: undefined,
+    maxDigits: undefined
+  },
   errorMessages: {
     required: _i('This field is required.'),
     invalid: _i('Enter a number.')
   },
+  create: function() {
+    this.inherited(arguments);
+    if (this.maxDecimals !== undefined) {
+      this.validators.push(new validators.MaxDecimalPlacesValidator(this.maxDecimals));
+    }
+    if (this.minDecimals !== undefined) {
+      this.validators.push(new validators.MinDecimalPlacesValidator(this.minDecimals));
+    }
+    if (this.maxDigits !== undefined) {
+      this.validators.push(new validators.MaxDigitsValidator(this.maxDigits));
+    }
+  },
   parseFn: parseFloat
 });
+
+enyo.kind({
+  name: "RegexField",
+  kind: "Field",
+  published: {
+    //* the compiled regex to test against.
+    regex: undefined,
+    //* the error message to display when the regex fails
+    errorMessage: undefined
+  },
+  create: function() {
+    this.inherited(arguments);
+    this.validators.push(new RegexValidator(this.regex));
+    if (this.errorMessage) {
+      this.errorMessages.invalid = this.errorMessage;
+    }
+  }
+});
+
+enyo.kind({
+  name: "EmailField",
+  kind: "Field",
+  widget: { kind:"EmailWidget" },
+  validators: [new validators.EmailValidator()]
+});
+
+
+enyo.kind({
+  name: "BaseTemporalField",
+  kind: "Field",
+  errorMessages: {
+    required: _i('This field is required.'),
+    invalid: _i('Enter a Date/Time.')
+  },
+  timeToJavascript: function(val) {
+    re = /([012]?\d):?([012345]\d):?([012345]\d)?\s*(am|pm)?/i;
+    var match = val.match(re);
+    if (match && parseInt(match[1], 10) < 25) {
+      var hour = parseInt(match[1], 10);
+      hour = (match[4] == "pm" && hour < 12) ? hour+12 : hour;
+      hour = (match[4] == "am" && hour == 12) ? 0 : hour;
+      var minute = parseInt(match[2], 10);
+      var second = (match[3]) ? parseInt(match[3], 10) : 0;
+      var timezone = new Date().getTimezoneOffset();
+      // TODO finish this function and dateToJavascript helper function
+
+    } else {
+      this.errors.push(this.errorMessages['invalid']);
+    }
+  }
+})
