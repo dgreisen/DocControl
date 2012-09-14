@@ -7,3 +7,11 @@
 	border-radius: 4px;
 	padding: 16px;
 }
+
+.error p {
+	color: red;
+}
+
+.onyx-input-decorator {
+	outline-color: red;
+}
