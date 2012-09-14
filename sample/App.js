@@ -4,7 +4,7 @@ enyo.kind({
   kind: "Scroller",
   components: [
     { name: "userMessage", tag: "h3", style: "color:red;"},
-    { name:"userForm", kind: "ListField", fields: [
+    { name:"userForm", kind: "ContainerField", schema: [
       { name: "username", kind: "CharField", maxLength: 10, minLength: 5, widgetAttrs: { label: "Username", helpText: "CharField between 5 and 10 characters long", initial: "John Doe" } },
       { name: "age", kind: "IntegerField", maxValue: 116, minValue: 13, widgetAttrs: { label: "Age", helpText: "Integer between 13 and 116" } }
       ],
@@ -13,7 +13,7 @@ enyo.kind({
     },
     { kind: "onyx.Button", ontap: "onUserTap", content: "Submit"},
     { name: "loginMessage", tag: "h3", style: "color:red;"},
-    { name:"loginForm", kind: "ListField", fields: [
+    { name:"loginForm", kind: "ContainerField", schema: [
       { name: "email", kind: "EmailField", widgetAttrs: { label: "Email" }},
       { name: "password", kind: "CharField", minLength: 8, widget: { kind: "PasswordWidget" }, widgetAttrs: { label: "Password" }}
     ]},

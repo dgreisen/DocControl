@@ -12,6 +12,6 @@
 	color: red;
 }
 
-.onyx-input-decorator {
-	outline-color: red;
+.error .onyx-input-decorator {
+	border-color: red;
 }

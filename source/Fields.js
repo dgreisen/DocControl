@@ -118,34 +118,26 @@ enyo.kind({
 });
 
 
-
-
-
 enyo.kind({
-  name: "ListField",
+  name: "BaseContainerField",
   kind: "Field",
   published: {
-    //* either a single instance of, or a list of, kind definition object. If a single object, such as `{kind: "CharField", maxLength: 50 }`, then the list will consist of an arbitrary number of a single kind of that field. If a list, such as `[{kind: "CharField", maxLength: 50 }, {kind:IntegerField }`, it will contain the specified list of heterogenious fields.
-    fields: undefined
-  },
-  beforeWidgetInit: function() {
-    this.$.widget.setFields(this.fields);
+    //* A single instance of a kind definition object, such as `{kind: "CharField", maxLength: 50 }`, the list will consist of an arbitrary number of a single kind of that field
+    schema: undefined
   },
   errorMessages: {
     required: _i('There must be at least one %s.'),
     invalid: _i('Please fix the errors indicated below.')
   },
-  widget: { kind: "ListWidget" },
-  validate: function() {
-    if (this.fieldKind && !this.listFields().length && this.required) {
-      this.errors.push(this.errorMessages.required);
-      return;
-    }
+  beforeWidgetInit: function() {
+    this.schemaChanged();
   },
   handlers: {
     onValidation: "onValidation"
   },
+  // number of invalid subfields
   validCounter: 0,
+  // hash of invalid subfields (to prevent duplication)
   invalidFields: {},
   onValidation: function(inSender, inEvent) {
     if (inEvent.valid && inSender in this.invalidFields) {
@@ -171,51 +163,65 @@ enyo.kind({
     this.$.widget.validatedOnce = true;
     return valid;
   },
-  getClean: function() {
-    valid = this.isValid();
-    if (!valid) {
-      throw this.errors;
-    }
-    if (this.fieldKind) {
-      return this.listFields().map(function(x) {x.getClean();});
-    } else {
-      var out = {};
-      this.listFields().forEach(function(x) { out[x.getName()] = x.getClean(); });
-      return out;
-    }
-  },
-  getFields: function() {
-    return this.$.widget.getFields();
-  },
   listFields: function() {
     return this.$.widget.listFields();
   },
-  // whether this is a list or hash container
-  listContainer: true,
-  setFields: function(val) {
-    this.listContainer = val instanceof Array;
-    return this.$.widget.setFields(val);
+  schemaChanged: function() {
+    return this.$.widget.setFields(this.schema);
   },
-  fieldKindChanged: function() {
-    this.$.widget.setFieldKind(this.fieldKind);
+  throwValidationError: function() {
+    // test for validity, throw error if not valid
+    if (!this.isValid()) { throw this.errors; }
+  }
+});
+
+enyo.kind({
+  name: "ContainerField",
+  kind: "BaseContainerField",
+  published: {
+    //* A list of kind definition objects such as `[{kind: "CharField", maxLength: 50 }, {kind:IntegerField }`. It will contain the specified list of heterogenious fields.
+    schema: undefined
+  },
+  widget: { kind: "ContainerWidget" },
+  validate: function() {},
+  getClean: function() {
+    this.throwValidationError();
+    var out = {};
+    this.listFields().forEach(function(x) { out[x.getName()] = x.getClean(); });
+    return out;
+  },
+  toJSON: function() {
+    this.throwValidationError();
+    var out = {};
+    this.listFields().forEach(function(x) { out[x.getName()] = x.toJSON(); });
+    return out;
+  }
+
+});
+
+enyo.kind({
+  name: "BaseListField",
+  kind: "BaseContainerField",
+  widget: { kind: "ListWidget" },
+  validate: function() {
+    if (!this.listFields().length && this.required) {
+      this.errors.push(this.errorMessages.required);
+      return;
+    }
+  },
+  getClean: function() {
+    this.throwValidationError();
+    return this.listFields().map(function(x) {x.getClean();});
   },
   fieldsChanged: function() {
     this.$.widgetAttrs.setFields(this.fields);
   },
   toJSON: function() {
-    valid = this.isValid();
-    if (!valid) {
-      throw this.errors;
-    }
-    if (this.fieldKind) {
-      return this.listFields().map(function(x) {x.toJSON();});
-    } else {
-      var out = {};
-      this.listFields().forEach(function(x) { out[x.getName()] = x.toJSON(); });
-      return out;
-    }
+    this.throwValidationError();
+    return this.listFields().map(function(x) {x.toJSON();});
   }
 });
+
 
 
 

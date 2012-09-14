@@ -139,7 +139,7 @@ enyo.kind({
 
 
 enyo.kind({
-  name: "ListWidget",
+  name: "BaseContainerWidget",
   kind: "Widget",
   published: {
     //* either a single instance of, or a list of, kind definition object. If a single object, such as `{kind: "CharField", maxLength: 50 }`, then the list will consist of an arbitrary number of a single kind of that field. If a list, such as `[{kind: "CharField", maxLength: 50 }, {kind:IntegerField }`, it will contain the specified list of heterogenious fields.
@@ -155,59 +155,11 @@ enyo.kind({
   generateComponents: function() {
     return;
   },
-
   labelChanged: function() {
     this.$.label.setContent(this.label);
   },
-  // when fields is set with a single object, we copy the field definition here for later use.
-  _fieldKind: undefined,
-  setFields: function(fields) {
-    if (fields instanceof Array) {
-      this.$.fields.destroyComponents();
-      this.$.fields.createComponents(fields);
-    } else {
-      this._fieldKind = fields;
-    }
-  },
   getFields: function() {
     return this.$.fields.$;
-  },
-  listFields: function() {
-    return this.$.fields.children;
-  },
-  setValue: function(values) {
-    if (!values) return;
-    var fields = this.$.fields.$;
-    if (this._fieldKind) {
-      if (!(values instanceof Array)) throw "values must be an array";
-      var i;
-
-      // add any needed fields
-      var kind = this._fieldKind;
-      var kinds = [];
-      var quantity = Math.max(values.length-fields.length, 0);
-      for (i = 0; i < quantity; i++) { kinds.push(kind); }
-      this.$.fields.createComponents(kinds);
-      // set validatedOnce, if necessary
-      if (quantity && this.validatedOnce) {
-        fields.slice(fields.length-quantity).forEach(function(x) {x.validatedOnce = true;});
-      }
-      // update values for existing fields
-      for (i=0; i < values.length; i++) {
-        if (fields[i]) {
-          fields[i].setValue(values[0]);
-        }
-      }
-      // remove extra fields
-      fields.slice(values.length).forEach(function(x) {x.destroy();});
-    } else {
-      if (!(values instanceof Object) || (values instanceof Array)) throw "values must be a hash";
-
-      for (var k in values) {
-        var v = values[k];
-        if (fields[k]) fields[k].setValue(v);
-      }
-    }
   },
   getValue: function() {
     throw "ListWidget does not support getValue()";
@@ -215,4 +167,65 @@ enyo.kind({
   errorClass: "listerror",
   fieldNameChanged: function() { return; },
   initialChanged: function() { return; }
+});
+
+enyo.kind({
+  name: "ContainerWidget",
+  kind: "BaseContainerWidget",
+  setFields: function(fields) {
+    this.$.fields.destroyComponents();
+    this.$.fields.createComponents(fields);
+  },
+  listFields: function() {
+    return this.$.fields.children;
+  },
+  setValue: function(values) {
+    if (!values) return;
+    var fields = this.$.fields.$;
+    if (!(values instanceof Object) || (values instanceof Array)) throw "values must be a hash";
+
+    for (var k in values) {
+      var v = values[k];
+      if (fields[k]) fields[k].setValue(v);
+    }
+  }
+});
+
+enyo.kind({
+  name: "ListWidget",
+  kind: "BaseContainerWidget",
+
+  // We copy the field definition from the field schema for later use.
+  _fieldKind: undefined,
+  setFields: function(fields) {
+      this._fieldKind = fields;
+  },
+  listFields: function() {
+    return this.$.fields.children;
+  },
+  setValue: function(values) {
+    if (!values) return;
+    var fields = this.$.fields.$;
+    if (!(values instanceof Array)) throw "values must be an array";
+    var i;
+
+    // add any needed fields
+    var kind = this._fieldKind;
+    var kinds = [];
+    var quantity = Math.max(values.length-fields.length, 0);
+    for (i = 0; i < quantity; i++) { kinds.push(kind); }
+    this.$.fields.createComponents(kinds);
+    // set validatedOnce, if necessary
+    if (quantity && this.validatedOnce) {
+      fields.slice(fields.length-quantity).forEach(function(x) {x.validatedOnce = true;});
+    }
+    // update values for existing fields
+    for (i=0; i < values.length; i++) {
+      if (fields[i]) {
+        fields[i].setValue(values[0]);
+      }
+    }
+    // remove extra fields
+    fields.slice(values.length).forEach(function(x) {x.destroy();});
+  }
 });
