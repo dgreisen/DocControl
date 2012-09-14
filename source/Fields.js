@@ -158,6 +158,7 @@ enyo.kind({
     if (!valid) {
       this.errors = [this.errorMessages.invalid];
     }
+    valid = !this.errors.length;
     this.$.widget.setErrorMessage(this.errors[0]);
     this.$.widget.setValid(valid);
     this.$.widget.validatedOnce = true;
@@ -205,7 +206,8 @@ enyo.kind({
   widget: { kind: "ListWidget" },
   validate: function() {
     if (!this.listFields().length && this.required) {
-      this.errors.push(this.errorMessages.required);
+      var message = this.errorMessages.required;
+      this.errors = [interpolate(message, [this.schema.name || this.schema.kind.slice(0,-5)])];
       return;
     }
   },
@@ -219,7 +221,14 @@ enyo.kind({
   toJSON: function() {
     this.throwValidationError();
     return this.listFields().map(function(x) {x.toJSON();});
+  },
+  addField: function(value) {
+    this.widget.append(value);
+  },
+  removeField: function(index) {
+    this.widget.remove(index);
   }
+
 });
 
 
@@ -362,4 +371,4 @@ enyo.kind({
       this.errors.push(this.errorMessages['invalid']);
     }
   }
-})
+});

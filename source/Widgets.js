@@ -10,6 +10,8 @@ enyo.kind({
     initial: "",
     //* the current value of the widget
     value: "",
+    //* the value to be stored when a null/undefined value is written to the field.
+    nullValue: "",
     //* widget help text
     helpText: "",
     //* whether the current widget is in valid state. IMPORTANT: just because `valid` is true, doesn't mean value passes field's validation method. Just specifies whether widget displays error messages or not.
@@ -34,7 +36,7 @@ enyo.kind({
     this.inherited(arguments);
     this.generateComponents();
     this.labelChanged();
-    this.setValue(this.initial);
+    this.setValue(this.value || this.initial);
     this.helpTextChanged();
     this.errorMessageChanged();
     this.validChanged();
@@ -78,8 +80,9 @@ enyo.kind({
       this.$.label.setContent(this.label);
     }
   },
-  setValue: function() {
-    this.$.input.setValue(this.value);
+  setValue: function(val) {
+    val = (val === null || val === undefined) ? this.nullValue : val;
+    this.$.input.setValue(val);
   },
   getValue: function() {
     return this.$.input.getValue();
@@ -145,7 +148,8 @@ enyo.kind({
     //* either a single instance of, or a list of, kind definition object. If a single object, such as `{kind: "CharField", maxLength: 50 }`, then the list will consist of an arbitrary number of a single kind of that field. If a list, such as `[{kind: "CharField", maxLength: 50 }, {kind:IntegerField }`, it will contain the specified list of heterogenious fields.
     fields: [],
     //* whether this widget has a fixed height. If `true`, then a scroller is provided.
-    fixedHeight: false
+    fixedHeight: false,
+    value: undefined
   },
   components: [
     { name: "label", tag: "label" },
@@ -164,7 +168,7 @@ enyo.kind({
   getValue: function() {
     throw "ListWidget does not support getValue()";
   },
-  errorClass: "listerror",
+  errorClass: "containererror",
   fieldNameChanged: function() { return; },
   initialChanged: function() { return; }
 });
@@ -181,12 +185,13 @@ enyo.kind({
   },
   setValue: function(values) {
     if (!values) return;
-    var fields = this.$.fields.$;
     if (!(values instanceof Object) || (values instanceof Array)) throw "values must be a hash";
-
-    for (var k in values) {
-      var v = values[k];
-      if (fields[k]) fields[k].setValue(v);
+    var fields = this.listFields();
+    var k;
+    for (var i=0; i < fields.length; i++) {
+      var field = fields[i];
+      var name = field.getName();
+      field.setValue(values[name]);
     }
   }
 });
@@ -203,9 +208,12 @@ enyo.kind({
   listFields: function() {
     return this.$.fields.children;
   },
+  getValue: function() {
+
+  },
   setValue: function(values) {
     if (!values) return;
-    var fields = this.$.fields.$;
+    var fields = this.listFields();
     if (!(values instanceof Array)) throw "values must be an array";
     var i;
 
@@ -221,11 +229,15 @@ enyo.kind({
     }
     // update values for existing fields
     for (i=0; i < values.length; i++) {
-      if (fields[i]) {
         fields[i].setValue(values[0]);
-      }
     }
     // remove extra fields
     fields.slice(values.length).forEach(function(x) {x.destroy();});
+  },
+  addField: function(value) {
+
+  },
+  removeField: function(index) {
+
   }
 });

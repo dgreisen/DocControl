@@ -2,13 +2,12 @@
 	Put anything you reference with "url()" in ../assets/
 	This way, you can minify your application, and just remove the "source" folder for production
 */
+
 #app {
-	margin: 16px;
-	border-radius: 4px;
 	padding: 16px;
 }
 
-.error p {
+.error p, .containererror > p {
 	color: red;
 }
 
