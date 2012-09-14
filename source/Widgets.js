@@ -165,9 +165,6 @@ enyo.kind({
   getFields: function() {
     return this.$.fields.$;
   },
-  getValue: function() {
-    throw "ListWidget does not support getValue()";
-  },
   errorClass: "containererror",
   fieldNameChanged: function() { return; },
   initialChanged: function() { return; }
@@ -182,6 +179,11 @@ enyo.kind({
   },
   listFields: function() {
     return this.$.fields.children;
+  },
+  getValue:  function() {
+    var out = {};
+    this.listFields().forEach(function(x) { out[x.getName()] = x.toJSON(); });
+    return out;
   },
   setValue: function(values) {
     if (!values) return;
@@ -209,7 +211,7 @@ enyo.kind({
     return this.$.fields.children;
   },
   getValue: function() {
-
+    return this.listFields().forEach(function(x) {return x.getValue();});
   },
   setValue: function(values) {
     if (!values) return;
@@ -229,15 +231,22 @@ enyo.kind({
     }
     // update values for existing fields
     for (i=0; i < values.length; i++) {
-        fields[i].setValue(values[0]);
+        fields[i].setValue(values[i]);
     }
     // remove extra fields
     fields.slice(values.length).forEach(function(x) {x.destroy();});
   },
   addField: function(value) {
-
+    kind = enyo.clone(this._fieldKind);
+    if (value) { kind.value = value; }
+    this.$.fields.createComponent(kind);
+    this.render();
   },
   removeField: function(index) {
-
+    value = this.getValue();
+    if (value.length > index) {
+      value = value.splice(index, 1);
+      this.setValue(value);
+    }
   }
 });

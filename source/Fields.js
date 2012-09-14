@@ -24,6 +24,8 @@ enyo.kind({
   },
   beforeWidgetInit: function () {},
   create: function() {
+    // all fields were sharing the same validators list
+    this.validators = enyo.cloneArray(this.validators);
     this.inherited(arguments);
     this.setWidget(this.widget);
     this.beforeWidgetInit();
@@ -201,7 +203,7 @@ enyo.kind({
 });
 
 enyo.kind({
-  name: "BaseListField",
+  name: "ListField",
   kind: "BaseContainerField",
   widget: { kind: "ListWidget" },
   validate: function() {
@@ -223,10 +225,10 @@ enyo.kind({
     return this.listFields().map(function(x) {x.toJSON();});
   },
   addField: function(value) {
-    this.widget.append(value);
+    this.$.widget.addField(value);
   },
   removeField: function(index) {
-    this.widget.remove(index);
+    this.$.widget.removeField(index);
   }
 
 });

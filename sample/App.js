@@ -10,11 +10,13 @@ enyo.kind({
   kind: "Scroller",
   components: [
     { name: "userMessage", tag: "h3", style: "color:red;"},
-    { name: "usersForm", kind: "BaseListField",
+    { name: "usersForm", kind: "ListField",
       schema: { kind: "UserField" },
       value: [{username: "JDoe", age: 22}, {username: "ANormal", age: 33}],
       widgetAttrs: { label: "Users", helpText: "Add as many users as you like" } },
+    { kind: "onyx.Button", ontap: "onAddTap", content: "Add User"},
     { kind: "onyx.Button", ontap: "onUserTap", content: "Submit"},
+
     { name: "loginMessage", tag: "h3", style: "color:red;"},
     { name:"loginForm", kind: "ContainerField", schema: [
       { name: "email", kind: "EmailField", widgetAttrs: { label: "Email" }},
@@ -33,5 +35,8 @@ enyo.kind({
       { this.$.userMessage.setContent('Successfull User Submission'); }
     else
       { this.$.userMessage.setContent('No User Submission - invalid form'); }
+  },
+  onAddTap: function() {
+    this.$.usersForm.addField();
   }
 });
