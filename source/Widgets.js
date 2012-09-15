@@ -30,7 +30,8 @@ enyo.kind({
   },
   events: {
     onRequestValidation: "",
-    onchange: ""
+    onchange: "",
+    onDelete: ""
   },
   create: function() {
     this.inherited(arguments);
@@ -47,8 +48,10 @@ enyo.kind({
       { name: "input", kind: "onyx.Input", onchange: "onInputChange", onkeyup: "onInputKey", onkeydown: "onInputKey" }
     ]},
   helpKind: { name: "helpText", tag: "p" },
+  containerControl: undefined,
   generateComponents: function() {
     this.createComponents([this.labelKind, this.inputKind, this.helpKind]);
+    if (this.containerControl) this.createComponent(this.containerControl);
   },
   onInputChange: function() {
     this.value = this.$.input.getValue();
@@ -63,6 +66,10 @@ enyo.kind({
       this.validate();
     }
     return true;
+  },
+  // this function is here to be set as a handler on widget chrome in this.containerControl
+  handleDelete: function() {
+    this.doDelete();
   },
   //* whether the field has been validated before - used by some validationStrategies
   validatedOnce: false,
@@ -156,8 +163,9 @@ enyo.kind({
     { name: "helpText", tag: "p" },
     { name: "fields", tag: "div" }
   ],
+  containerControl: undefined,
   generateComponents: function() {
-    return;
+    if (this.containerControl) this.createComponent(this.containerControl);
   },
   labelChanged: function() {
     this.$.label.setContent(this.label);
@@ -182,7 +190,7 @@ enyo.kind({
   },
   getValue:  function() {
     var out = {};
-    this.listFields().forEach(function(x) { out[x.getName()] = x.toJSON(); });
+    this.listFields().forEach(function(x) { out[x.getName()] = x.getValue(); });
     return out;
   },
   setValue: function(values) {
@@ -211,7 +219,7 @@ enyo.kind({
     return this.$.fields.children;
   },
   getValue: function() {
-    return this.listFields().forEach(function(x) {return x.getValue();});
+    return this.listFields().map(function(x) {return x.getValue();});
   },
   setValue: function(values) {
     if (!values) return;
@@ -245,7 +253,7 @@ enyo.kind({
   removeField: function(index) {
     value = this.getValue();
     if (value.length > index) {
-      value = value.splice(index, 1);
+      value.splice(index, 1);
       this.setValue(value);
     }
   }

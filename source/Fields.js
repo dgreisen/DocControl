@@ -20,7 +20,7 @@ enyo.kind({
     }
   },
   events: {
-    onValidation: ""
+    onValidation: "",
   },
   beforeWidgetInit: function () {},
   create: function() {
@@ -32,13 +32,19 @@ enyo.kind({
     this.requiredChanged();
     this.setValue(this.value);
     this.widgetAttrs.fieldName = this.getName();
-    this.setWidgetAttrs(this.widgetAttrs);
   },
   handlers: {
-    onRequestValidation: "onRequestValidation"
+    onRequestValidation: "onRequestValidation",
+    onDelete: "onDelete"
   },
   onRequestValidation: function() {
     this.isValid();
+  },
+  onDelete: function(inSender, inEvent) {
+    if (inEvent.originator instanceof Widget) {
+      // we hijack inEvent.originator to point to the originating Field, not the originating widget.
+      inEvent.originator = this;
+    }
   },
   toJavascript: function() {
     this.clean = this.getValue();
@@ -103,7 +109,9 @@ enyo.kind({
   },
   setWidget: function(widget) {
     this.destroyComponents();
+    widget = enyo.clone(widget);
     widget.name = "widget";
+    widget = enyo.mixin(widget, this.widgetAttrs);
     this.createComponent(widget);
   },
   getWidget: function() {
@@ -199,7 +207,6 @@ enyo.kind({
     this.listFields().forEach(function(x) { out[x.getName()] = x.toJSON(); });
     return out;
   }
-
 });
 
 enyo.kind({
@@ -229,8 +236,20 @@ enyo.kind({
   },
   removeField: function(index) {
     this.$.widget.removeField(index);
+  },
+  onDelete: function(inSender, inEvent) {
+    if (inEvent.originator instanceof Widget) {
+      // we hijack the originator to point to the originating field not the originating widget
+      inEvent.originator = this;
+    }
+    else {
+      // delete the field at inEvent.originator.
+      var i = this.listFields().indexOf(inEvent.originator);
+      if (i < 0) throw "Field to delete not found";
+      this.removeField(i);
+      return true;
+    }
   }
-
 });
 
 

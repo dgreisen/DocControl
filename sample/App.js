@@ -1,8 +1,12 @@
-enyo.kind({ name:"UserField", kind: "ContainerField", schema: [
-      { name: "username", kind: "CharField", maxLength: 10, minLength: 5, widgetAttrs: { label: "Username", helpText: "CharField between 5 and 10 characters long", initial: "John Doe" } },
-      { name: "age", kind: "IntegerField", maxValue: 116, minValue: 13, widgetAttrs: { label: "Age" } }
-      ]
-    });
+enyo.kind({
+  name: "UserField",
+  kind: "ContainerField",
+  schema: [
+    { name: "username", kind: "CharField", maxLength: 10, minLength: 5, widgetAttrs: { label: "Username", helpText: "CharField between 5 and 10 characters long", initial: "John Doe" } },
+    { name: "age", kind: "IntegerField", maxValue: 116, minValue: 13, widgetAttrs: { label: "Age" } }
+  ],
+  widgetAttrs: {containerControl: { kind: "onyx.Button", content: "Delete", ontap: "handleDelete" } }
+});
 
 enyo.kind({
   name: "App",
