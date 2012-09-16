@@ -17,3 +17,7 @@ interpolate = function(s, args) {
 ValidationError = function() {
   return {message: arguments[0], code: arguments[1], data: Array.prototype.slice.call(arguments, 2) };
 };
+
+includes = function(a, s) {
+  return a.indexOf(s) > -1;
+};

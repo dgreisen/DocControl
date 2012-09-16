@@ -11,7 +11,7 @@ enyo.kind({
     //* list of validators
     validators: [],
     //* kind definition for widget (eg { kind: "Widget"})
-    widget: { kind: "Widget" },
+    widget: "Widget",
     //* hash of attibutes to set on widget (eg `label`, `initial`)
     widgetAttrs: {},
     //* hash of error messages
@@ -19,6 +19,8 @@ enyo.kind({
       required: _i('This field is required.')
     }
   },
+  // the initial value of the field
+  initial: undefined,
   events: {
     onValidation: "",
   },
@@ -30,7 +32,7 @@ enyo.kind({
     this.setWidget(this.widget);
     this.beforeWidgetInit();
     this.requiredChanged();
-    this.setValue(this.value);
+    if (this.value !== undefined) this.setValue(this.value);
     this.widgetAttrs.fieldName = this.getName();
   },
   handlers: {
@@ -108,9 +110,11 @@ enyo.kind({
     return this.$.widget.getValue();
   },
   setWidget: function(widget) {
+    widget = (typeof(widget)=="string") ? { kind: widget } : widget;
     this.destroyComponents();
     widget = enyo.clone(widget);
     widget.name = "widget";
+    widget.initial = this.initial;
     widget = enyo.mixin(widget, this.widgetAttrs);
     this.createComponent(widget);
   },
@@ -193,7 +197,7 @@ enyo.kind({
     //* A list of kind definition objects such as `[{kind: "CharField", maxLength: 50 }, {kind:IntegerField }`. It will contain the specified list of heterogenious fields.
     schema: undefined
   },
-  widget: { kind: "ContainerWidget" },
+  widget: "ContainerWidget",
   validate: function() {},
   getClean: function() {
     this.throwValidationError();
@@ -212,7 +216,7 @@ enyo.kind({
 enyo.kind({
   name: "ListField",
   kind: "BaseContainerField",
-  widget: { kind: "ListWidget" },
+  widget: "ListWidget",
   validate: function() {
     if (!this.listFields().length && this.required) {
       var message = this.errorMessages.required;
@@ -364,7 +368,7 @@ enyo.kind({
 enyo.kind({
   name: "EmailField",
   kind: "Field",
-  widget: { kind:"EmailWidget" },
+  widget: "EmailWidget",
   validators: [new validators.EmailValidator()]
 });
 
@@ -391,5 +395,79 @@ enyo.kind({
     } else {
       this.errors.push(this.errorMessages['invalid']);
     }
+  }
+});
+
+enyo.kind({
+  name: "BooleanField",
+  kind: "Field",
+  widget: "CheckboxWidget",
+  toJavascript: function() {
+    var value = this.getValue();
+    if (typeof(value) == "string" && value.toLowerCase() in {"false":"", "0":""}) {
+      value = false;
+    }
+    else {
+      value = Boolean(value);
+    }
+    if (!value && this.required) {
+      this.errors.push(this.errorMessages.required);
+    }
+    this.clean = value;
+  }
+});
+
+enyo.kind({
+  name: "NullBooleanField",
+  kind: "Field",
+  widget: "CheckboxWidget",
+  toJavascript: function() {
+    var value = this.getValue();
+    if (includes([true, "True", "1"], value)) { value =  true; }
+    else if (includes([false, "False", "0"], value)) { value = false; }
+    else { value = null; }
+    this.clean = value;
+  },
+  validate: function() {
+    return;
+  }
+});
+
+enyo.kind({
+  name: "ChoiceField",
+  kind: "Field",
+  widget: "ChoiceWidget",
+  errorMessages: {
+    'invalidChoice': _i('Select a valid choice. %(value)s is not one of the available choices.')
+  },
+  published: {
+    //* Array of 2-arrays specifying valid choices. if 2-arrays, first value is value, second is display. create optgroups by setting display If display value to a 2-array. MUST USE SETTER.
+    choices: {}
+  },
+  setChoices: function(val) {
+    choices = {};
+    iterChoices = function(x) {
+      if (x[1] instanceof Array) x[1].forEach(iterChoices);
+      else choices[x[0]] = x[1];
+    },
+    val.forEach(iterChoices);
+  },
+  toJavascript: function() {
+    var value = (validators.isEmpty(this.getValue())) ? "" : this.getValue();
+    this.clean = value;
+  },
+  validate: function() {
+    this.inherited();
+    var value = this.getValue();
+    if (value && !this.validValue(value))
+      var message = this.errorMessages.invalidChoices;
+      this.errors = [interpolate(message, [value])];
+  },
+  validValue: function(val) {
+    if (val in this.choices) return true;
+    return false;
+  },
+  getDisplay: function() {
+    return this.choices[this.getClean()];
   }
 });

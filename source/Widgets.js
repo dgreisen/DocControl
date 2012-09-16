@@ -6,10 +6,8 @@ enyo.kind({
     required: true,
     //* widget label
     label: "",
-    //* the initial value of the widget
-    initial: "",
     //* the current value of the widget
-    value: "",
+    value: undefined,
     //* the value to be stored when a null/undefined value is written to the field.
     nullValue: "",
     //* widget help text
@@ -28,6 +26,8 @@ enyo.kind({
     //* the name of the field
     fieldName: undefined
   },
+  //* the initial value of the widget (generally set by field)
+  initial: "",
   events: {
     onRequestValidation: "",
     onchange: "",
@@ -37,7 +37,8 @@ enyo.kind({
     this.inherited(arguments);
     this.generateComponents();
     this.labelChanged();
-    this.setValue(this.value || this.initial);
+    var initialVal = (this.value === undefined ) ? this.initial : this.value;
+    this.setValue(initialVal);
     this.helpTextChanged();
     this.errorMessageChanged();
     this.validChanged();
@@ -115,11 +116,6 @@ enyo.kind({
     this.$.label.setAttribute("for", this.fieldName);
     this.render();
   },
-  initialChanged: function() {
-    if (validators.isEmpty(this.$.input.getValue())) {
-      this.$.input.setValue(this.initial);
-    }
-  },
   //* validation strategies
   defaultValidation: function() {
     if (this.validatedOnce) {
@@ -145,6 +141,18 @@ enyo.kind({
   inputKind: { kind: "onyx.InputDecorator", components: [
       { name: "input", kind: "onyx.Input", type: "email", onchange: "onInputChange", onkeyup: "onInputKey", onkeydown: "onInputKey" }
     ]}
+});
+
+enyo.kind({
+  name: "CheckboxWidget",
+  kind: "Widget",
+  inputKind: { name: "input", kind: "onyx.Checkbox", onchange: "onInputChange" }
+});
+
+enyo.kind({
+  name: "ChoiceWidget",
+  kind: "Widget",
+  inputKind: { name: "input", kind: "onyx." }
 });
 
 
@@ -175,7 +183,6 @@ enyo.kind({
   },
   errorClass: "containererror",
   fieldNameChanged: function() { return; },
-  initialChanged: function() { return; }
 });
 
 enyo.kind({
