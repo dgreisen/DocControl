@@ -49,10 +49,10 @@ enyo.kind({
       { name: "input", kind: "onyx.Input", onchange: "onInputChange", onkeyup: "onInputKey", onkeydown: "onInputKey" }
     ]},
   helpKind: { name: "helpText", tag: "p" },
-  containerControl: undefined,
+  itemControlKind: undefined,
   generateComponents: function() {
     this.createComponents([this.labelKind, this.inputKind, this.helpKind]);
-    if (this.containerControl) this.createComponent(this.containerControl);
+    if (this.itemControlKind) this.createComponent(this.itemControlKind);
   },
   onInputChange: function() {
     this.value = this.$.input.getValue();
@@ -166,6 +166,10 @@ enyo.kind({
     fixedHeight: false,
     value: undefined
   },
+  create: function() {
+    this.inherited(arguments);
+    this.setSchema(this.schema);
+  },
   components: [
     { name: "label", tag: "label" },
     { name: "helpText", tag: "p" },
@@ -173,7 +177,8 @@ enyo.kind({
   ],
   containerControl: undefined,
   generateComponents: function() {
-    if (this.containerControl) this.createComponent(this.containerControl);
+    if (this.containerControlKind) this.createComponent(this.containerControlKind);
+    if (this.itemControlKind) this.createComponent(this.itemControlKind);
   },
   labelChanged: function() {
     this.$.label.setContent(this.label);
@@ -182,15 +187,15 @@ enyo.kind({
     return this.$.fields.$;
   },
   errorClass: "containererror",
-  fieldNameChanged: function() { return; },
+  fieldNameChanged: function() { return; }
 });
 
 enyo.kind({
   name: "ContainerWidget",
   kind: "BaseContainerWidget",
-  setFields: function(fields) {
+  setSchema: function(schema) {
     this.$.fields.destroyComponents();
-    this.$.fields.createComponents(fields);
+    this.$.fields.createComponents(schema);
   },
   listFields: function() {
     return this.$.fields.children;
@@ -214,13 +219,19 @@ enyo.kind({
 });
 
 enyo.kind({
-  name: "ListWidget",
+  name: "BaseListWidget",
   kind: "BaseContainerWidget",
-
+  create: function() {
+    this.inherited(arguments);
+    this.containerControlKind = enyo.clone(this.containerControlKind);
+    this.itemControlKind = enyo.clone(this.itemControlKind);
+  },
   // We copy the field definition from the field schema for later use.
   _fieldKind: undefined,
-  setFields: function(fields) {
-      this._fieldKind = fields;
+  setSchema: function(schema) {
+    this._fieldKind = enyo.clone(schema);
+    this._fieldKind.widgetAttrs = this._fieldKind.widgetAttrs || {};
+    this._fieldKind.widgetAttrs.itemControlKind = this.itemControlKind;
   },
   listFields: function() {
     return this.$.fields.children;
@@ -246,14 +257,15 @@ enyo.kind({
     }
     // update values for existing fields
     for (i=0; i < values.length; i++) {
-        fields[i].setValue(values[i]);
+        fields[i].setValue(values[i] || null);
     }
     // remove extra fields
     fields.slice(values.length).forEach(function(x) {x.destroy();});
   },
   addField: function(value) {
     kind = enyo.clone(this._fieldKind);
-    if (value) { kind.value = value; }
+    // if value is a component, then we are actually seeing inSender
+    if (value && !(value instanceof enyo.Component)) { kind.value = value; }
     this.$.fields.createComponent(kind);
     this.render();
   },
@@ -264,4 +276,12 @@ enyo.kind({
       this.setValue(value);
     }
   }
+});
+
+
+enyo.kind({
+  name: "ListWidget",
+  kind: "BaseListWidget",
+  itemControlKind: { kind: "onyx.Button", content: "Delete", ontap: "handleDelete" },
+  containerControlKind: { kind: "onyx.Button", ontap: "addField", content: "Add" }
 });

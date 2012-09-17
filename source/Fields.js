@@ -22,15 +22,14 @@ enyo.kind({
   // the initial value of the field
   initial: undefined,
   events: {
-    onValidation: "",
+    onValidation: ""
   },
-  beforeWidgetInit: function () {},
   create: function() {
     // all fields were sharing the same validators list
     this.validators = enyo.cloneArray(this.validators);
     this.inherited(arguments);
+    this.widget = (typeof(this.widget)=="string") ? { kind: this.widget } : enyo.clone(this.widget);
     this.setWidget(this.widget);
-    this.beforeWidgetInit();
     this.requiredChanged();
     if (this.value !== undefined) this.setValue(this.value);
     this.widgetAttrs.fieldName = this.getName();
@@ -110,12 +109,11 @@ enyo.kind({
     return this.$.widget.getValue();
   },
   setWidget: function(widget) {
-    widget = (typeof(widget)=="string") ? { kind: widget } : widget;
-    this.destroyComponents();
-    widget = enyo.clone(widget);
+    // this.inherited does not work; you must update setWidget of all subclasses.
     widget.name = "widget";
     widget.initial = this.initial;
     widget = enyo.mixin(widget, this.widgetAttrs);
+    this.destroyComponents();
     this.createComponent(widget);
   },
   getWidget: function() {
@@ -143,9 +141,6 @@ enyo.kind({
     required: _i('There must be at least one %s.'),
     invalid: _i('Please fix the errors indicated below.')
   },
-  beforeWidgetInit: function() {
-    this.schemaChanged();
-  },
   handlers: {
     onValidation: "onValidation"
   },
@@ -153,6 +148,15 @@ enyo.kind({
   validCounter: 0,
   // hash of invalid subfields (to prevent duplication)
   invalidFields: {},
+  setWidget: function(widget) {
+    // this.inherited does not work - get "Uncaught TypeError: Cannot read property '_inherited' of undefined"
+    widget.name = "widget";
+    widget.initial = this.initial;
+    widget.schema = this.schema;
+    widget = enyo.mixin(widget, this.widgetAttrs);
+    this.destroyComponents();
+    this.createComponent(widget);
+  },
   onValidation: function(inSender, inEvent) {
     if (inEvent.valid && inSender in this.invalidFields) {
       delete this.invalidFields[inSender];
@@ -182,7 +186,7 @@ enyo.kind({
     return this.$.widget.listFields();
   },
   schemaChanged: function() {
-    return this.$.widget.setFields(this.schema);
+    return this.$.widget.setSchema(this.schema);
   },
   throwValidationError: function() {
     // test for validity, throw error if not valid
@@ -216,7 +220,7 @@ enyo.kind({
 enyo.kind({
   name: "ListField",
   kind: "BaseContainerField",
-  widget: "ListWidget",
+  widget: "BaseListWidget",
   validate: function() {
     if (!this.listFields().length && this.required) {
       var message = this.errorMessages.required;
@@ -227,9 +231,6 @@ enyo.kind({
   getClean: function() {
     this.throwValidationError();
     return this.listFields().map(function(x) {x.getClean();});
-  },
-  fieldsChanged: function() {
-    this.$.widgetAttrs.setFields(this.fields);
   },
   toJSON: function() {
     this.throwValidationError();
@@ -404,10 +405,9 @@ enyo.kind({
   widget: "CheckboxWidget",
   toJavascript: function() {
     var value = this.getValue();
-    if (typeof(value) == "string" && value.toLowerCase() in {"false":"", "0":""}) {
+    if (typeof(value) == "string" && includes(["false", "0"], value.toLowerCase())) {
       value = false;
-    }
-    else {
+    } else {
       value = Boolean(value);
     }
     if (!value && this.required) {
