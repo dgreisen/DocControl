@@ -38,7 +38,6 @@ enyo.kind({
   events: {
     onRequestValidation: "",
     onchange: "",
-    onDelete: ""
   },
   create: function() {
     this.inherited(arguments);
@@ -72,10 +71,6 @@ enyo.kind({
       this.validate();
     }
     return true;
-  },
-  // this function is here to be set as a handler on widget chrome in this.containerControl
-  handleDelete: function() {
-    this.doDelete();
   },
   validate: function() {
     if (typeof(this.validationStrategy) == "string") {
