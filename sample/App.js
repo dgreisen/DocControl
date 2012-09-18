@@ -64,7 +64,7 @@ enyo.kind({
     if (this.$.contactsForm.isValid())
       { this.$.contactsMessage.setContent('Successfull Contacts Submission'); }
     else
-      { this.$.contactsMessage.setContent(' invalid form'); }
+      { this.$.contactsMessage.setContent('Submission Failure - invalid form'); }
   },
   onAddTap: function() {
     this.$.contactsForm.addField();

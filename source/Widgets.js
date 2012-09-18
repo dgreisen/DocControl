@@ -24,7 +24,14 @@ enyo.kind({
     //* whether to display the widget in its compact form
     compact: false,
     //* the name of the field
-    fieldName: undefined
+    fieldName: undefined,
+    //* display method.
+    //  - null or undefined:  no widget
+    //  - "display": non-editable view of widget
+    //  - "visible": standard edit widget
+    display: "visible",
+    //* whether the field has been validated before - used by some validationStrategies
+    validatedOnce: false
   },
   //* the initial value of the widget (generally set by field)
   initial: "",
@@ -72,8 +79,6 @@ enyo.kind({
   handleDelete: function() {
     this.doDelete();
   },
-  //* whether the field has been validated before - used by some validationStrategies
-  validatedOnce: false,
   validate: function() {
     if (typeof(this.validationStrategy) == "string") {
       this[this.validationStrategy]();
@@ -153,135 +158,4 @@ enyo.kind({
   name: "ChoiceWidget",
   kind: "Widget",
   inputKind: { name: "input", kind: "onyx." }
-});
-
-
-enyo.kind({
-  name: "BaseContainerWidget",
-  kind: "Widget",
-  published: {
-    //* either a single instance of, or a list of, kind definition object. If a single object, such as `{kind: "CharField", maxLength: 50 }`, then the list will consist of an arbitrary number of a single kind of that field. If a list, such as `[{kind: "CharField", maxLength: 50 }, {kind:IntegerField }`, it will contain the specified list of heterogenious fields.
-    fields: [],
-    //* whether this widget has a fixed height. If `true`, then a scroller is provided.
-    fixedHeight: false,
-    value: undefined
-  },
-  create: function() {
-    this.inherited(arguments);
-    this.setSchema(this.schema);
-  },
-  components: [
-    { name: "label", tag: "label" },
-    { name: "helpText", tag: "p" },
-    { name: "fields", tag: "div" }
-  ],
-  containerControl: undefined,
-  generateComponents: function() {
-    if (this.containerControlKind) this.createComponent(this.containerControlKind);
-    if (this.itemControlKind) this.createComponent(this.itemControlKind);
-  },
-  labelChanged: function() {
-    this.$.label.setContent(this.label);
-  },
-  getFields: function() {
-    return this.$.fields.$;
-  },
-  errorClass: "containererror",
-  fieldNameChanged: function() { return; }
-});
-
-enyo.kind({
-  name: "ContainerWidget",
-  kind: "BaseContainerWidget",
-  setSchema: function(schema) {
-    this.$.fields.destroyComponents();
-    this.$.fields.createComponents(schema);
-  },
-  listFields: function() {
-    return this.$.fields.children;
-  },
-  getValue:  function() {
-    var out = {};
-    this.listFields().forEach(function(x) { out[x.getName()] = x.getValue(); });
-    return out;
-  },
-  setValue: function(values) {
-    if (!values) return;
-    if (!(values instanceof Object) || (values instanceof Array)) throw "values must be a hash";
-    var fields = this.listFields();
-    var k;
-    for (var i=0; i < fields.length; i++) {
-      var field = fields[i];
-      var name = field.getName();
-      field.setValue(values[name]);
-    }
-  }
-});
-
-enyo.kind({
-  name: "BaseListWidget",
-  kind: "BaseContainerWidget",
-  create: function() {
-    this.inherited(arguments);
-    this.containerControlKind = enyo.clone(this.containerControlKind);
-    this.itemControlKind = enyo.clone(this.itemControlKind);
-  },
-  // We copy the field definition from the field schema for later use.
-  _fieldKind: undefined,
-  setSchema: function(schema) {
-    this._fieldKind = enyo.clone(schema);
-    this._fieldKind.widgetAttrs = this._fieldKind.widgetAttrs || {};
-    this._fieldKind.widgetAttrs.itemControlKind = this.itemControlKind;
-  },
-  listFields: function() {
-    return this.$.fields.children;
-  },
-  getValue: function() {
-    return this.listFields().map(function(x) {return x.getValue();});
-  },
-  setValue: function(values) {
-    if (!values) return;
-    var fields = this.listFields();
-    if (!(values instanceof Array)) throw "values must be an array";
-    var i;
-
-    // add any needed fields
-    var kind = this._fieldKind;
-    var kinds = [];
-    var quantity = Math.max(values.length-fields.length, 0);
-    for (i = 0; i < quantity; i++) { kinds.push(kind); }
-    this.$.fields.createComponents(kinds);
-    // set validatedOnce, if necessary
-    if (quantity && this.validatedOnce) {
-      fields.slice(fields.length-quantity).forEach(function(x) {x.validatedOnce = true;});
-    }
-    // update values for existing fields
-    for (i=0; i < values.length; i++) {
-        fields[i].setValue(values[i] || null);
-    }
-    // remove extra fields
-    fields.slice(values.length).forEach(function(x) {x.destroy();});
-  },
-  addField: function(value) {
-    kind = enyo.clone(this._fieldKind);
-    // if value is a component, then we are actually seeing inSender
-    if (value && !(value instanceof enyo.Component)) { kind.value = value; }
-    this.$.fields.createComponent(kind);
-    this.render();
-  },
-  removeField: function(index) {
-    value = this.getValue();
-    if (value.length > index) {
-      value.splice(index, 1);
-      this.setValue(value);
-    }
-  }
-});
-
-
-enyo.kind({
-  name: "ListWidget",
-  kind: "BaseListWidget",
-  itemControlKind: { kind: "onyx.Button", content: "Delete", ontap: "handleDelete" },
-  containerControlKind: { kind: "onyx.Button", ontap: "addField", content: "Add" }
 });
