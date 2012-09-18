@@ -1,6 +1,6 @@
 enyo.kind({
-  name: "BaseContainerField",
-  kind: "Field",
+  name: "fields.BaseContainerField",
+  kind: "fields.Field",
   published: {
     //* A single instance of a kind definition object, such as `{kind: "CharField", maxLength: 50 }`, the list will consist of an arbitrary number of a single kind of that field
     schema: undefined,
@@ -83,13 +83,13 @@ enyo.kind({
 
 
 enyo.kind({
-  name: "ContainerField",
-  kind: "BaseContainerField",
+  name: "fields.ContainerField",
+  kind: "fields.BaseContainerField",
   published: {
     //* A list of kind definition objects such as `[{kind: "CharField", maxLength: 50 }, {kind:IntegerField }`. It will contain the specified list of heterogenious fields.
     schema: undefined
   },
-  widget: "ContainerWidget",
+  widget: "widgets.ContainerWidget",
   validate: function() {},
   setValue: function(values) {
     if (!values) return;
@@ -127,9 +127,9 @@ enyo.kind({
 
 
 enyo.kind({
-  name: "ListField",
-  kind: "BaseContainerField",
-  widget: "BaseListWidget",
+  name: "fields.ListField",
+  kind: "fields.BaseContainerField",
+  widget: "widgets.BaseListWidget",
   validate: function() {
     if (!this.getFields().length && this.required) {
       var message = this.errorMessages.required;

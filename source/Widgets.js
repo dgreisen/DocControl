@@ -1,5 +1,5 @@
 enyo.kind({
-  name: "Widget",
+  name: "widgets.Widget",
   kind: "Control",
   published: {
     //* whether this widget requires a value
@@ -25,11 +25,6 @@ enyo.kind({
     compact: false,
     //* the name of the field
     fieldName: undefined,
-    //* display method.
-    //  - null or undefined:  no widget
-    //  - "display": non-editable view of widget
-    //  - "visible": standard edit widget
-    display: "visible",
     //* whether the field has been validated before - used by some validationStrategies
     validatedOnce: false
   },
@@ -126,29 +121,29 @@ enyo.kind({
 });
 
 enyo.kind({
-  name: "PasswordWidget",
-  kind: "Widget",
+  name: "widgets.PasswordWidget",
+  kind: "widgets.Widget",
   inputKind: { kind: "onyx.InputDecorator", components: [
         { name: "input", kind: "onyx.Input", type:"password", onchange: "onInputChange", onkeyup: "onInputKey", onkeydown: "onInputKey" }
     ]}
 });
 
 enyo.kind({
-  name: "EmailWidget",
-  kind: "Widget",
+  name: "widgets.EmailWidget",
+  kind: "widgets.Widget",
   inputKind: { kind: "onyx.InputDecorator", components: [
       { name: "input", kind: "onyx.Input", type: "email", onchange: "onInputChange", onkeyup: "onInputKey", onkeydown: "onInputKey" }
     ]}
 });
 
 enyo.kind({
-  name: "CheckboxWidget",
-  kind: "Widget",
+  name: "widgets.CheckboxWidget",
+  kind: "widgets.Widget",
   inputKind: { name: "input", kind: "onyx.Checkbox", onchange: "onInputChange" }
 });
 
 enyo.kind({
-  name: "ChoiceWidget",
-  kind: "Widget",
+  name: "widgets.ChoiceWidget",
+  kind: "widgets.Widget",
   inputKind: { name: "input", kind: "onyx." }
 });

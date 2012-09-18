@@ -1,9 +1,7 @@
 enyo.kind({
-  name: "BaseContainerWidget",
-  kind: "Widget",
+  name: "widgets.BaseContainerWidget",
+  kind: "widgets.Widget",
   published: {
-    //* either a single instance of, or a list of, kind definition object. If a single object, such as `{kind: "CharField", maxLength: 50 }`, then the list will consist of an arbitrary number of a single kind of that field. If a list, such as `[{kind: "CharField", maxLength: 50 }, {kind:IntegerField }`, it will contain the specified list of heterogenious fields.
-    fields: [],
     //* whether this widget has a fixed height. If `true`, then a scroller is provided.
     fixedHeight: false,
     value: undefined
@@ -48,8 +46,8 @@ enyo.kind({
 
 
 enyo.kind({
-  name: "ContainerWidget",
-  kind: "BaseContainerWidget",
+  name: "widgets.ContainerWidget",
+  kind: "widgets.BaseContainerWidget",
   setSchema: function(schema) {
     this.$.fields.destroyComponents();
     this.$.fields.createComponents(schema);
@@ -70,8 +68,8 @@ enyo.kind({
 
 
 enyo.kind({
-  name: "BaseListWidget",
-  kind: "BaseContainerWidget",
+  name: "widgets.BaseListWidget",
+  kind: "widgets.BaseContainerWidget",
   create: function() {
     this.inherited(arguments);
     this.containerControlKind = enyo.clone(this.containerControlKind);
@@ -123,8 +121,8 @@ enyo.kind({
 
 
 enyo.kind({
-  name: "ListWidget",
-  kind: "BaseListWidget",
+  name: "widgets.ListWidget",
+  kind: "widgets.BaseListWidget",
   setValue: function(values) {
     if (!values) return;
     if (!(values instanceof Array)) throw "values must be an array";
@@ -148,14 +146,14 @@ enyo.kind({
     this.validate();
     this.render();
   },
-  itemKind: { kind: "ListItem" },
+  itemKind: { kind: "widgets.ListItem" },
   containerControlKind: { kind: "onyx.Button", ontap: "addField", content: "Add" }
 });
 
 
 
 enyo.kind({
-  name: "ListItem",
+  name: "widgets.ListItem",
   kind: "enyo.Control",
   events: {
     onDelete: ""

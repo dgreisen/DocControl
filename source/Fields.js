@@ -1,28 +1,36 @@
 enyo.kind({
-  name: "Field",
+  name: "fields.Field",
   kind: "Control",
   published: {
     //* whether the current field is required
     required: true,
-    //* the current value of the field; this should be used for setting ui elements.
+    //* the current value of the field
     value: undefined,
-    //* the cleaned value; raises error if invalid; this will be a javascript datatype and should be used for any calculations, etc. You should use the toJSON() method to get a version appropriate for serialization.
+    //* the cleaned value accessed via `getClean()`; raises error if invalid; this will be a javascript datatype and should be used for any calculations, etc. Use the toJSON() method to get a version appropriate for serialization.
     clean: undefined,
-    //* list of validators
+    //* list of validators; If overriding a parent class, you must include all parent class validators
     validators: [],
-    //* kind definition for widget (eg { kind: "Widget"})
-    widget: "Widget",
+    //* kind definition for widget (eg { kind: "widget.Widget"})
+    widget: "widgets.Widget",
     //* hash of attibutes to set on widget (eg `label`, `initial`)
     widgetAttrs: {},
-    //* hash of error messages
+    //* hash of error messages; If overriding a parent class, you must include all parent class errorMessages
     errorMessages: {
       required: _i('This field is required.')
-    }
+    },
+    //* display method.
+    //*  <ul><li> `null` or `undefined`:  no widget</li>
+    //* <li>"display": non-editable view of widget (not yet implemented) </li>
+    //* <li>"visible": standard edit widget</li></ul>
+    display: "visible"
   },
-  // the initial value of the field
+  //* the initial value of the field.
   initial: undefined,
   events: {
+    //* @protected
+    //* called on validation completed to pass validation information to parent container so it can properly set it's valid state
     onValidation: "",
+    //* called on creation to register field with its container
     onFieldRegistration: ""
   },
   create: function() {
@@ -38,12 +46,16 @@ enyo.kind({
     this.doFieldRegistration();
   },
   handlers: {
+    //* a widget will request validation by sending an onRequestValidation event. 
     onRequestValidation: "onRequestValidation",
+    //* a widget will request deletion of the field by sending an onDelete event.
     onDelete: "onDelete"
   },
+  //* perform validation for the widget
   onRequestValidation: function() {
     this.isValid();
   },
+  //* pass the onDelete event on to the container.
   onDelete: function(inSender, inEvent) {
     if (inEvent.originator instanceof Widget) {
       // we hijack inEvent.originator to point to the originating Field, not the originating widget.
@@ -99,6 +111,7 @@ enyo.kind({
     }
     return this.clean;
   },
+  setClean: function() { throw "clean not settable. use setValue, instead."; },
   toJSON: function() {
     return this.getClean();
   },
@@ -139,8 +152,8 @@ enyo.kind({
 
 
 enyo.kind({
-  name: "CharField",
-  kind: "Field",
+  name: "fields.CharField",
+  kind: "fields.Field",
   published: {
     maxLength: undefined,
     minLength: undefined
@@ -163,8 +176,8 @@ enyo.kind({
 });
 
 enyo.kind({
-  name: "IntegerField",
-  kind: "Field",
+  name: "fields.IntegerField",
+  kind: "fields.Field",
   published: {
     maxValue: undefined,
     minValue: undefined
@@ -197,8 +210,8 @@ enyo.kind({
 });
 
 enyo.kind({
-  name: "FloatField",
-  kind: "IntegerField",
+  name: "fields.FloatField",
+  kind: "fields.IntegerField",
   published: {
     maxDecimals: undefined,
     minDecimals: undefined,
@@ -224,8 +237,8 @@ enyo.kind({
 });
 
 enyo.kind({
-  name: "RegexField",
-  kind: "Field",
+  name: "fields.RegexField",
+  kind: "fields.Field",
   published: {
     //* the compiled regex to test against.
     regex: undefined,
@@ -242,16 +255,16 @@ enyo.kind({
 });
 
 enyo.kind({
-  name: "EmailField",
-  kind: "Field",
-  widget: "EmailWidget",
+  name: "fields.EmailField",
+  kind: "fields.Field",
+  widget: "widgets.EmailWidget",
   validators: [new validators.EmailValidator()]
 });
 
 
 enyo.kind({
-  name: "BaseTemporalField",
-  kind: "Field",
+  name: "fields.BaseTemporalField",
+  kind: "fields.Field",
   errorMessages: {
     required: _i('This field is required.'),
     invalid: _i('Enter a Date/Time.')
@@ -275,9 +288,9 @@ enyo.kind({
 });
 
 enyo.kind({
-  name: "BooleanField",
-  kind: "Field",
-  widget: "CheckboxWidget",
+  name: "fields.BooleanField",
+  kind: "fields.Field",
+  widget: "widgets.CheckboxWidget",
   toJavascript: function() {
     var value = this.getValue();
     if (typeof(value) == "string" && includes(["false", "0"], value.toLowerCase())) {
@@ -293,9 +306,9 @@ enyo.kind({
 });
 
 enyo.kind({
-  name: "NullBooleanField",
-  kind: "Field",
-  widget: "CheckboxWidget",
+  name: "fields.NullBooleanField",
+  kind: "fields.Field",
+  widget: "widgets.CheckboxWidget",
   toJavascript: function() {
     var value = this.getValue();
     if (includes([true, "True", "1"], value)) { value =  true; }
@@ -309,9 +322,9 @@ enyo.kind({
 });
 
 enyo.kind({
-  name: "ChoiceField",
-  kind: "Field",
-  widget: "ChoiceWidget",
+  name: "fields.ChoiceField",
+  kind: "fields.Field",
+  widget: "widgets.ChoiceWidget",
   errorMessages: {
     'invalidChoice': _i('Select a valid choice. %(value)s is not one of the available choices.')
   },

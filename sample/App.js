@@ -1,27 +1,27 @@
 enyo.kind({
   name: "ContactField",
-  kind: "ContainerField",
+  kind: "fields.ContainerField",
   schema: [
     { name: "name",
-      kind: "CharField",
+      kind: "fields.CharField",
       maxLength: 40,
       widgetAttrs: { label: "Name" }
     },
     { name: "private",
-      kind: "BooleanField",
+      kind: "fields.BooleanField",
       required: false,
       widgetAttrs: { label: "Private", initial: true }
     },
     { name: "emails",
-      kind: "ListField",
-      widget: "ListWidget",
-      schema: { kind: "EmailField", widgetAttrs: { label: "Email" }},
+      kind: "fields.ListField",
+      widget: "widgets.ListWidget",
+      schema: { kind: "fields.EmailField", widgetAttrs: { label: "Email" }},
       widgetAttrs: {
         containerControlKind: { kind: "onyx.Button", ontap: "addField", content: "Add Email" }
       }
     },
     { name: "children",
-      kind: "IntegerField",
+      kind: "fields.IntegerField",
       maxValue: 30,
       minValue: 0,
       widgetAttrs: { label: "# of Children", initial: 0 }
@@ -35,9 +35,9 @@ enyo.kind({
   classes: "enyo-fit",
   kind: "Scroller",
   components: [
-    { name: "contactsForm", kind: "ListField",
+    { name: "contactsForm", kind: "fields.ListField",
       schema: { kind: "ContactField" },
-      widget: "ListWidget",
+      widget: "widgets.ListWidget",
       value: [{name: "John Doe", children: 3}, {name: "Sally Smith", children: 2}],
       widgetAttrs: {
         label: "Contacts",

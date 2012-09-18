@@ -1,12 +1,9 @@
 {
 	"version": "2.0.1",
 	"packages": [
-		{"name": "enyo", "path": "../enyo/source"},
-		{"name": "layout/fittable", "path": "../lib/layout/fittable"},
-		{"name": "layout/list", "path": "../lib/layout/list"},
-		{"name": "layout/panels", "path": "../lib/layout/panels"},
-		{"name": "layout/slideable", "path": "../lib/layout/slideable"},
-		{"name": "layout/tree", "path": "../lib/layout/tree"},
-		{"name": "onyx", "path": "../lib/onyx"}
+		{"name": "widgets", "path": "../source/Widgets.js"},
+		{"name": "containerwidgets", "path": "../source/ContainerWidgets.js"},
+		{"name": "fields", "path": "../source/Fields.js"},
+		{"name": "containerfields", "path": "../source/ContainerFields.js"}
 	]
 }
