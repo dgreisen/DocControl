@@ -163,16 +163,10 @@ enyo.kind({
     this.setValue(value);
   },
   onDelete: function(inSender, inEvent) {
-    if (inEvent.originator instanceof Widget) {
-      // we hijack the originator to point to the originating field not the originating widget
-      inEvent.originator = this;
-    }
-    else {
-      // delete the field at inEvent.originator.
-      var i = this.getFields().indexOf(inEvent.originator);
-      if (i < 0) throw "Field to delete not found";
-      this.removeField(i);
-      return true;
-    }
+    // delete the field at inEvent.field.
+    var i = this.getFields().indexOf(inEvent.field);
+    if (i < 0) throw "Field to delete not found";
+    this.removeField(i);
+    return true;
   }
 });

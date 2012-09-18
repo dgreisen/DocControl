@@ -35,7 +35,6 @@ enyo.kind({
   classes: "enyo-fit",
   kind: "Scroller",
   components: [
-    { name: "contactsMessage", tag: "h3", style: "color:red;"},
     { name: "contactsForm", kind: "ListField",
       schema: { kind: "ContactField" },
       widget: "ListWidget",
@@ -45,28 +44,13 @@ enyo.kind({
         helpText: "Add as many contacts as you like",
         containerControlKind: { kind: "onyx.Button", ontap: "addField", content: "Add Contact" }
     }},
-    { kind: "onyx.Button", ontap: "onContactTap", content: "Submit"},
-
-    { name: "loginMessage", tag: "h3", style: "color:red;"},
-    { name:"loginForm", kind: "ContainerField", schema: [
-      { name: "email", kind: "EmailField", widgetAttrs: { label: "Email" }},
-      { name: "password", kind: "CharField", minLength: 8, widget: { kind: "PasswordWidget" }, widgetAttrs: { label: "Password" }}
-    ]},
-    { kind: "onyx.Button", ontap: "onLoginTap", content: "Submit"}
+    { name: "contactsMessage", tag: "h3", style: "color:red;"},
+    { kind: "onyx.Button", ontap: "onContactTap", content: "Submit"}
   ],
-  onLoginTap: function() {
-    if (this.$.loginForm.isValid())
-      { this.$.loginMessage.setContent('Successfull Login Submission'); }
-    else
-      { this.$.loginMessage.setContent('No Login Submission - invalid form'); }
-  },
   onContactTap: function() {
     if (this.$.contactsForm.isValid())
       { this.$.contactsMessage.setContent('Successfull Contacts Submission'); }
     else
       { this.$.contactsMessage.setContent('Submission Failure - invalid form'); }
-  },
-  onAddTap: function() {
-    this.$.contactsForm.addField();
   }
 });

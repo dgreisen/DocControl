@@ -56,10 +56,8 @@ enyo.kind({
       { name: "input", kind: "onyx.Input", onchange: "onInputChange", onkeyup: "onInputKey", onkeydown: "onInputKey" }
     ]},
   helpKind: { name: "helpText", tag: "p" },
-  itemControlKind: undefined,
   generateComponents: function() {
     this.createComponents([this.labelKind, this.inputKind, this.helpKind]);
-    if (this.itemControlKind) this.createComponent(this.itemControlKind);
   },
   onInputChange: function() {
     this.value = this.$.input.getValue();

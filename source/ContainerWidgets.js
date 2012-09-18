@@ -17,10 +17,9 @@ enyo.kind({
     { name: "helpText", tag: "p" },
     { name: "fields", tag: "div" }
   ],
-  containerControl: undefined,
+  containerControlKind: undefined,
   generateComponents: function() {
     if (this.containerControlKind) this.createComponent(this.containerControlKind);
-    if (this.itemControlKind) this.createComponent(this.itemControlKind);
   },
   labelChanged: function() {
     this.$.label.setContent(this.label);
@@ -76,14 +75,12 @@ enyo.kind({
   create: function() {
     this.inherited(arguments);
     this.containerControlKind = enyo.clone(this.containerControlKind);
-    this.itemControlKind = enyo.clone(this.itemControlKind);
+    this.itemKind = enyo.clone(this.itemKind);
   },
   // We copy the field definition from the field schema for later use.
   _fieldKind: undefined,
   setSchema: function(schema) {
     this._fieldKind = enyo.clone(schema);
-    this._fieldKind.widgetAttrs = this._fieldKind.widgetAttrs || {};
-    this._fieldKind.widgetAttrs.itemControlKind = this.itemControlKind;
   },
   listFields: function() {
     return this.$.fields.children;
@@ -93,15 +90,14 @@ enyo.kind({
   },
   setValue: function(values) {
     if (!values) return;
-    var fields = this.listFields();
     if (!(values instanceof Array)) throw "values must be an array";
     var i;
 
     // remove existing fields.
     this.$.fields.destroyComponents();
 
-    // add new fields with properly set `validatedOnce` and `value`
     var kinds = [];
+    // add new fields with properly set `validatedOnce` and `value`
     for (i = 0; i < values.length; i++) {
       kind = enyo.clone(this._fieldKind);
       kind = enyo.mixin(kind, {value: values[i], validatedOnce: this.validatedOnce});
@@ -129,6 +125,47 @@ enyo.kind({
 enyo.kind({
   name: "ListWidget",
   kind: "BaseListWidget",
-  itemControlKind: { kind: "onyx.Button", content: "Delete", ontap: "handleDelete" },
+  setValue: function(values) {
+    if (!values) return;
+    if (!(values instanceof Array)) throw "values must be an array";
+    var i;
+
+    // remove existing fields.
+    this.$.fields.destroyComponents();
+
+    that = this;
+    values.forEach(function(x) {that.addField(x);});
+  },
+  addField: function(value) {
+    kind = enyo.clone(this.itemKind);
+    item = this.$.fields.createComponent(kind);
+
+    kind = enyo.clone(this._fieldKind);
+    kind.validatedOnce = this.validatedOnce;
+    // if value is a component, then we are actually seeing inSender
+    if (value && !(value instanceof enyo.Component)) { kind.value = value; }
+    item.$._content.createComponent(kind);
+    this.validate();
+    this.render();
+  },
+  itemKind: { kind: "ListItem" },
   containerControlKind: { kind: "onyx.Button", ontap: "addField", content: "Add" }
 });
+
+
+
+enyo.kind({
+  name: "ListItem",
+  kind: "enyo.Control",
+  events: {
+    onDelete: ""
+  },
+  components: [
+    { name: "_content", kind: "enyo.Control" },
+    { kind: "onyx.Button", content: "Delete", ontap: "handleDelete" }
+  ],
+  // this function is here to be set as a handler on widget chrome in this.containerControl
+  handleDelete: function() {
+    this.doDelete({field: this.$._content.children[0]});
+  }
+})
