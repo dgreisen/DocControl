@@ -1,3 +1,7 @@
+/**
+    _fields.Field_ is the base kind for creating Fields. All Fields must be a subclass of Field for the DocControl machinery to work.
+
+*/
 enyo.kind({
   name: "fields.Field",
   kind: "Control",
@@ -12,7 +16,7 @@ enyo.kind({
     validators: [],
     //* kind definition for widget (eg { kind: "widget.Widget"})
     widget: "widgets.Widget",
-    //* hash of attibutes to set on widget (eg `label`, `initial`)
+    //* hash of attibutes to set on widget (eg `{label: ..., initial: ...}`)
     widgetAttrs: {},
     //* hash of error messages; If overriding a parent class, you must include all parent class errorMessages
     errorMessages: {
@@ -26,8 +30,8 @@ enyo.kind({
   },
   //* the initial value of the field.
   initial: undefined,
+  //* @protected
   events: {
-    //* @protected
     //* called on validation completed to pass validation information to parent container so it can properly set it's valid state
     onValidation: "",
     //* called on creation to register field with its container
@@ -37,18 +41,20 @@ enyo.kind({
     // all fields were sharing the same validators list
     this.validators = enyo.cloneArray(this.validators);
     this.inherited(arguments);
-    this.widget = (typeof(this.widget)=="string") ? { kind: this.widget } : enyo.clone(this.widget);
-    this.setWidget(this.widget);
-    this.requiredChanged();
-    if (this.value !== undefined) this.setValue(this.value);
-    this.widgetAttrs.fieldName = this.getName();
+    if (this.display) {
+      this.widget = (typeof(this.widget)=="string") ? { kind: this.widget } : enyo.clone(this.widget);
+      this.setWidget(this.widget);
+      this.requiredChanged();
+      if (this.value !== undefined) this.setValue(this.value);
+      this.widgetAttrs.fieldName = this.getName();
+    }
     // send event to register this field with it's container
     this.doFieldRegistration();
   },
   handlers: {
-    //* a widget will request validation by sending an onRequestValidation event. 
+    //* a widget will request validation by sending an onRequestValidation event.
     onRequestValidation: "onRequestValidation",
-    //* a widget will request deletion of the field by sending an onDelete event.
+    //* a listItem wrapping a widget will request deletion of the field by sending an onDelete event.
     onDelete: "onDelete"
   },
   //* perform validation for the widget
@@ -58,18 +64,30 @@ enyo.kind({
   //* pass the onDelete event on to the container.
   onDelete: function(inSender, inEvent) {
     if (inEvent.originator instanceof Widget) {
-      // we hijack inEvent.originator to point to the originating Field, not the originating widget.
+      // we hijack inEvent.originator to point to the originating Field, not the originating listItem.
       inEvent.originator = this;
     }
   },
+  //* @public
+  //* First function called in validation process.<br />
+  //* this function converts the raw value to javascript (from `this.getValue()`, and places it in the `this.clean` attribute<br />
+  //* this function should be able to convert from any type that a widget might supply to the type needed for validation
   toJavascript: function() {
     this.clean = this.getValue();
   },
+  //* Second function called in validation process.<br />
+  //* Any custom validation logic should be placed here. When validation fails, push an error string
+  //* from `this.errorMessages` onto `this.errors`. You can perform string interpolation using
+  //* utils.interpolate(string "%(arg)s", {arg: value, ...})
+  //* be sure to call `this.inherited()`<br />
+  //* default action is to check if the field is required
   validate: function() {
     if (validators.isEmpty(this.getValue()) && this.required) {
       this.errors.push(this.errorMessages.required);
     }
   },
+  //* Third function called by in validation process.<br />
+  //* You should not have to override this function
   runValidators: function() {
     var i;
     value = this.clean;
@@ -90,6 +108,9 @@ enyo.kind({
       }
     }
   },
+  //* primary validation function<br />
+  //* calls all other validation subfunctions and passes validation info up to parent fields and down to widget, if it exists.<br />
+  //* returns `true` or `false`
   isValid: function() {
     // reset the errors array
     this.errors = [];
@@ -98,12 +119,17 @@ enyo.kind({
     this.validate();
     this.runValidators();
     var valid = !Boolean(this.errors.length);
-    this.$.widget.setErrorMessage(this.errors[0]);
-    this.$.widget.setValid(valid);
-    this.$.widget.validatedOnce = true;
+    // if there is a widget, pass validation info
+    if (this.display) {
+      this.$.widget.setErrorMessage(this.errors[0]);
+      this.$.widget.setValid(valid);
+      this.$.widget.validatedOnce = true;
+    }
     this.doValidation({valid: valid});
     return valid;
   },
+  //* return the fild's cleaned data if there are no errors. throws an error if there are validation errors.
+  //* you will likely have to override this in Field subclasses
   getClean: function() {
     valid = this.isValid();
     if (!valid) {
@@ -111,30 +137,48 @@ enyo.kind({
     }
     return this.clean;
   },
-  setClean: function() { throw "clean not settable. use setValue, instead."; },
+  //* return the field's cleaned data in serializable form if there are no errors. throws an error if there are validation errors.<br />
+  //* you might have to override this in Field subclasses.
   toJSON: function() {
     return this.getClean();
   },
+  //* @protected
+  //* you cannot set `clean` manually
+  setClean: function() { throw "clean not settable. use setValue, instead."; },
   requiredChanged: function() {
-    this.$.widget.setRequired(this.required);
+    if (this.display) this.$.widget.setRequired(this.required);
   },
+  //* You should not have to override this in Field subclasses
   setValue: function(val) {
-    this.$.widget.setValue(val);
+    if (this.display) {
+      this.$.widget.setValue(val);
+    } else {
+      this.value = val;
+    }
   },
+  //* You should not have to override this in Field subclasses
   getValue: function() {
-    return this.$.widget.getValue();
+    if (this.display) {
+      return this.$.widget.getValue();
+    } else {
+      return this.value;
+    }
   },
+  //* this function creates the widget.
   setWidget: function(widget) {
-    // this.inherited does not work; you must update setWidget of all subclasses.
+    // this.inherited does not work; if modified, must update setWidget of all subclasses.
     widget.name = "widget";
     widget.initial = this.initial;
     widget = enyo.mixin(widget, this.widgetAttrs);
     this.destroyComponents();
     this.createComponent(widget);
   },
+
   getWidget: function() {
-    return this.$.widget;
+
+    return (this.display) ? this.$.widget : null;
   },
+  //* helper function for setting widget attributes on a field for quick definition of a complete schema
   setWidgetAttrs: function(attrs) {
     var k;
     for (k in attrs) {
@@ -150,14 +194,17 @@ enyo.kind({
 
 
 
-
+//* @public
 enyo.kind({
   name: "fields.CharField",
   kind: "fields.Field",
   published: {
+    //* The maximum lengthh of the string (optional)
     maxLength: undefined,
+    //* The minimum length of the string (optional)
     minLength: undefined
   },
+  //* @protected
   create: function() {
     this.inherited(arguments);
     if (this.maxLength !== undefined) {
@@ -175,13 +222,18 @@ enyo.kind({
   }
 });
 
+
+//* @public
 enyo.kind({
   name: "fields.IntegerField",
   kind: "fields.Field",
   published: {
+    //* Maximum value of integer
     maxValue: undefined,
+    //* Minimum value of integer
     minValue: undefined
   },
+  //* @protected
   errorMessages: {
     required: _i('This field is required.'),
     invalid: _i('Enter a whole number.')
@@ -196,8 +248,13 @@ enyo.kind({
     }
   },
   parseFn: parseInt,
+  regex: /^\d*$/,
   toJavascript: function() {
     value = this.getValue();
+    if (!value.match(this.regex)) {
+      this.errors.push(this.errorMessages['invalid']);
+      return;
+    }
     var value = (validators.isEmpty(value)) ? undefined : this.parseFn(value, 10);
     if (value === undefined) {
       this.clean = undefined;
@@ -209,14 +266,19 @@ enyo.kind({
   }
 });
 
+//* @public
 enyo.kind({
   name: "fields.FloatField",
   kind: "fields.IntegerField",
   published: {
+    //* Maximum number of digits after the decimal point
     maxDecimals: undefined,
+    //* Minimum number of digits after the decimal point
     minDecimals: undefined,
+    //* Maximum number of total digits before and after the decimal point
     maxDigits: undefined
   },
+  //* @protected
   errorMessages: {
     required: _i('This field is required.'),
     invalid: _i('Enter a number.')
@@ -233,9 +295,12 @@ enyo.kind({
       this.validators.push(new validators.MaxDigitsValidator(this.maxDigits));
     }
   },
-  parseFn: parseFloat
+  parseFn: parseFloat,
+  regex: /^\d*\.?\d*$/
 });
 
+//* @public
+//* a basic Regex Field for subclassing.
 enyo.kind({
   name: "fields.RegexField",
   kind: "fields.Field",
@@ -245,6 +310,7 @@ enyo.kind({
     //* the error message to display when the regex fails
     errorMessage: undefined
   },
+  //* @protected
   create: function() {
     this.inherited(arguments);
     this.validators.push(new RegexValidator(this.regex));
@@ -254,14 +320,18 @@ enyo.kind({
   }
 });
 
+//* @public
+//* validates the value is a valid email
 enyo.kind({
   name: "fields.EmailField",
   kind: "fields.Field",
   widget: "widgets.EmailWidget",
+  //* @protected
   validators: [new validators.EmailValidator()]
 });
 
-
+//* @public
+//* a baseclass for Temporal Fields (date, time, datetime)
 enyo.kind({
   name: "fields.BaseTemporalField",
   kind: "fields.Field",
@@ -269,6 +339,7 @@ enyo.kind({
     required: _i('This field is required.'),
     invalid: _i('Enter a Date/Time.')
   },
+  //* Convert a time string to javascript
   timeToJavascript: function(val) {
     re = /([012]?\d):?([012345]\d):?([012345]\d)?\s*(am|pm)?/i;
     var match = val.match(re);
@@ -287,10 +358,14 @@ enyo.kind({
   }
 });
 
+//* @public
+//* Boolean Field. Normalizes to a `true` or `false` value - undefined normalizes to `false`. Validates that the value is `true` (e.g. the check box is checked) if the field has `required:true`.<br />
+//* Since all Field subclasses have `required:true` by default, the validation condition here is important. If you want to include a boolean in your form that can be either `true` or `false` (e.g. a checked or unchecked checkbox), you must remember to pass in `required:false` when creating the BooleanField.
 enyo.kind({
   name: "fields.BooleanField",
   kind: "fields.Field",
   widget: "widgets.CheckboxWidget",
+  //* @protected
   toJavascript: function() {
     var value = this.getValue();
     if (typeof(value) == "string" && includes(["false", "0"], value.toLowerCase())) {
@@ -305,10 +380,13 @@ enyo.kind({
   }
 });
 
+//* @public
+//* Normalizes to a `true`, `false` or `null` value. Will not check for required.
 enyo.kind({
   name: "fields.NullBooleanField",
   kind: "fields.Field",
   widget: "widgets.CheckboxWidget",
+  //* @protected
   toJavascript: function() {
     var value = this.getValue();
     if (includes([true, "True", "1"], value)) { value =  true; }
@@ -321,16 +399,19 @@ enyo.kind({
   }
 });
 
+//* @public
+//* a field that ensures its value is contained in the list of valid `choices`.
 enyo.kind({
   name: "fields.ChoiceField",
   kind: "fields.Field",
   widget: "widgets.ChoiceWidget",
-  errorMessages: {
-    'invalidChoice': _i('Select a valid choice. %(value)s is not one of the available choices.')
-  },
   published: {
     //* Array of 2-arrays specifying valid choices. if 2-arrays, first value is value, second is display. create optgroups by setting display If display value to a 2-array. MUST USE SETTER.
-    choices: {}
+    choices: []
+  },
+  //* @protected
+  errorMessages: {
+    'invalidChoice': _i('Select a valid choice. %(value)s is not one of the available choices.')
   },
   setChoices: function(val) {
     choices = {};

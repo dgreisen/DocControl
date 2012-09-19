@@ -1,10 +1,11 @@
+//* Basekind for all containers. Not for direct use.
 enyo.kind({
   name: "widgets.BaseContainerWidget",
   kind: "widgets.Widget",
+  //* @protected
   published: {
-    //* whether this widget has a fixed height. If `true`, then a scroller is provided.
-    fixedHeight: false,
-    value: undefined
+    // whether this widget has a fixed height. If `true`, then a scroller is provided.
+    // fixedHeight: false,
   },
   create: function() {
     this.inherited(arguments);
@@ -15,10 +16,7 @@ enyo.kind({
     { name: "helpText", tag: "p" },
     { name: "fields", tag: "div" }
   ],
-  containerControlKind: undefined,
-  generateComponents: function() {
-    if (this.containerControlKind) this.createComponent(this.containerControlKind);
-  },
+  generateComponents: function() {},
   labelChanged: function() {
     this.$.label.setContent(this.label);
   },
@@ -34,8 +32,6 @@ enyo.kind({
   toJSON: function() {
     throw "BaseContainerWidget and its subclasses do not support toJSON; call BaseContainerField.toJSON()";
   },
-
-
   errorClass: "containererror",
   fieldNameChanged: function() { return; }
 });
@@ -44,7 +40,7 @@ enyo.kind({
 
 
 
-
+//* widget for _fields.ContainerField_
 enyo.kind({
   name: "widgets.ContainerWidget",
   kind: "widgets.BaseContainerWidget",
@@ -58,23 +54,20 @@ enyo.kind({
   },
   listFields: function() {
     return this.$.fields.children;
-  }, 
+  },
   setValue: function(values) {}
 });
 
 
 
 
-
-
+//* @public
+//* default widget for _fields.ListWidget_. This kind implements a bare-bones list of subfields. it provides no
+//* controls for adding/removing subfields.
 enyo.kind({
   name: "widgets.BaseListWidget",
   kind: "widgets.BaseContainerWidget",
-  create: function() {
-    this.inherited(arguments);
-    this.containerControlKind = enyo.clone(this.containerControlKind);
-    this.itemKind = enyo.clone(this.itemKind);
-  },
+  //* protected
   // We copy the field definition from the field schema for later use.
   _fieldKind: undefined,
   setSchema: function(schema) {
@@ -118,11 +111,21 @@ enyo.kind({
 
 
 
-
-
+//* @public
+//* widget for _fields.ListWidget_. Provides a wrapper around each subfield for list controls such as move/delete.
+//* also provides list controls, such as add
 enyo.kind({
   name: "widgets.ListWidget",
   kind: "widgets.BaseListWidget",
+  //* @private
+  create: function() {
+    this.inherited(arguments);
+    this.containerControlKind = enyo.clone(this.containerControlKind);
+    this.itemKind = enyo.clone(this.itemKind);
+  },
+  generateComponents: function() {
+    if (this.containerControlKind) this.createComponent(this.containerControlKind);
+  },
   setValue: function(values) {
     if (!values) return;
     if (!(values instanceof Array)) throw "values must be an array";
@@ -131,7 +134,7 @@ enyo.kind({
     // remove existing fields.
     this.$.fields.destroyComponents();
 
-    that = this;
+    var that = this;
     values.forEach(function(x) {that.addField(x);});
   },
   addField: function(value) {
@@ -146,12 +149,18 @@ enyo.kind({
     this.validate();
     this.render();
   },
+  //* @public
+  //* kind definition for the itemKind wrapper around each subfield. Defaults to a
+  //* _widgets.ListItem_, but can be any kind. the subfield will created created within the
+  //* control named "_content".
   itemKind: { kind: "widgets.ListItem" },
+  //* kind definition for list controls. defaults to an add button
   containerControlKind: { kind: "onyx.Button", ontap: "addField", content: "Add" }
 });
 
 
-
+//* @public
+//* wrapper for subfields of a _widgets.ListWidget_. You can subclass and specify it in `ListWidget.itemKind`.
 enyo.kind({
   name: "widgets.ListItem",
   kind: "enyo.Control",
@@ -166,4 +175,4 @@ enyo.kind({
   handleDelete: function() {
     this.doDelete({field: this.$._content.children[0]});
   }
-})
+});

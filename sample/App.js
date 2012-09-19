@@ -38,7 +38,7 @@ enyo.kind({
     { name: "contactsForm", kind: "fields.ListField",
       schema: { kind: "ContactField" },
       widget: "widgets.ListWidget",
-      value: [{name: "John Doe", children: 3}, {name: "Sally Smith", children: 2}],
+      value: [{name: "John Doe", "private": false, emails: ["jdoe@example.com"], children:3}, {name: "Sally Smith", "private": false, emails: ["test2@test.com"], children: 2}],
       widgetAttrs: {
         label: "Contacts",
         helpText: "Add as many contacts as you like",

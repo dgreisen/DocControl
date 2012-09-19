@@ -21,3 +21,4 @@ ValidationError = function() {
 includes = function(a, s) {
   return a.indexOf(s) > -1;
 };
+
