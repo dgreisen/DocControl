@@ -1,26 +1,148 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-	<head>
-		<title>Enyo Bootplate App</title>
-		<link rel="shortcut icon" href="assets/favicon.ico"/>
-		<!-- -->
-		<meta http-equiv="Content-Type" content="text/html; charset=utf8"/>
-		<meta name="apple-mobile-web-app-capable" content="yes"/>
-		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-		<!-- css -->
-		<link href="build/enyo.css" rel="stylesheet"/>
-		<link href="build/app.css" rel="stylesheet"/>
-		<!-- js -->
-		<script src="build/enyo.js"></script>
-		<script src="build/app.js"></script>
-	</head>
-	<body class="enyo-unselectable">
-		<script>
-			if (!window.App) {
-				alert('No application build found, redirecting to debug.html.');
-				location = 'debug.html';
-			}
-			new App().renderInto(document.body);
-		</script>
-	</body>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>DocControl by dgreisen</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>DocControl</h1>
+        <p>Enyo Controller for document objects</p>
+
+        <p class="view"><a href="https://github.com/dgreisen/DocControl">View the Project on GitHub <small>dgreisen/DocControl</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/dgreisen/DocControl/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/dgreisen/DocControl/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/dgreisen/DocControl">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>DocControl</h1>
+
+<p>DocControl is a controller framework for Enyo. It is heavily 
+influenced by Django Forms, but is designed for a hierarchical 
+document data structure rather than a flat database row. </p>
+
+<h2>Sample Application</h2>
+
+<p>A sample application is both <a href="./sample.html">hosted</a> and available in the repository.</p>
+
+<h2>API</h2>
+
+<p>The api is both <a href="./api/index.html">hosted</a> and available in the repository.</p>
+
+<h2>Basic Structure</h2>
+
+<p>Three classes (kinds in Enyo parlance) work together to validate your 
+data. A <code>Field</code> represents the data and performs validation. A <code>Widget</code> 
+displays the data by creating enyo components. Finally, a <code>Field</code> will 
+use one or more <code>validators</code>, small reusable snippets of code, to perform 
+the actual validation.</p>
+
+<p>Fields can contain other fields, which allows for the validation
+of highly nested data. It is possible to create a
+single DocControl to validate, for example, an entire contact document
+including an arbitrary number of tagged emails, phone numbers, and 
+other data.</p>
+
+<p>There are currently two types of fields that can contain subfields:
+<code>ContainerField</code> and <code>ListField</code>. A <code>ContainerField</code>'s schema defines
+multiple heterogeneous fields, and so is useful for defining a 
+document. A <code>ListField</code>'s schema takes a single field (which could be
+a <code>ContainerField</code>). It is used for creating an arbitrary-length array 
+of identical fields.</p>
+
+<h2>Basic Usage</h2>
+
+<p>The following will create a simple user field:</p>
+
+<pre><code>enyo.kind({ name:"UserField", kind: "ContainerField", schema: [
+    { name: "username", 
+      kind: "CharField", 
+      maxLength: 10, 
+      minLength: 5, 
+      widgetAttrs: { 
+        label: "Username", 
+        helpText: "CharField between 5 and 10 characters long", 
+        initial: "John Doe" } },
+    { name: "email", 
+      kind: "EmailField", 
+      widgetAttrs: { label: "Email", } }
+    { name: "age", 
+      kind: "IntegerField", 
+      maxValue: 116, 
+      minValue: 13, 
+      widgetAttrs: { 
+        label: "Age", 
+        helpText: "Integer between 13 and 116" } } ],
+  widgetAttrs: { 
+    label: "Users", 
+    helpText: "Add as many users as you like" }
+})
+</code></pre>
+
+<p><code>getClean()</code> returns the <code>field</code>'s data in native javascript 
+formats. <code>toJSON()</code> returns the data in a format suitable for serializing. 
+both raise an error if the field is invalid. <code>isValid()</code> returns <code>true</code> or 
+<code>false</code>. <code>setValue(val)</code> to set a <code>field</code>'s value.</p>
+
+<p>In the default configuration, validation will not occur until you call
+one of the <code>UserField</code>'s <code>getClean</code>, <code>toJSON</code>, or <code>isValid</code> methods. Once one of 
+these functions has been called once, validation will run very time data 
+changes. You can override this validation behaviour by setting the widget's
+<code>validationStrategy</code> to another predefined strategy or one written by yourself.</p>
+
+<h2>Installation</h2>
+
+<p>First, download or clone DocControl from github 
+(<a href="https://github.com/dgreisen/DocControl">https://github.com/dgreisen/DocControl</a>). You can immediately run the
+sample application by visiting <code>sample.html</code> in a browser. To include 
+in your project, copy or link the <code>source</code> directory into project's lib directory and add a reference to it in your project's <code>package.js</code> file.</p>
+
+<h2>Development</h2>
+
+<p>Currently, validators are written in coffeescript. If you wish to 
+modify the existing validators or add more to that file, you will need
+coffeescript. You can easily compile the coffeescript by running:</p>
+
+<pre><code>coffee -w -o ./source/ ./coffee/
+</code></pre>
+
+<p>in DocControl's root directory.</p>
+
+<h2>TODO</h2>
+
+<ol>
+<li>
+<p>I would like to remove the coffeescript dependencies for two reasons:</p>
+
+<p>a. validators are directly ported from Django, complicating the license
+b. it is silly to require coffeescript to compile one file</p>
+</li>
+<li><p>I hope to convince the Enyo team to make Enyo core compatible with node,
+then you can write a control once for both the front-end and backend.</p></li>
+<li><p>I hope to write a django ./manage.py function that will automatically 
+create DocControl schema from django forms, so you don't have to rewrite
+controllers for the front-end.</p></li>
+</ol>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/dgreisen">dgreisen</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
 </html>
