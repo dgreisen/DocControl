@@ -31,6 +31,10 @@ enyo.kind({
     required: _i('There must be at least one %s.'),
     invalid: _i('Please fix the errors indicated below.')
   },
+  create: function() {
+    this.inherited(arguments);
+    this.setValue(this.value);
+  },
   handlers: {
     //* when an `onValidation` event is received we update the container's state to reflect it's subfield's validation state
     onValidation: "onValidation",
@@ -39,7 +43,7 @@ enyo.kind({
   },
   // add the field to `fields`.
   handleFieldRegistration: function(inSender, inEvent) {
-    if (!this.fields) this.setFields([]);
+    if (!this.fields) this.resetFields();
     field = inEvent.originator;
     if (field != this) {
       this.getFields().push(field);
@@ -62,14 +66,8 @@ enyo.kind({
       this.errors = [this.errorMessages.invalid];
     }
   },
-  setWidget: function(widget) {
-    // this.inherited does not work - get "Uncaught TypeError: Cannot read property '_inherited' of undefined"
-    widget.name = "widget";
-    widget.initial = this.initial;
-    widget.schema = this.schema; // this is the only line we have added to the parent's method
-    widget = enyo.mixin(widget, this.widgetAttrs);
-    this.destroyComponents();
-    this.createComponent(widget);
+  prepareWidget: function() {
+    this.widget.schema = this.schema;
   },
   // custom isvalid method that validates all child fields as well.
   isValid: function() {
@@ -92,12 +90,20 @@ enyo.kind({
     return this.fields;
   },
   setFields: function(val) {
-    this.fields = val;
+    throw "setFields not supported";
+  },
+  resetFields: function() {
+    this.fields = [];
     if (this.display) this.$.widget.fields = this.fields;
   },
   schemaChanged: function() {
-    this.setFields([]);
+    this.resetFields();
     if (this.display) this.$.widget.setSchema(this.schema);
+  },
+  //* reset validation state of this field and all subfields.
+  reset: function() {
+    this.inherited();
+    this.getFields().forEach(function(x) {x.reset();});
   },
   throwValidationError: function() {
     // test for validity, throw error if not valid
@@ -126,7 +132,8 @@ enyo.kind({
   kind: "fields.BaseContainerField",
   widget: "widgets.ContainerWidget",
   //* setValue accepts a hash of values, each key corresponding to the name of a subfield, each value the value for that subfield.
-  setValue: function(values) {
+  //* if the optional value `reset` is truthy, then validation state will be reset.
+  setValue: function(values, reset) {
     if (!values) return;
     if (!(values instanceof Object) || (values instanceof Array)) throw "values must be a hash";
     var fields = this.getFields();
@@ -136,6 +143,7 @@ enyo.kind({
       var name = field.getName();
       field.setValue(values[name]);
     }
+    if (reset) this.reset();
   },
   //* @protected
   validate: function() {},
@@ -180,11 +188,13 @@ enyo.kind({
   kind: "fields.BaseContainerField",
   widget: "widgets.BaseListWidget",
   //* accepts an array, where each element in the array is the value for a subfield.
-  setValue: function(values) {
+  //* if the optional value `reset` is truthy, then validation state will be reset.
+  setValue: function(values, reset) {
     if (!values) return;
     if (!(values instanceof Array)) throw "values must be an array";
-    this.setFields([]);
+    this.resetFields();
     this.$.widget.setValue(values);
+    if (reset) this.reset();
   },
   //* append a subfield to the ListField. If value is not specified, an empty subfield will be created
   addField: function(value) {

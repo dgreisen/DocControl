@@ -41,11 +41,19 @@ enyo.kind({
     // all fields were sharing the same validators list
     this.validators = enyo.cloneArray(this.validators);
     this.inherited(arguments);
+    //set initial value, if no value specified
+    this.value = (this.value === undefined) ? this.initial : this.value;
+    // we are displaying this field, then create the widget.
     if (this.display) {
+      //prepare widget by creating or cloning the widget kind
       this.widget = (typeof(this.widget)=="string") ? { kind: this.widget } : enyo.clone(this.widget);
-      this.setWidget(this.widget);
-      this.requiredChanged();
-      if (this.value !== undefined) this.setValue(this.value);
+      // then add widget attributes
+      var widgetAttrs = enyo.mixin(this.widgetAttrs, {name: "widget", required: this.required, value: this.value });
+      this.widget = enyo.mixin(this.widget, widgetAttrs);
+      // call prepareWidget, which is implemented by subclasses.
+      this.prepareWidget();
+      // create the component
+      this.createComponent(this.widget);
       this.widgetAttrs.fieldName = this.getName();
     }
     // send event to register this field with it's container
@@ -66,6 +74,15 @@ enyo.kind({
     if (inEvent.originator instanceof Widget) {
       // we hijack inEvent.originator to point to the originating Field, not the originating listItem.
       inEvent.originator = this;
+    }
+  },
+  //* reset the validation state of the field and associated widget.
+  reset: function() {
+    this.errors = [];
+    if (this.display) {
+      this.$.widget.setErrorMessage(this.errors[0]);
+      this.$.widget.setValid(true);
+      this.$.widget.validatedOnce = false;
     }
   },
   //* @public
@@ -142,6 +159,8 @@ enyo.kind({
   toJSON: function() {
     return this.getClean();
   },
+  //* useful for subclassing. set any needed attributes on `this.widget` kind definition before widget is created.
+  prepareWidget: function() {},
   //* @protected
   //* you cannot set `clean` manually
   setClean: function() { throw "clean not settable. use setValue, instead."; },
@@ -164,18 +183,7 @@ enyo.kind({
       return this.value;
     }
   },
-  //* this function creates the widget.
-  setWidget: function(widget) {
-    // this.inherited does not work; if modified, must update setWidget of all subclasses.
-    widget.name = "widget";
-    widget.initial = this.initial;
-    widget = enyo.mixin(widget, this.widgetAttrs);
-    this.destroyComponents();
-    this.createComponent(widget);
-  },
-
   getWidget: function() {
-
     return (this.display) ? this.$.widget : null;
   },
   //* helper function for setting widget attributes on a field for quick definition of a complete schema
@@ -413,13 +421,23 @@ enyo.kind({
   errorMessages: {
     'invalidChoice': _i('Select a valid choice. %(value)s is not one of the available choices.')
   },
-  setChoices: function(val) {
+  create: function() {
+    this.inherited(arguments);
+    this.choicesChanged();
+  },
+
+  //* this function creates the widget.
+  prepareWidget: function() {
+    this.widget.choices = this.choices;
+  },
+  choicesChanged: function() {
     choices = {};
     iterChoices = function(x) {
       if (x[1] instanceof Array) x[1].forEach(iterChoices);
       else choices[x[0]] = x[1];
-    },
-    val.forEach(iterChoices);
+    };
+    this.choices.forEach(iterChoices);
+    this.choicesIndex = choices;
   },
   toJavascript: function() {
     var value = (validators.isEmpty(this.getValue())) ? "" : this.getValue();
@@ -430,7 +448,7 @@ enyo.kind({
     var value = this.getValue();
     if (value && !this.validValue(value))
       var message = this.errorMessages.invalidChoices;
-      this.errors = [interpolate(message, [value])];
+      this.errors = [ interpolate(message, [value]) ];
   },
   validValue: function(val) {
     if (val in this.choices) return true;

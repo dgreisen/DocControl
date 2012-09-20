@@ -1,3 +1,16 @@
+DATA = [
+  { name: "John Doe",
+    "private": true,
+    emails: ["jdoe@example.com"],
+    children:3
+  },
+  { name: "Sally Smith",
+  "private": false,
+  emails: ["test2@test.com"],
+  children: 2
+  }
+];
+
 enyo.kind({
   name: "ContactField",
   kind: "fields.ContainerField",
@@ -6,6 +19,12 @@ enyo.kind({
       kind: "fields.CharField",
       maxLength: 40,
       widgetAttrs: { label: "Name" }
+    },
+    { name: "type",
+      kind: "fields.ChoiceField",
+      choices: [[0, "Friend"],[1, "Family"], [2, "Coworker"], [3, "Acquaintance"]],
+      widgetAttrs: { label: "Contact Type" }
+
     },
     { name: "private",
       kind: "fields.BooleanField",
@@ -35,10 +54,11 @@ enyo.kind({
   classes: "enyo-fit",
   kind: "Scroller",
   components: [
+
     { name: "contactsForm", kind: "fields.ListField",
       schema: { kind: "ContactField" },
       widget: "widgets.ListWidget",
-      value: [{name: "John Doe", "private": false, emails: ["jdoe@example.com"], children:3}, {name: "Sally Smith", "private": false, emails: ["test2@test.com"], children: 2}],
+      value: DATA,
       widgetAttrs: {
         label: "Contacts",
         helpText: "Add as many contacts as you like",
