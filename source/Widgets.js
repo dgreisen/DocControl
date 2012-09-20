@@ -38,8 +38,7 @@ enyo.kind({
     this.inherited(arguments);
     this.generateComponents(); // generate the widget components
     this.labelChanged();
-    var initialVal = (this.value === undefined ) ? this.initial : this.value;
-    this.setValue(initialVal);
+    this.setValue(this.value, true);
     this.helpTextChanged();
     this.errorMessageChanged();
     this.validChanged();
@@ -168,6 +167,55 @@ enyo.kind({
 enyo.kind({
   name: "widgets.ChoiceWidget",
   kind: "widgets.Widget",
+  nullValue: "",
+  published: {
+    //* Text to show corresponding to undefined/null
+    //* will not be a choice if (1) initial value is present and (2) field is required.
+    unchosenText: "Pick One..."
+  },
   //* @protected
-  inputKind: { name: "input", kind: "onyx." }
+  create: function() {
+    this.inherited(arguments);
+    this.setChoices(this.choices);
+  },
+  inputKind: {kind: "onyx.PickerDecorator", components: [
+    {},
+    { name: "input",
+      kind: "onyx.Picker",
+      components: []
+    }
+  ]},
+  setValue: function(val) {
+    val = (val === null || val === undefined) ? this.nullValue : val;
+    this.value = val;
+    if (this.choicesIndex && this.choicesIndex[val]) this.$.input.setSelected(this.choicesIndex[val]);
+  },
+  getValue: function() {
+    return this.value;
+  },
+  choicesIndex: undefined,
+  setChoices: function(val) {
+    if (this.choicesIndex) {
+      for (var k in this.choicesIndex) {
+        this.choicesIndex[k].destroy();
+      }
+      this.choicesIndex = undefined;
+    }
+    // add unchosen choice if applicable
+    if (!this.required || !this.initial) val.unshift([this.nullValue, this.unchosenText]);
+    var that = this;
+    var choices = {};
+    iterChoices = function(x) {
+      if (x[1] instanceof Array) x[1].forEach(iterChoices);
+      else {
+        choices[x[0]] = that.$.input.createComponent({ content: x[1], value: x[0], active: that.value===x[0]});
+      }
+    };
+    val.forEach(iterChoices);
+    this.choicesIndex = choices;
+  },
+  handlers: { onSelect: "itemSelected" },
+  itemSelected: function(inSender, inEvent) {
+    this.value = inEvent.originator.value;
+  }
 });
