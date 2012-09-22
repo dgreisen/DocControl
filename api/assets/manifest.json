@@ -4,6 +4,7 @@
 		{"name": "widgets", "path": "../source/Widgets.js"},
 		{"name": "containerwidgets", "path": "../source/ContainerWidgets.js"},
 		{"name": "fields", "path": "../source/Fields.js"},
-		{"name": "containerfields", "path": "../source/ContainerFields.js"}
+		{"name": "containerfields", "path": "../source/ContainerFields.js"},
+		{"name": "localized.en", "path": "../source/localized/en/Fields.js"}
 	]
 }
