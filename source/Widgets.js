@@ -217,5 +217,6 @@ enyo.kind({
   handlers: { onSelect: "itemSelected" },
   itemSelected: function(inSender, inEvent) {
     this.value = inEvent.originator.value;
+    this.validate();
   }
 });

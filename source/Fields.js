@@ -46,15 +46,14 @@ enyo.kind({
     // we are displaying this field, then create the widget.
     if (this.display) {
       //prepare widget by creating or cloning the widget kind
-      this.widget = (typeof(this.widget)=="string") ? { kind: this.widget } : enyo.clone(this.widget);
+      this.widget = enyo.clone((typeof(this.widget)=="string") ? { kind: this.widget } : this.widget);
       // then add widget attributes
-      var widgetAttrs = enyo.mixin(this.widgetAttrs, {name: "widget", required: this.required, value: this.value });
+      var widgetAttrs = enyo.mixin(enyo.clone(this.widgetAttrs), {name: "widget", required: this.required, value: this.value, fieldName: this.getName() });
       this.widget = enyo.mixin(this.widget, widgetAttrs);
       // call prepareWidget, which is implemented by subclasses.
       this.prepareWidget();
       // create the component
       this.createComponent(this.widget);
-      this.widgetAttrs.fieldName = this.getName();
     }
     // send event to register this field with it's container
     this.doFieldRegistration();
@@ -65,7 +64,7 @@ enyo.kind({
     //* a listItem wrapping a widget will request deletion of the field by sending an onDelete event.
     onDelete: "onDelete"
   },
-  //* perform validation for the widget
+  //* perform validation upon request by the widget
   onRequestValidation: function() {
     this.isValid();
   },
@@ -96,7 +95,7 @@ enyo.kind({
   //* Any custom validation logic should be placed here. When validation fails, push an error string
   //* from `this.errorMessages` onto `this.errors`. You can perform string interpolation using
   //* utils.interpolate(string "%(arg)s", {arg: value, ...})
-  //* be sure to call `this.inherited()`<br />
+  //* be sure to call `this.inherited(arguments)`<br />
   //* default action is to check if the field is required
   validate: function() {
     if (validators.isEmpty(this.getValue()) && this.required) {
@@ -107,7 +106,7 @@ enyo.kind({
   //* You should not have to override this function
   runValidators: function() {
     var i;
-    value = this.clean;
+    var value = this.clean;
     if (validators.isEmpty(value)) return;
     for (i = 0; i < this.validators.length; i++) {
       v = this.validators[i];
@@ -169,7 +168,7 @@ enyo.kind({
   },
   //* You should not have to override this in Field subclasses
   setValue: function(val) {
-    if (this.display) {
+    if (this.display && val != this.getValue()) {
       this.$.widget.setValue(val);
     } else {
       this.value = val;
@@ -258,12 +257,12 @@ enyo.kind({
   parseFn: parseInt,
   regex: /^\d*$/,
   toJavascript: function() {
-    value = this.getValue();
+    var value = this.getValue();
     if (!value.match(this.regex)) {
       this.errors.push(this.errorMessages['invalid']);
       return;
     }
-    var value = (validators.isEmpty(value)) ? undefined : this.parseFn(value, 10);
+    value = (validators.isEmpty(value)) ? undefined : this.parseFn(value, 10);
     if (value === undefined) {
       this.clean = undefined;
     } else if (isNaN(value)) {
@@ -321,7 +320,7 @@ enyo.kind({
   //* @protected
   create: function() {
     this.inherited(arguments);
-    this.validators.push(new RegexValidator(this.regex));
+    this.validators.push(new validators.RegexValidator(this.regex));
     if (this.errorMessage) {
       this.errorMessages.invalid = this.errorMessage;
     }
@@ -419,10 +418,12 @@ enyo.kind({
   },
   //* @protected
   errorMessages: {
-    'invalidChoice': _i('Select a valid choice. %(value)s is not one of the available choices.')
+    required: _i('This field is required.'),
+    invalidChoice: _i('Select a valid choice. %(value)s is not one of the available choices.')
   },
   create: function() {
     this.inherited(arguments);
+    this.choices = enyo.clone(this.choices);
     this.choicesChanged();
   },
 
@@ -444,14 +445,15 @@ enyo.kind({
     this.clean = value;
   },
   validate: function() {
-    this.inherited();
+    this.inherited(arguments);
     var value = this.getValue();
-    if (value && !this.validValue(value))
-      var message = this.errorMessages.invalidChoices;
+    if (value && !this.validValue(value)) {
+      var message = this.errorMessages.invalidChoice;
       this.errors = [ interpolate(message, [value]) ];
+    }
   },
   validValue: function(val) {
-    if (val in this.choices) return true;
+    if (val in this.choicesIndex) return true;
     return false;
   },
   getDisplay: function() {

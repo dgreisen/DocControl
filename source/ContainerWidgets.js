@@ -4,12 +4,10 @@ enyo.kind({
   kind: "widgets.Widget",
   //* @protected
   published: {
+    //* the schema used to generate subfields
+    schema: undefined
     // whether this widget has a fixed height. If `true`, then a scroller is provided.
     // fixedHeight: false,
-  },
-  create: function() {
-    this.inherited(arguments);
-    this.setSchema(this.schema);
   },
   components: [
     { name: "label", tag: "label" },
@@ -39,11 +37,17 @@ enyo.kind({
 
 
 
-
+//* @public
 //* widget for _fields.ContainerField_
 enyo.kind({
   name: "widgets.ContainerWidget",
   kind: "widgets.BaseContainerWidget",
+  //* @protected
+  // we must explicitly set the schema, which will create all subfields based on schema.
+  create: function() {
+    this.inherited(arguments);
+    this.setSchema(this.schema);
+  },
   setSchema: function(schema) {
     this.$.fields.destroyComponents();
     this.$.fields.createComponents(schema);
@@ -55,6 +59,8 @@ enyo.kind({
   listFields: function() {
     return this.$.fields.children;
   },
+  // the value should always be set by the field. cannot set value at creation b/c no way to know what value goes with
+  // which field until the fields are created and registered.
   setValue: function(values) {}
 });
 
@@ -67,21 +73,16 @@ enyo.kind({
 enyo.kind({
   name: "widgets.BaseListWidget",
   kind: "widgets.BaseContainerWidget",
-  //* protected
-  // We copy the field definition from the field schema for later use.
-  _fieldKind: undefined,
-  setSchema: function(schema) {
-    this._fieldKind = enyo.clone(schema);
-  },
+  //* @protected
   listFields: function() {
     return this.$.fields.children;
   },
   getValue: function() {
     return this.listFields().map(function(x) {return x.getValue();});
   },
-  setValue: function(values) {
-    if (!values) return;
-    if (!(values instanceof Array)) throw "values must be an array";
+  setValue: function(val) {
+    if (!val) return;
+    if (!(val instanceof Array)) throw "val must be an array";
     var i;
 
     // remove existing fields.
@@ -90,14 +91,15 @@ enyo.kind({
     var kinds = [];
     // add new fields with properly set `validatedOnce` and `value`
     for (i = 0; i < values.length; i++) {
-      kind = enyo.clone(this._fieldKind);
+      kind = enyo.clone(this.schema);
       kind = enyo.mixin(kind, {value: values[i], validatedOnce: this.validatedOnce});
       kinds.push(kind);
     }
     this.$.fields.createComponents(kinds);
+    this.validate();
   },
   addField: function(value) {
-    kind = enyo.clone(this._fieldKind);
+    var kind = enyo.clone(this.schema);
     kind.validatedOnce = this.validatedOnce;
     // if value is a component, then we are actually seeing inSender
     if (value && !(value instanceof enyo.Component)) { kind.value = value; }
@@ -136,15 +138,16 @@ enyo.kind({
 
     var that = this;
     values.forEach(function(x) {that.addField(x);});
+    this.validate();
   },
   addField: function(value) {
-    kind = enyo.clone(this.itemKind);
-    item = this.$.fields.createComponent(kind);
+    var kind = enyo.clone(this.itemKind);
+    var item = this.$.fields.createComponent(kind);
 
-    kind = enyo.clone(this._fieldKind);
+    kind = enyo.clone(this.schema);
     kind.validatedOnce = this.validatedOnce;
     // if value is a component, then we are actually seeing inSender
-    if (value && !(value instanceof enyo.Component)) { kind.value = value; }
+    if (value !== undefined && !(value instanceof enyo.Component)) { kind.value = value; }
     item.$._content.createComponent(kind);
     this.validate();
     this.render();

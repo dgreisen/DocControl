@@ -2,14 +2,31 @@ DATA = [
   { name: "John Doe",
     "private": true,
     emails: ["jdoe@example.com"],
+    phones: [{ label: "h", phone: "403-555-9832" }],
     children:3
   },
   { name: "Sally Smith",
   "private": false,
   emails: ["test2@test.com"],
+  phones: [{ label: "w", phone: "202-555-2384"}],
   children: 2
   }
 ];
+
+enyo.kind({
+  name: "phoneField",
+  kind: "fields.ContainerField",
+  schema: [
+  { name: "label",
+    kind: "fields.ChoiceField",
+    choices: [['h', 'Home'], ['w', 'Work'], ['m', 'Mobile']],
+    widgetAttrs: { unchosenText: "label..." }
+  },
+  { name: "phone",
+    kind: "local.en.USPhoneNumberField",
+    widgetAttrs: {label: "Phone"}
+  }]
+});
 
 enyo.kind({
   name: "ContactField",
@@ -19,6 +36,15 @@ enyo.kind({
       kind: "fields.CharField",
       maxLength: 40,
       widgetAttrs: { label: "Name" }
+    },
+    { name: "phones",
+      kind: "fields.ListField",
+      widget: "widgets.ListWidget",
+      schema: { kind: phoneField },
+      widgetAttrs: { label: "Phone Numbers" }
+    },
+    { name: "address",
+      kind: "local.en.USAddressField"
     },
     { name: "type",
       kind: "fields.ChoiceField",
@@ -54,7 +80,6 @@ enyo.kind({
   classes: "enyo-fit",
   kind: "Scroller",
   components: [
-
     { name: "contactsForm", kind: "fields.ListField",
       schema: { kind: "ContactField" },
       widget: "widgets.ListWidget",
