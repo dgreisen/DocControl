@@ -22,3 +22,7 @@ includes = function(a, s) {
   return a.indexOf(s) > -1;
 };
 
+function isEmpty(obj){
+   for(var i in obj){ return false;}
+  return true;
+}

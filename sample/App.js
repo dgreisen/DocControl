@@ -12,6 +12,21 @@ DATA = [
 ];
 
 enyo.kind({
+  name: "phoneField",
+  kind: "fields.ContainerField",
+  schema: [
+  { name: "label",
+    kind: "fields.ChoiceField",
+    choices: [['h', 'Home'], ['w', 'Work'], ['m', 'Mobile']],
+    widgetAttrs: { unchosenText: "label..." }
+  },
+  { name: "phone",
+    kind: "local.en.USPhoneNumberField",
+    widgetAttrs: {label: "Phone"}
+  }],
+});
+
+enyo.kind({
   name: "ContactField",
   kind: "fields.ContainerField",
   schema: [
@@ -19,6 +34,12 @@ enyo.kind({
       kind: "fields.CharField",
       maxLength: 40,
       widgetAttrs: { label: "Name" }
+    },
+    { name: "phones",
+      kind: "fields.ListField",
+      widget: "widgets.ListWidget",
+      schema: { kind: phoneField },
+      widgetAttrs: { label: "Phone Numbers" }
     },
     { name: "type",
       kind: "fields.ChoiceField",
@@ -54,16 +75,20 @@ enyo.kind({
   classes: "enyo-fit",
   kind: "Scroller",
   components: [
-
-    { name: "contactsForm", kind: "fields.ListField",
-      schema: { kind: "ContactField" },
-      widget: "widgets.ListWidget",
-      value: DATA,
-      widgetAttrs: {
-        label: "Contacts",
-        helpText: "Add as many contacts as you like",
-        containerControlKind: { kind: "onyx.Button", ontap: "addField", content: "Add Contact" }
-    }},
+    { name: "contact",
+      kind: "ContactField",
+      value: DATA[0],
+      widgetAttrs: { label: "Contact" }
+    },
+    // { name: "contactsForm", kind: "fields.ListField",
+    //   schema: { kind: "ContactField" },
+    //   widget: "widgets.ListWidget",
+    //   value: DATA,
+    //   widgetAttrs: {
+    //     label: "Contacts",
+    //     helpText: "Add as many contacts as you like",
+    //     containerControlKind: { kind: "onyx.Button", ontap: "addField", content: "Add Contact" }
+    // }},
     { name: "contactsMessage", tag: "h3", style: "color:red;"},
     { kind: "onyx.Button", ontap: "onContactTap", content: "Submit"}
   ],

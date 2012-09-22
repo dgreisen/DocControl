@@ -31,10 +31,6 @@ enyo.kind({
     required: _i('There must be at least one %s.'),
     invalid: _i('Please fix the errors indicated below.')
   },
-  create: function() {
-    this.inherited(arguments);
-    this.setValue(this.value);
-  },
   handlers: {
     //* when an `onValidation` event is received we update the container's state to reflect it's subfield's validation state
     onValidation: "onValidation",
@@ -50,21 +46,18 @@ enyo.kind({
       return true;
     }
   },
-  // number of invalid subfields
-  validCounter: 0,
   // hash of invalid subfields (to prevent duplication)
   invalidFields: {},
-  // add/remove the field from `invalidFields` and increment/decrement the validCounter depending on if the field is invalid or valid, respectively
+  // add/remove the field from `invalidFields` depending on if the field is invalid or valid, respectively
   onValidation: function(inSender, inEvent) {
+    if (inSender == this) return false; // if this field sent the event, let parent field handle it.
     if (inEvent.valid && inSender in this.invalidFields) {
       delete this.invalidFields[inSender];
-      if (!--this.validCounter) {
-        this.errors = [];
-      }
     } else if (!inEvent.valid) {
       this.invalidFields[inSender] = true;
-      this.errors = [this.errorMessages.invalid];
     }
+    this.errors = (isEmpty(this.invalidFields)) ? [] : [this.errorMessages.invalid];
+    return true;
   },
   prepareWidget: function() {
     this.widget.schema = this.schema;
@@ -84,6 +77,7 @@ enyo.kind({
       this.$.widget.setValid(valid);
       this.$.widget.validatedOnce = true;
     }
+    this.doValidation({valid: valid});
     return valid;
   },
   getFields: function() {
@@ -102,7 +96,7 @@ enyo.kind({
   },
   //* reset validation state of this field and all subfields.
   reset: function() {
-    this.inherited();
+    this.inherited(arguments);
     this.getFields().forEach(function(x) {x.reset();});
   },
   throwValidationError: function() {
@@ -146,6 +140,11 @@ enyo.kind({
     if (reset) this.reset();
   },
   //* @protected
+  create: function() {
+    this.inherited(arguments);
+    // unlike all other fields, we cannot set values on widgets and subfields prior to creation. so we must do it after.
+    this.setValue(this.value);
+  },
   validate: function() {},
   getValue: function() {
     var out = {};
@@ -218,7 +217,7 @@ enyo.kind({
   validate: function() {
     if (!this.getFields().length && this.required) {
       var message = this.errorMessages.required;
-      this.errors = [interpolate(message, [this.schema.name || this.schema.kind.slice(0,-5)])];
+      this.errors = [interpolate(message, [this.schema.name || (typeof(this.schema.kind) == "string" && this.schema.kind.slice(0,-5)) || "item"])];
       return;
     }
   },
