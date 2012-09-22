@@ -48,7 +48,7 @@ enyo.kind({
       //prepare widget by creating or cloning the widget kind
       this.widget = enyo.clone((typeof(this.widget)=="string") ? { kind: this.widget } : this.widget);
       // then add widget attributes
-      var widgetAttrs = enyo.mixin(this.widgetAttrs, {name: "widget", required: this.required, value: this.value, fieldName: this.getName() });
+      var widgetAttrs = enyo.mixin(enyo.clone(this.widgetAttrs), {name: "widget", required: this.required, value: this.value, fieldName: this.getName() });
       this.widget = enyo.mixin(this.widget, widgetAttrs);
       // call prepareWidget, which is implemented by subclasses.
       this.prepareWidget();
@@ -320,7 +320,7 @@ enyo.kind({
   //* @protected
   create: function() {
     this.inherited(arguments);
-    this.validators.push(new RegexValidator(this.regex));
+    this.validators.push(new validators.RegexValidator(this.regex));
     if (this.errorMessage) {
       this.errorMessages.invalid = this.errorMessage;
     }
@@ -423,6 +423,7 @@ enyo.kind({
   },
   create: function() {
     this.inherited(arguments);
+    this.choices = enyo.clone(this.choices);
     this.choicesChanged();
   },
 

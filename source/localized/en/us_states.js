@@ -7,7 +7,7 @@ postal service.
 This exists in this standalone file so that it's only imported into memory
 when explicitly needed.
 */
-us_states = {};
+var us_states = {};
 
 // The 48 contiguous states, plus the District of Columbia.
 us_states.CONTIGUOUS_STATES = [
@@ -153,10 +153,10 @@ us_states.OBSOLETE_STATES = [
 
 
 // All US states and territories plus DC and military mail.
-us_states.STATE_CHOICES = tuple[sorted[US_STATES + US_TERRITORIES + ARMED_FORCES_STATES, key=lambda obj: obj[1]]];
+us_states.STATE_CHOICES = us_states.US_STATES.concat(us_states.US_TERRITORIES, us_states.ARMED_FORCES_STATES).sort();
 
 // All US Postal Service locations.
-us_states.USPS_CHOICES = tuple[sorted[US_STATES + US_TERRITORIES + ARMED_FORCES_STATES + COFA_STATES, key=lambda obj: obj[1]]];
+us_states.USPS_CHOICES = us_states.US_STATES.concat(us_states.US_TERRITORIES, us_states.ARMED_FORCES_STATES, us_states.COFA_STATES).sort();
 
 us_states.STATES_NORMALIZED = {
     'ak': 'AK',
@@ -325,3 +325,5 @@ us_states.STATES_NORMALIZED = {
     'wyo': 'WY',
     'wyoming': 'WY'
 };
+
+if (window) window.us_states = us_states;

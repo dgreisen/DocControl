@@ -2,11 +2,13 @@ DATA = [
   { name: "John Doe",
     "private": true,
     emails: ["jdoe@example.com"],
+    phones: [{ label: "h", phone: "403-555-9832" }],
     children:3
   },
   { name: "Sally Smith",
   "private": false,
   emails: ["test2@test.com"],
+  phones: [{ label: "w", phone: "202-555-2384"}],
   children: 2
   }
 ];
@@ -23,7 +25,7 @@ enyo.kind({
   { name: "phone",
     kind: "local.en.USPhoneNumberField",
     widgetAttrs: {label: "Phone"}
-  }],
+  }]
 });
 
 enyo.kind({
@@ -40,6 +42,9 @@ enyo.kind({
       widget: "widgets.ListWidget",
       schema: { kind: phoneField },
       widgetAttrs: { label: "Phone Numbers" }
+    },
+    { name: "address",
+      kind: "local.en.USAddressField"
     },
     { name: "type",
       kind: "fields.ChoiceField",
@@ -75,20 +80,15 @@ enyo.kind({
   classes: "enyo-fit",
   kind: "Scroller",
   components: [
-    { name: "contact",
-      kind: "ContactField",
-      value: DATA[0],
-      widgetAttrs: { label: "Contact" }
-    },
-    // { name: "contactsForm", kind: "fields.ListField",
-    //   schema: { kind: "ContactField" },
-    //   widget: "widgets.ListWidget",
-    //   value: DATA,
-    //   widgetAttrs: {
-    //     label: "Contacts",
-    //     helpText: "Add as many contacts as you like",
-    //     containerControlKind: { kind: "onyx.Button", ontap: "addField", content: "Add Contact" }
-    // }},
+    { name: "contactsForm", kind: "fields.ListField",
+      schema: { kind: "ContactField" },
+      widget: "widgets.ListWidget",
+      value: DATA,
+      widgetAttrs: {
+        label: "Contacts",
+        helpText: "Add as many contacts as you like",
+        containerControlKind: { kind: "onyx.Button", ontap: "addField", content: "Add Contact" }
+    }},
     { name: "contactsMessage", tag: "h3", style: "color:red;"},
     { kind: "onyx.Button", ontap: "onContactTap", content: "Submit"}
   ],
