@@ -31,6 +31,10 @@ enyo.kind({
     required: _i('There must be at least one %s.'),
     invalid: _i('Please fix the errors indicated below.')
   },
+  create: function() {
+    this.inherited(arguments);
+    this.invalidFields = enyo.clone(this.invalidFields);
+  },
   handlers: {
     //* when an `onValidation` event is received we update the container's state to reflect it's subfield's validation state
     onValidation: "onValidation",
@@ -66,8 +70,10 @@ enyo.kind({
   isValid: function() {
     // reset the errors array
     this.errors = [];
-    this.validate();
+    var value = this.getValue();
+    value = this.validate(value);
     valid = this.getFields().reduce(function(x, y) {return y.isValid() && x;}, true);
+    this.clean = (valid) ? value : undefined;
     if (!valid) {
       this.errors = [this.errorMessages.invalid];
     }
@@ -145,10 +151,16 @@ enyo.kind({
     // unlike all other fields, we cannot set values on widgets and subfields prior to creation. so we must do it after.
     this.setValue(this.value);
   },
-  validate: function() {},
+  validate: function(value) { return value; },
   getValue: function() {
     var out = {};
     this.getFields().forEach(function(x) { out[x.getName()] = x.getValue(); });
+    return out;
+  },
+  getErrors: function() {
+    if (!this.errors.length) return null;
+    var out = {};
+    this.getFields().forEach(function(x) { if (x.getErrors()) out[x.getName()] = x.getErrors(); });
     return out;
   },
   getClean: function() {
@@ -214,15 +226,19 @@ enyo.kind({
     return true;
   },
   //* @protected
-  validate: function() {
-    if (!this.getFields().length && this.required) {
+  validate: function(value) {
+    if (!value.length && this.required) {
       var message = this.errorMessages.required;
       this.errors = [interpolate(message, [this.schema.name || (typeof(this.schema.kind) == "string" && this.schema.kind.slice(0,-5)) || "item"])];
-      return;
+      return value;
     }
   },
   getValue: function() {
     return this.getFields().map(function(x) {return x.getValue();});
+  },
+  getErrors: function() {
+    if (!this.errors.length) return null;
+    return this.getFields().map(function(x) {return x.getErrors();});
   },
   getClean: function() {
     this.throwValidationError();
