@@ -12,6 +12,8 @@ enyo.kind({
     value: undefined,
     //* the cleaned value accessed via `getClean()`; raises error if invalid; this will be a javascript datatype and should be used for any calculations, etc. Use the toJSON() method to get a version appropriate for serialization.
     clean: undefined,
+    //* a list of errors for this field.
+    errors: [],
     //* list of validators; If overriding a parent class, you must include all parent class validators
     validators: [],
     //* kind definition for widget (eg { kind: "widget.Widget"})
@@ -85,28 +87,34 @@ enyo.kind({
     }
   },
   //* @public
+  //* get the errors for this field. returns null if no errors.
+  getErrors: function() {
+    return (this.errors.length) ? this.errors : null;
+  },
   //* First function called in validation process.<br />
-  //* this function converts the raw value to javascript (from `this.getValue()`, and places it in the `this.clean` attribute<br />
+  //* this function converts the raw value to javascript. `value` is the raw value from
+  //* `this.getValue()`. The function returns the value in the proper javascript format,<br />
   //* this function should be able to convert from any type that a widget might supply to the type needed for validation
-  toJavascript: function() {
-    this.clean = this.getValue();
+  toJavascript: function(value) {
+    return value;
   },
   //* Second function called in validation process.<br />
-  //* Any custom validation logic should be placed here. When validation fails, push an error string
+  //* Any custom validation logic should be placed here. receives the input, `value`, from `toJavascript`'s output.
+  //* return the value with any modifications. When validation fails, push an error string
   //* from `this.errorMessages` onto `this.errors`. You can perform string interpolation using
-  //* utils.interpolate(string "%(arg)s", {arg: value, ...})
-  //* be sure to call `this.inherited(arguments)`<br />
+  //* utils.interpolate("%(arg)s", {arg: value, ...}).
+  //* be sure to call `this.inherited(arguments) <br />
   //* default action is to check if the field is required
-  validate: function() {
-    if (validators.isEmpty(this.getValue()) && this.required) {
+  validate: function(value) {
+    if (validators.isEmpty(value) && this.required) {
       this.errors.push(this.errorMessages.required);
     }
+    return value;
   },
-  //* Third function called by in validation process.<br />
+  //* Third function called in validation process.<br />
   //* You should not have to override this function
-  runValidators: function() {
+  runValidators: function(value) {
     var i;
-    var value = this.clean;
     if (validators.isEmpty(value)) return;
     for (i = 0; i < this.validators.length; i++) {
       v = this.validators[i];
@@ -123,6 +131,7 @@ enyo.kind({
         }
       }
     }
+    return value;
   },
   //* primary validation function<br />
   //* calls all other validation subfunctions and passes validation info up to parent fields and down to widget, if it exists.<br />
@@ -131,10 +140,12 @@ enyo.kind({
     // reset the errors array
     this.errors = [];
     // call the various validators
-    this.toJavascript();
-    this.validate();
-    this.runValidators();
+    var value = this.getValue();
+    value = this.toJavascript(value);
+    if (!Boolean(this.errors.length)) value = this.validate(value);
+    if (!Boolean(this.errors.length)) value = this.runValidators(value);
     var valid = !Boolean(this.errors.length);
+    this.clean = (valid) ? value : undefined;
     // if there is a widget, pass validation info
     if (this.display) {
       this.$.widget.setErrorMessage(this.errors[0]);
@@ -221,9 +232,9 @@ enyo.kind({
       this.validators.push(new validators.MinLengthValidator(this.minLength));
     }
   },
-  toJavascript: function() {
-    var value = (validators.isEmpty(this.getValue())) ? "" : this.getValue();
-    this.clean = value;
+  toJavascript: function(value) {
+    value = (validators.isEmpty(value)) ? "" : value;
+    return value;
 
   // TODO: need to be able to set widget attributes
   }
@@ -255,21 +266,17 @@ enyo.kind({
     }
   },
   parseFn: parseInt,
-  regex: /^\d*$/,
-  toJavascript: function() {
-    var value = this.getValue();
+  regex: /^-?\d*$/,
+  toJavascript: function(value) {
     if (!value.match(this.regex)) {
       this.errors.push(this.errorMessages['invalid']);
       return;
     }
     value = (validators.isEmpty(value)) ? undefined : this.parseFn(value, 10);
-    if (value === undefined) {
-      this.clean = undefined;
-    } else if (isNaN(value)) {
+    if (value !== undefined && isNaN(value)) {
       this.errors.push(this.errorMessages['invalid']);
-    } else {
-      this.clean = value;
     }
+    return value;
   }
 });
 
@@ -373,8 +380,7 @@ enyo.kind({
   kind: "fields.Field",
   widget: "widgets.CheckboxWidget",
   //* @protected
-  toJavascript: function() {
-    var value = this.getValue();
+  toJavascript: function(value) {
     if (typeof(value) == "string" && includes(["false", "0"], value.toLowerCase())) {
       value = false;
     } else {
@@ -383,7 +389,7 @@ enyo.kind({
     if (!value && this.required) {
       this.errors.push(this.errorMessages.required);
     }
-    this.clean = value;
+    return value;
   }
 });
 
@@ -394,15 +400,14 @@ enyo.kind({
   kind: "fields.Field",
   widget: "widgets.CheckboxWidget",
   //* @protected
-  toJavascript: function() {
-    var value = this.getValue();
+  toJavascript: function(value) {
     if (includes([true, "True", "1"], value)) { value =  true; }
     else if (includes([false, "False", "0"], value)) { value = false; }
     else { value = null; }
-    this.clean = value;
+    return value;
   },
-  validate: function() {
-    return;
+  validate: function(value) {
+    return value;
   }
 });
 
@@ -440,17 +445,17 @@ enyo.kind({
     this.choices.forEach(iterChoices);
     this.choicesIndex = choices;
   },
-  toJavascript: function() {
-    var value = (validators.isEmpty(this.getValue())) ? "" : this.getValue();
-    this.clean = value;
+  toJavascript: function(value) {
+    value = (validators.isEmpty(value)) ? "" : value;
+    return value;
   },
-  validate: function() {
+  validate: function(value) {
     this.inherited(arguments);
-    var value = this.getValue();
     if (value && !this.validValue(value)) {
       var message = this.errorMessages.invalidChoice;
       this.errors = [ interpolate(message, [value]) ];
     }
+    return value;
   },
   validValue: function(val) {
     if (val in this.choicesIndex) return true;

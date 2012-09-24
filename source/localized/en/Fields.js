@@ -19,9 +19,8 @@ enyo.kind({
     invalid: _i('Phone numbers must be in XXX-XXX-XXXX format.')
   },
   regex: /^(?:1-?)?(\d{3})[-\.]?(\d{3})[-\.]?(\d{4})$/,
-  validate: function() {
+  validate: function(value) {
     this.inherited(arguments);
-    var value = this.clean;
     if (validators.isEmpty(value)) return this.nullValue;
     value = value.replace(/(\(|\)|\s+)/g, '');
     match = value.match(this.regex);
@@ -32,6 +31,7 @@ enyo.kind({
     } else {
       this.errors.push(this.errorMessages['invalid']);
     }
+    return value;
   }
 });
 
@@ -59,9 +59,8 @@ enyo.kind({
     invalid: _i('Enter a valid U.S. Social Security number in XXX-XX-XXXX format.')
   },
   regex: /^(\d{3})[-\ ]?(\d{2})[-\ ]?(\d{4})$/,
-  validate: function() {
+  validate: function(value) {
     this.inherited(arguments);
-    var value = this.clean;
     var match = value.match(this.regex);
     var invalidEM = this.errorMessages['invalid'];
     if (!match) this.errors.push(invalidEM);
@@ -78,6 +77,7 @@ enyo.kind({
     value = interpolate('%s-%s-%s', [area, group, serial]);
     this.clean = value;
     this.setValue(value);
+    return value;
   }
 });
 
@@ -97,9 +97,9 @@ enyo.kind({
     required: _i('This field is required.'),
     invalid: _i('Enter a U.S. state or territory.')
   },
-  validate: function() {
+  validate: function(value) {
     this.inherited(arguments);
-    value = strip(this.clean).toLowerCase();
+    value = strip(value).toLowerCase();
     value = us_states.STATES_NORMALIZED[value];
     if (value) {
       this.clean = value;
@@ -108,6 +108,7 @@ enyo.kind({
     else {
       this.errors.push(this.errorMessages.invalid);
     }
+    return value;
   }
 
 });
@@ -153,7 +154,7 @@ enyo.kind({
     this.schema = [];
     for (var i=0; i<this.streetLines; i++) {
       var street = enyo.clone(this.streetField);
-      street.name = street.name+i;
+      street.name = street.name+(i+1);
       var label = (i>1) ? " "+ i : "";
       street.widgetAttrs.label = street.widgetAttrs.label + label;
       this.schema.push(street);
