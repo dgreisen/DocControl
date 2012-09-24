@@ -3,13 +3,13 @@ DATA = [
     "private": true,
     emails: ["jdoe@example.com"],
     phones: [{ label: "h", phone: "403-555-9832" }],
+    address: {
+      street1: "1 Mulberry Ln.",
+      city: "Springfield",
+      state: "ND",
+      zip: "00093"
+    },
     children:3
-  },
-  { name: "Sally Smith",
-  "private": false,
-  emails: ["test2@test.com"],
-  phones: [{ label: "w", phone: "202-555-2384"}],
-  children: 2
   }
 ];
 

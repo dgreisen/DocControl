@@ -145,6 +145,14 @@ enyo.kind({
     }
     if (reset) this.reset();
   },
+  //* get the errors for all subfields. if a subfield has no errors, it is not listed; subfields
+  //* are returned as a hash of subfield name keys and error values.
+  getErrors: function() {
+    if (!this.errors.length) return null;
+    var out = {};
+    this.getFields().forEach(function(x) { if (x.getErrors()) out[x.getName()] = x.getErrors(); });
+    return out;
+  },
   //* @protected
   create: function() {
     this.inherited(arguments);
@@ -155,12 +163,6 @@ enyo.kind({
   getValue: function() {
     var out = {};
     this.getFields().forEach(function(x) { out[x.getName()] = x.getValue(); });
-    return out;
-  },
-  getErrors: function() {
-    if (!this.errors.length) return null;
-    var out = {};
-    this.getFields().forEach(function(x) { if (x.getErrors()) out[x.getName()] = x.getErrors(); });
     return out;
   },
   getClean: function() {
@@ -225,6 +227,11 @@ enyo.kind({
     this.removeField(i);
     return true;
   },
+  //* get all subfield errors. returns a list of subfield error values. if a subfield has no errors, the error value at it's index is null.
+  getErrors: function() {
+    if (!this.errors.length) return null;
+    return this.getFields().map(function(x) {return x.getErrors();});
+  },
   //* @protected
   validate: function(value) {
     if (!value.length && this.required) {
@@ -235,10 +242,6 @@ enyo.kind({
   },
   getValue: function() {
     return this.getFields().map(function(x) {return x.getValue();});
-  },
-  getErrors: function() {
-    if (!this.errors.length) return null;
-    return this.getFields().map(function(x) {return x.getErrors();});
   },
   getClean: function() {
     this.throwValidationError();

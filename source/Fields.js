@@ -86,21 +86,24 @@ enyo.kind({
       this.$.widget.validatedOnce = false;
     }
   },
+  //* @public
+  //* get the errors for this field. returns null if no errors.
   getErrors: function() {
     return (this.errors.length) ? this.errors : null;
   },
-  //* @public
   //* First function called in validation process.<br />
-  //* this function converts the raw value to javascript (from `this.getValue()`, and places it in the `this.clean` attribute<br />
+  //* this function converts the raw value to javascript. `value` is the raw value from
+  //* `this.getValue()`. The function returns the value in the proper javascript format,<br />
   //* this function should be able to convert from any type that a widget might supply to the type needed for validation
   toJavascript: function(value) {
     return value;
   },
   //* Second function called in validation process.<br />
-  //* Any custom validation logic should be placed here. When validation fails, push an error string
+  //* Any custom validation logic should be placed here. receives the input, `value`, from `toJavascript`'s output.
+  //* return the value with any modifications. When validation fails, push an error string
   //* from `this.errorMessages` onto `this.errors`. You can perform string interpolation using
-  //* utils.interpolate(string "%(arg)s", {arg: value, ...})
-  //* be sure to call `this.inherited(arguments)`<br />
+  //* utils.interpolate("%(arg)s", {arg: value, ...}).
+  //* be sure to call `this.inherited(arguments) <br />
   //* default action is to check if the field is required
   validate: function(value) {
     if (validators.isEmpty(value) && this.required) {
@@ -108,7 +111,7 @@ enyo.kind({
     }
     return value;
   },
-  //* Third function called by in validation process.<br />
+  //* Third function called in validation process.<br />
   //* You should not have to override this function
   runValidators: function(value) {
     var i;

@@ -1,31 +1,61 @@
 DocControl
 ==========
 
-DocControl is a controller framework for Enyo. It is heavily 
-influenced by Django Forms, but is designed for a hierarchical 
-document data structure rather than a flat database row. 
+DocControl is a controller framework for Enyo. It allows you to quickly and easily
+create forms that validate complex documents and get that data in a format that can
+be manipulated on the front-end or serialized and sent to a back-end. DocControl is
+well suited to validating both flat data that is destined for a table in a RDBMS, or
+for nested data that is destined for a document database such as CouchDB or Mongo.
+
+Much of DocControl is a port to javascript of 
+[Django Forms](https://docs.djangoproject.com/en/1.4/topics/forms/), and these docs 
+borrow heavily from the Django docs. The ported Django code has been extended to 
+allow you to create nested forms that can validate and produce almost any json
+object you desire.
 
 Sample Application
 ------------------
-A sample application is both [hosted](http://dgreisen.github.com/DocControl/sample.html) and available in the repository.
+A sample application is [hosted here](http://dgreisen.github.com/DocControl/sample.html) 
+and is available in the repository by opening `sample.html` in a browser.
 
 API
 ---
-The api is both [hosted](http://dgreisen.github.com/DocControl/api/index.html) and available in the repository.
+The api is [hosted here](http://dgreisen.github.com/DocControl/api/index.html) and 
+is available in the repository by opening `api/index.html` in a browser. To 
+work properly, you must serve the `api`  directory from your favorite web server. The 
+easiest way is to create a symlink in your `www` directory to the `api` directory.
 
-Basic Structure
----------------
-Three classes (kinds in Enyo parlance) work together to validate your 
-data. A `Field` represents the data and performs validation. A `Widget` 
-displays the data by creating enyo components. Finally, a `Field` will 
-use one or more `validators`, small reusable snippets of code, to perform 
-the actual validation.
+What it Does
+------------
 
-Fields can contain other fields, which allows for the validation
-of highly nested data. It is possible to create a
-single DocControl to validate, for example, an entire contact document
-including an arbitrary number of tagged emails, phone numbers, and 
-other data.
+DocControl performs several common front-end controller tasks.
+
+1. display a form with automatically generated widgets
+2. Check inputted data against a set of validation rules.
+3. Display error messages until the form conforms to the validation rules
+4. Convert the form data to the relevant javascript data types
+5. Convert the form data to an easily serializable format for storage or transmission to a server
+
+Overview
+--------
+The library deals with these concepts:
+
+###Widget
+A kind that knows how to render a field, and get and set the value from/to that field. 
+It also ensures validation occurs when the value of the field changes, in accordance 
+with the validationStrategy 
+
+###Field
+A class that is responsible for doing validation, e.g. an EmailField that makes sure 
+its data is a valid email address, as well as serialization.
+
+###Collection
+A special type of field that can contain other fields or collections. When validated, it ensures all
+subfields are validated, when its value is retreived the value of all subfields are 
+retreived.
+
+###Validator
+A small snippet of reusable code that is used by field to perform most of the validation.
 
 There are currently two types of fields that can contain subfields:
 `ContainerField` and `ListField`. A `ContainerField`'s schema defines
@@ -34,8 +64,8 @@ document. A `ListField`'s schema takes a single field (which could be
 a `ContainerField`). It is used for creating an arbitrary-length array 
 of identical fields.
 
-Basic Usage
------------
+Short Example
+-------------
 The following will create a simple user field:
 
     enyo.kind({ name:"UserField", kind: "ContainerField", schema: [

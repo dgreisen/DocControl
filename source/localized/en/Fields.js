@@ -154,7 +154,7 @@ enyo.kind({
     this.schema = [];
     for (var i=0; i<this.streetLines; i++) {
       var street = enyo.clone(this.streetField);
-      street.name = street.name+i;
+      street.name = street.name+(i+1);
       var label = (i>1) ? " "+ i : "";
       street.widgetAttrs.label = street.widgetAttrs.label + label;
       this.schema.push(street);
