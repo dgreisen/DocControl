@@ -3095,7 +3095,7 @@ loadPackages: function() {
 this.index = this.$.analyzer.index = new Indexer, this.$.packages.loadPackageData();
 },
 packagesLoaded: function(e, t) {
-document.title = "Enyo API Viewer (" + t.version + ")";
+document.title = "DocControl API Viewer (" + t.version + ")";
 var n = [];
 return enyo.forEach(t.packages, function(e) {
 e.disabled || n.push({
