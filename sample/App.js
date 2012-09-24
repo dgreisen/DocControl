@@ -1,18 +1,8 @@
-DATA = [
-  { name: "John Doe",
-    "private": true,
-    emails: ["jdoe@example.com"],
-    phones: [{ label: "h", phone: "403-555-9832" }],
-    address: {
-      street1: "1 Mulberry Ln.",
-      city: "Springfield",
-      state: "ND",
-      zip: "00093"
-    },
-    children:3
-  }
-];
+// SCHEMA
+// ======
 
+// Phone Field
+// -----------
 enyo.kind({
   name: "phoneField",
   kind: "fields.ContainerField",
@@ -28,6 +18,8 @@ enyo.kind({
   }]
 });
 
+// ContactField
+// ------------
 enyo.kind({
   name: "ContactField",
   kind: "fields.ContainerField",
@@ -74,28 +66,64 @@ enyo.kind({
   ]
 });
 
+// INITIAL DATA
+// ============
+DATA = [
+  { name: "John Doe",
+    "private": true,
+    emails: ["jdoe@example.com"],
+    phones: [{ label: "h", phone: "403-555-9832" }],
+    address: {
+      street1: "1 Mulberry Ln.",
+      city: "Springfield",
+      state: "ND",
+      zip: "00093"
+    },
+    children:3
+  }
+];
 
+// APPLICATION
+// ===========
 enyo.kind({
   name: "App",
   classes: "enyo-fit",
-  kind: "Scroller",
+  kind: "FittableRows",
   components: [
-    { name: "contactsForm", kind: "fields.ListField",
-      schema: { kind: "ContactField" },
-      widget: "widgets.ListWidget",
-      value: DATA,
-      widgetAttrs: {
-        label: "Contacts",
-        helpText: "Add as many contacts as you like",
-        containerControlKind: { kind: "onyx.Button", ontap: "addField", content: "Add Contact" }
-    }},
-    { name: "contactsMessage", tag: "h3", style: "color:red;"},
-    { kind: "onyx.Button", ontap: "onContactTap", content: "Submit"}
+    { name: "topTB", kind: "onyx.Toolbar" },
+    { kind: "Scroller", fit: true, components: [
+      { name: "contactsForm", kind: "fields.ListField",
+        schema: { kind: "ContactField" },
+        widget: "widgets.ListWidget",
+        value: DATA,
+        widgetAttrs: {
+          label: "Contacts",
+          helpText: "Add as many contacts as you like",
+          containerControlKind: { kind: "onyx.Button", ontap: "addField", content: "Add Contact" }
+      }}
+    ]},
+    { kind: "onyx.Toolbar", components: [
+      { kind: "onyx.Button", ontap: "onContactTap", content: "Submit"}
+    ]},
+    { name: "submitPop", kind: "onyx.Popup", centered: true, floating: true }
   ],
+  handlers: {
+    onValidation: "onValidation"
+  },
   onContactTap: function() {
-    if (this.$.contactsForm.isValid())
-      { this.$.contactsMessage.setContent('Successfull Contacts Submission'); }
-    else
-      { this.$.contactsMessage.setContent('Submission Failure - invalid form'); }
+    if (this.$.contactsForm.isValid()) {
+      this.$.submitPop.setContent('Successfull Contacts Submission');
+    } else {
+      this.$.submitPop.setContent('Submission Failure - invalid form');
+    }
+    this.$.submitPop.show();
+  },
+  onValidation: function(inSender, inEvent) {
+    if (inEvent.valid) {
+      this.$.topTB.setContent("");
+    } else {
+      this.$.topTB.setContent(this.$.contactsForm.errors[0]);
+    }
+    console.log("validation", inEvent);
   }
 });
