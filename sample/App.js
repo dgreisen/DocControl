@@ -54,7 +54,7 @@ enyo.kind({
       widget: "widgets.ListWidget",
       schema: { kind: "fields.EmailField", widgetAttrs: { label: "Email" }},
       widgetAttrs: {
-        containerControlKind: { kind: "onyx.Button", ontap: "addField", content: "Add Email" }
+        containerControlKind: { kind: "enyo.Button", ontap: "addField", content: "Add Email" }
       }
     },
     { name: "children",
@@ -99,7 +99,7 @@ enyo.kind({
         widgetAttrs: {
           label: "Contacts",
           helpText: "Add as many contacts as you like",
-          containerControlKind: { kind: "onyx.Button", ontap: "addField", content: "Add Contact" }
+          containerControlKind: { kind: "enyo.Button", ontap: "addField", content: "Add Contact" }
       }}
     ]},
     { kind: "onyx.Toolbar", components: [

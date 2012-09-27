@@ -90,9 +90,9 @@ enyo.kind({
 
     var kinds = [];
     // add new fields with properly set `validatedOnce` and `value`
-    for (i = 0; i < values.length; i++) {
+    for (i = 0; i < val.length; i++) {
       kind = enyo.clone(this.schema);
-      kind = enyo.mixin(kind, {value: values[i], validatedOnce: this.validatedOnce});
+      kind = enyo.mixin(kind, {value: val[i], validatedOnce: this.validatedOnce});
       kinds.push(kind);
     }
     this.$.fields.createComponents(kinds);
@@ -158,7 +158,7 @@ enyo.kind({
   //* control named "_content".
   itemKind: { kind: "widgets.ListItem" },
   //* kind definition for list controls. defaults to an add button
-  containerControlKind: { kind: "onyx.Button", ontap: "addField", content: "Add" }
+  containerControlKind: { kind: "enyo.Button", ontap: "addField", content: "Add" }
 });
 
 
@@ -172,7 +172,7 @@ enyo.kind({
   },
   components: [
     { name: "_content", kind: "enyo.Control" },
-    { kind: "onyx.Button", content: "Delete", ontap: "handleDelete" }
+    { kind: "enyo.Button", content: "Delete", ontap: "handleDelete" }
   ],
   // this function is here to be set as a handler on widget chrome in this.containerControl
   handleDelete: function() {

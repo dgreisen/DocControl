@@ -123,10 +123,8 @@ in DocControl's root directory.
 
 TODO
 ----
-1. I would like to remove the coffeescript dependencies for two reasons:
-
-  a. validators are directly ported from Django, complicating the license
-  b. it is silly to require coffeescript to compile one file
+1. I would like to remove the coffeescript dependencies because it is silly
+    to require coffeescript to compile one file
 2. I hope to convince the Enyo team to make Enyo core compatible with node,
    then you can write a control once for both the front-end and backend.
 3. I hope to write a django ./manage.py function that will automatically 

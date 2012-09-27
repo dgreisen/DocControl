@@ -16,6 +16,8 @@ enyo.kind({
     validationInstant: false,
     //* whether to display the widget in its compact form TODO: only partially implemented
     compact: false,
+    //* function for skinning this widget
+    skin: "defaultSkin",
     //* @protected
     //* whether this widget requires a value; inherited from field
     required: true,
@@ -50,14 +52,19 @@ enyo.kind({
   //* Useful for subclassing. The kind definition for the representation of the label. `name` must remain 'label'.
   labelKind: { name: "label", tag: "label" },
   //* useful for subclassing. The kind definition for the actual input component. You can use as much chrome as you like, but the input should be named `input` to use the default get/setValue machinery. You should also specify any handlers here. They should generally point to `onInputChange` for events equivalent to `onblur`, and to `onInputKey` for events equivalent to `onkeyup`
-  inputKind: { kind: "onyx.InputDecorator", components: [
-      { name: "input", kind: "onyx.Input", onchange: "onInputChange", onkeyup: "onInputKey", onkeydown: "onInputKey" }
-    ]},
+  inputKind: { name: "input", kind: "enyo.Input", onchange: "onInputChange", onkeyup: "onInputKey", onkeydown: "onInputKey" },
   //* useful for subclassing. The kind definition for the help text. `name` must remain 'helpText'.
   helpKind: { name: "helpText", tag: "p" },
   //* useful for subclassing. override this function to rearrange the order of the various kinds making up a widget.
   generateComponents: function() {
-    this.createComponents([this.labelKind, this.inputKind, this.helpKind]);
+  this.labelKind = enyo.clone(this.labelKind);
+  this.inputKind = enyo.clone(this.inputKind);
+  this.helpKind = enyo.clone(this.helpKind);
+  if (typeof(this.skin) == "string") {
+      this[this.skin]();
+    } else {
+      this.skin.call(this);
+    }
   },
   // handler called by input kind when it has changed, and the user has finished inputing - for example on an `onchange` or `onblur`
   onInputChange: function() {
@@ -129,30 +136,28 @@ enyo.kind({
   //* validation strategy: validate automatically on change starting from widget creation
   alwaysValidation: function() {
     this.doRequestValidation();
+  },
+  //* skin: default skin with simple display
+  //* you must include `DocControl/skins/default` in your package.js
+  defaultSkin: function() {
+    this.createComponents([this.labelKind, this.inputKind, this.helpKind]);
+    this.addClass('ctrlHolder');
+    this.$.helpText.addClass('formHint');
   }
 });
-
-
-
-
 
 enyo.kind({
   name: "widgets.PasswordWidget",
   kind: "widgets.Widget",
   //* @protected
-  inputKind: { kind: "onyx.InputDecorator", components: [
-        { name: "input", kind: "onyx.Input", type:"password", onchange: "onInputChange", onkeyup: "onInputKey", onkeydown: "onInputKey" }
-    ]}
+  inputKind: { name: "input", kind: "enyo.Input", type: "password", onchange: "onInputChange", onkeyup: "onInputKey", onkeydown: "onInputKey" }
 });
 
-//* @public
 enyo.kind({
   name: "widgets.EmailWidget",
   kind: "widgets.Widget",
   //* @protected
-  inputKind: { kind: "onyx.InputDecorator", components: [
-      { name: "input", kind: "onyx.Input", type: "email", onchange: "onInputChange", onkeyup: "onInputKey", onkeydown: "onInputKey" }
-    ]}
+  inputKind: { name: "input", kind: "enyo.Input", type: "email", onchange: "onInputChange", onkeyup: "onInputKey", onkeydown: "onInputKey" }
 });
 
 //* @public
@@ -160,7 +165,7 @@ enyo.kind({
   name: "widgets.CheckboxWidget",
   kind: "widgets.Widget",
   //* @protected
-  inputKind: { name: "input", kind: "onyx.Checkbox", onchange: "onInputChange" }
+  inputKind: { name: "input", kind: "enyo.Checkbox", onchange: "onInputChange" }
 });
 
 //* @public
@@ -178,45 +183,40 @@ enyo.kind({
     this.inherited(arguments);
     this.setChoices(this.choices);
   },
-  inputKind: {kind: "onyx.PickerDecorator", components: [
-    {},
-    { name: "input",
-      kind: "onyx.Picker",
-      components: []
-    }
-  ]},
+  inputKind: { name: "input", kind: "enyo.Select" },
   setValue: function(val) {
     val = (val === null || val === undefined) ? this.nullValue : val;
     this.value = val;
     if (this.choicesIndex && this.choicesIndex[val]) this.$.input.setSelected(this.choicesIndex[val]);
   },
-  getValue: function() {
-    return this.value;
-  },
   choicesIndex: undefined,
   setChoices: function(val) {
+    // destroy any existing components
     if (this.choicesIndex) {
-      for (var k in this.choicesIndex) {
-        this.choicesIndex[k].destroy();
-      }
-      this.choicesIndex = undefined;
+      this.value = this.getValue();
+      this.$.input.destroyComponents();
     }
     // add unchosen choice if applicable
     if (!this.required || !this.initial) val.unshift([this.nullValue, this.unchosenText]);
-    var that = this;
+    var v = this.value;
     var choices = {};
+    var parent = this.$.input;
+    var i = 0;
     iterChoices = function(x) {
-      if (x[1] instanceof Array) x[1].forEach(iterChoices);
-      else {
-        choices[x[0]] = that.$.input.createComponent({ content: x[1], value: x[0], active: that.value===x[0]});
+      if (x[1] instanceof Array) {
+        parent = parent.createComponent({ tag: "optgroup", attributes: {label: x[0]} });
+        x[1].forEach(iterChoices);
+        parent = parent.parent;
+      } else {
+        parent.createComponent({ kind: "enyo.Option", content: x[1], value: x[0], active: v===x[0]});
+        choices[x[0]] = i++;
       }
     };
     val.forEach(iterChoices);
     this.choicesIndex = choices;
   },
-  handlers: { onSelect: "itemSelected" },
+  handlers: { onchange: "itemSelected" },
   itemSelected: function(inSender, inEvent) {
-    this.value = inEvent.originator.value;
     this.validate();
   }
 });
