@@ -2,7 +2,6 @@ enyo.depends(
 	"utils.js",
 	"Validators.js",
 	"Widgets.js",
-	"Widgets.onyx.js",
 	"Fields.js",
 	"ContainerWidgets.js",
 	"ContainerFields.js"

@@ -45,7 +45,7 @@ enyo.kind({
     this.inherited(arguments);
     //set initial value, if no value specified
     this.value = (this.value === undefined) ? this.initial : this.value;
-    // we are displaying this field, then create the widget.
+    // if we are displaying this field, then create the widget.
     if (this.display) {
       //prepare widget by creating or cloning the widget kind
       this.widget = enyo.clone((typeof(this.widget)=="string") ? { kind: this.widget } : this.widget);

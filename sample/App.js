@@ -8,13 +8,14 @@ enyo.kind({
   kind: "fields.ContainerField",
   schema: [
   { name: "label",
-    kind: "fields.ChoiceField",
+    kind: "fields.tbs.ChoiceField",
     choices: [['h', 'Home'], ['w', 'Work'], ['m', 'Mobile']],
-    widgetAttrs: { unchosenText: "label..." }
+    widgetAttrs: { label: "Label", compact: true },
+    inputClasses:"input-medium"
   },
   { name: "phone",
-    kind: "local.en.USPhoneNumberField",
-    widgetAttrs: {label: "Phone"}
+    kind: "local.en.tbs.USPhoneNumberField",
+    widgetAttrs: { label: "Number", compact: true }
   }]
 });
 
@@ -25,43 +26,44 @@ enyo.kind({
   kind: "fields.ContainerField",
   schema: [
     { name: "name",
-      kind: "fields.CharField",
+      kind: "fields.tbs.CharField",
       maxLength: 40,
-      widgetAttrs: { label: "Name" }
+      widgetAttrs: { label: "Name", style: "horizontal" }
     },
     { name: "phones",
-      kind: "fields.ListField",
-      widget: "widgets.ListWidget",
+      kind: "fields.tbs.ListField",
       schema: { kind: phoneField },
-      widgetAttrs: { label: "Phone Numbers" }
+      widgetAttrs: { label: "Phone Numbers", style: "horizontal" }
     },
     { name: "address",
-      kind: "local.en.USAddressField"
+      kind: "local.en.tbs.USAddressField",
+      widgetAttrs: { style: "horizontal" }
     },
     { name: "type",
-      kind: "fields.ChoiceField",
+      kind: "fields.tbs.ChoiceField",
       choices: [[0, "Friend"],[1, "Family"], [2, "Coworker"], [3, "Acquaintance"]],
-      widgetAttrs: { label: "Contact Type" }
+      widgetAttrs: { label: "Contact Type", style: "horizontal" }
 
     },
     { name: "private",
-      kind: "fields.BooleanField",
+      kind: "fields.tbs.BooleanField",
       required: false,
-      widgetAttrs: { label: "Private", initial: true }
+      widgetAttrs: { label: "Private", initial: true, style: "horizontal" }
     },
     { name: "emails",
-      kind: "fields.ListField",
-      widget: "widgets.ListWidget",
-      schema: { kind: "fields.EmailField", widgetAttrs: { label: "Email" }},
+      kind: "fields.tbs.ListField",
+      schema: { kind: "fields.tbs.EmailField", widgetAttrs: { label: "Email", compact: true } },
       widgetAttrs: {
-        containerControlKind: { kind: "enyo.Button", ontap: "addField", content: "Add Email" }
+        label: "Emails",
+        containerControlKind: { kind: "tbs.Button", ontap: "addField", content: "Add Email" },
+        style: "horizontal"
       }
     },
     { name: "children",
-      kind: "fields.IntegerField",
+      kind: "fields.tbs.IntegerField",
       maxValue: 30,
       minValue: 0,
-      widgetAttrs: { label: "# of Children", initial: 0 }
+      widgetAttrs: { label: "# of Children", initial: 0, style: "horizontal" }
     }
   ]
 });
@@ -92,14 +94,14 @@ enyo.kind({
   components: [
     { name: "topTB", kind: "onyx.Toolbar" },
     { kind: "Scroller", fit: true, components: [
-      { name: "contactsForm", kind: "fields.ListField",
+      { name: "contactsForm", kind: "fields.ListField", classes: "main-content form-horizontal",
         schema: { kind: "ContactField" },
         widget: "widgets.ListWidget",
         value: DATA,
         widgetAttrs: {
           label: "Contacts",
           helpText: "Add as many contacts as you like",
-          containerControlKind: { kind: "enyo.Button", ontap: "addField", content: "Add Contact" }
+          containerControlKind: { kind: "tbs.Button", ontap: "addField", content: "Add Contact" }
       }}
     ]},
     { kind: "onyx.Toolbar", components: [

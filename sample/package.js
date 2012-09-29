@@ -1,9 +1,11 @@
 enyo.depends(
 	"$lib/layout",
 	"$lib/onyx",
-	"../source/skins/default",
+	"../tbs-source",
+	"../source/skins/tbs",
 	"../source/localized/en/us_states.js",
 	"../source/localized/en/Fields.js",
+	"../source/localized/en/Fields.tbs.js",
 	"App.css",
 	"App.js"
 );

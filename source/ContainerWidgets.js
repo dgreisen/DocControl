@@ -9,14 +9,9 @@ enyo.kind({
     // whether this widget has a fixed height. If `true`, then a scroller is provided.
     // fixedHeight: false,
   },
-  components: [
-    { name: "label", tag: "label" },
-    { name: "helpText", tag: "p" },
-    { name: "fields", tag: "div" }
-  ],
-  generateComponents: function() {},
+  inputKind: { name: "fields", tag: "div" },
   labelChanged: function() {
-    this.$.label.setContent(this.label);
+    if (this.$.label) this.$.label.setContent(this.label);
   },
   getFields: function() {
     return this.$.fields.$;
@@ -31,7 +26,7 @@ enyo.kind({
     throw "BaseContainerWidget and its subclasses do not support toJSON; call BaseContainerField.toJSON()";
   },
   errorClass: "containererror",
-  fieldNameChanged: function() { return; }
+  fieldNameChanged: function() { return; },
 });
 
 
@@ -125,9 +120,6 @@ enyo.kind({
     this.containerControlKind = enyo.clone(this.containerControlKind);
     this.itemKind = enyo.clone(this.itemKind);
   },
-  generateComponents: function() {
-    if (this.containerControlKind) this.createComponent(this.containerControlKind);
-  },
   setValue: function(values) {
     if (!values) return;
     if (!(values instanceof Array)) throw "values must be an array";
@@ -158,7 +150,18 @@ enyo.kind({
   //* control named "_content".
   itemKind: { kind: "widgets.ListItem" },
   //* kind definition for list controls. defaults to an add button
-  containerControlKind: { kind: "enyo.Button", ontap: "addField", content: "Add" }
+  containerControlKind: { kind: "enyo.Button", ontap: "addField", content: "Add" },
+  //* skin: skin with twitter bootstrap. you must include a copy of the twitter bootstrap base css.
+  tbsSkin: function() {
+    this.containerControlKind = { kind: "tbs.Button", ontap: "addField", content: "Add" };
+    var comps = [this.helpKind, this.inputKind, this.containerControlKind];
+    if (this.style == "horizontal") comps = [{ tag:"div", classes:"controls", components: comps }];
+    if (this.label && !this.compact) comps.unshift(this.labelKind);
+    this.createComponents(comps);
+    this.addClass("control-group");
+    if (this.$.helpText) this.$.helpText.addClass("help-block");
+    if (this.$.label) this.$.label.addClass("control-label");
+  }
 });
 
 

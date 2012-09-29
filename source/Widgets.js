@@ -16,8 +16,11 @@ enyo.kind({
     validationInstant: false,
     //* whether to display the widget in its compact form TODO: only partially implemented
     compact: false,
+    //* a string designating a widget style. choices and implementation depends skin.
     //* function for skinning this widget
     skin: "defaultSkin",
+    //* a string of space-separated classes to apply to the input component
+    inputClasses: "",
     //* @protected
     //* whether this widget requires a value; inherited from field
     required: true,
@@ -39,6 +42,7 @@ enyo.kind({
   create: function() {
     this.inherited(arguments);
     this.generateComponents(); // generate the widget components
+    if (this.$.input) this.$.input.addClass(this.inputClasses);
     this.labelChanged();
     this.setValue(this.value, true);
     this.helpTextChanged();
@@ -52,16 +56,16 @@ enyo.kind({
   //* Useful for subclassing. The kind definition for the representation of the label. `name` must remain 'label'.
   labelKind: { name: "label", tag: "label" },
   //* useful for subclassing. The kind definition for the actual input component. You can use as much chrome as you like, but the input should be named `input` to use the default get/setValue machinery. You should also specify any handlers here. They should generally point to `onInputChange` for events equivalent to `onblur`, and to `onInputKey` for events equivalent to `onkeyup`
-  inputKind: { name: "input", kind: "enyo.Input", onchange: "onInputChange", onkeyup: "onInputKey", onkeydown: "onInputKey" },
+  inputKind: { name: "input", kind: "enyo.Input", type: "text", onchange: "onInputChange", onkeyup: "onInputKey", onkeydown: "onInputKey" },
   //* useful for subclassing. The kind definition for the help text. `name` must remain 'helpText'.
-  helpKind: { name: "helpText", tag: "p" },
+  helpKind: { name: "helpText", tag: "span" },
   //* useful for subclassing. override this function to rearrange the order of the various kinds making up a widget.
   generateComponents: function() {
-  this.labelKind = enyo.clone(this.labelKind);
-  this.inputKind = enyo.clone(this.inputKind);
-  this.helpKind = enyo.clone(this.helpKind);
-  if (typeof(this.skin) == "string") {
-      this[this.skin]();
+    this.labelKind = enyo.clone(this.labelKind);
+    this.inputKind = enyo.clone(this.inputKind);
+    this.helpKind = enyo.clone(this.helpKind);
+    if (typeof(this.skin) == "string") {
+        this[this.skin]();
     } else {
       this.skin.call(this);
     }
@@ -92,7 +96,7 @@ enyo.kind({
   labelChanged: function() {
     if (this.compact) {
       this.$.input.setPlaceholder(this.label);
-    } else {
+    } else if (this.$.label) {
       this.$.label.setContent(this.label);
     }
   },
@@ -114,7 +118,7 @@ enyo.kind({
   },
   fieldNameChanged: function() {
     this.$.input.setAttribute("name", this.fieldName);
-    this.$.label.setAttribute("for", this.fieldName);
+    if (this.$.label) this.$.label.setAttribute("for", this.fieldName);
     this.render();
   },
   //* @public
@@ -137,14 +141,32 @@ enyo.kind({
   alwaysValidation: function() {
     this.doRequestValidation();
   },
-  //* skin: default skin with simple display
-  //* you must include `DocControl/skins/default` in your package.js
+  //* skin: default skin with no css
   defaultSkin: function() {
-    this.createComponents([this.labelKind, this.inputKind, this.helpKind]);
-    this.addClass('ctrlHolder');
-    this.$.helpText.addClass('formHint');
+    var comps = [this.inputKind, this.helpKind];
+    if (this.label && !this.compact) comps.unshift(this.labelKind);
+    this.createComponents(comps);
+  },
+  //* skin: skin with twitter bootstrap. you must include a copy of the twitter bootstrap base css.
+  tbsSkin: function() {
+    var comps = [this.inputKind, this.helpKind];
+    if (this.style == "horizontal") comps = [{ tag:"div", classes:"controls", components: comps }];
+    if (this.label && !this.compact) comps.unshift(this.labelKind);
+    this.createComponents(comps);
+    if (this.$.helpText) {
+      if (this.style == "horizontal" || this.compact) {
+        this.$.helpText.addClass("help-inline");
+      } else {
+        this.$.helpText.addClass("help-block");
+      }
+    }
+    this.addClass("control-group");
+    if (this.$.label) this.$.label.addClass("control-label");
   }
 });
+
+
+
 
 enyo.kind({
   name: "widgets.PasswordWidget",
@@ -189,8 +211,17 @@ enyo.kind({
     this.value = val;
     if (this.choicesIndex && this.choicesIndex[val]) this.$.input.setSelected(this.choicesIndex[val]);
   },
+  labelChanged: function() {
+    if (this.compact) {
+      this.unchosenText = this.label;
+      if (this.choicesIndex) this.setChoices(this.choices);
+    } else if (this.$.label) {
+      this.$.label.setContent(this.label);
+    }
+  },
   choicesIndex: undefined,
   setChoices: function(val) {
+    this.choices = enyo.clone(val);
     // destroy any existing components
     if (this.choicesIndex) {
       this.value = this.getValue();
