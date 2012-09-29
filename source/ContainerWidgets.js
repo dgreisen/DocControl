@@ -46,10 +46,6 @@ enyo.kind({
   setSchema: function(schema) {
     this.$.fields.destroyComponents();
     this.$.fields.createComponents(schema);
-    this.setValidatedOnce(this.validatedOnce);
-  },
-  setValidatedOnce: function(val) {
-    this.fields.forEach(function(x) {if (x.display) x.$.widget.setValidatedOnce(val);});
   },
   listFields: function() {
     return this.$.fields.children;
@@ -87,7 +83,7 @@ enyo.kind({
     // add new fields with properly set `validatedOnce` and `value`
     for (i = 0; i < val.length; i++) {
       kind = enyo.clone(this.schema);
-      kind = enyo.mixin(kind, {value: val[i], validatedOnce: this.validatedOnce});
+      kind = enyo.mixin(kind, {value: val[i]});
       kinds.push(kind);
     }
     this.$.fields.createComponents(kinds);

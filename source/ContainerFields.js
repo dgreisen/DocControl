@@ -32,8 +32,8 @@ enyo.kind({
     invalid: _i('Please fix the errors indicated below.')
   },
   create: function() {
+    this.invalidFields = {};
     this.inherited(arguments);
-    this.invalidFields = enyo.clone(this.invalidFields);
   },
   handlers: {
     //* when an `onValidation` event is received we update the container's state to reflect it's subfield's validation state
@@ -44,11 +44,18 @@ enyo.kind({
   // add the field to `fields`.
   handleFieldRegistration: function(inSender, inEvent) {
     if (!this.fields) this.resetFields();
-    field = inEvent.originator;
+    var field = inEvent.originator;
     if (field != this) {
+      // set initial values (registration occurs before subfield creation)
+      this.initializeSubfield(field);
+      // add the field to index of subfields
       this.getFields().push(field);
       return true;
     }
+  },
+  //set initial values of subfields; registration of a subfield, when this function is called, occurs before subfield creation, so we can modify the field as much as we want here.
+  initializeSubfield: function(field) {
+    field.validatedOnce = this.validatedOnce;
   },
   // hash of invalid subfields (to prevent duplication)
   invalidFields: {},
@@ -94,7 +101,7 @@ enyo.kind({
   },
   resetFields: function() {
     this.fields = [];
-    if (this.display) this.$.widget.fields = this.fields;
+    if (this.$.widget) this.$.widget.fields = this.fields;
   },
   schemaChanged: function() {
     this.resetFields();
@@ -154,10 +161,9 @@ enyo.kind({
     return out;
   },
   //* @protected
-  create: function() {
+  initializeSubfield: function(field) {
     this.inherited(arguments);
-    // unlike all other fields, we cannot set values on widgets and subfields prior to creation. so we must do it after.
-    this.setValue(this.value);
+    field.value = this.value[field.name];
   },
   validate: function(value) { return value; },
   getValue: function() {

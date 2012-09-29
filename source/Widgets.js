@@ -204,6 +204,7 @@ enyo.kind({
   create: function() {
     this.inherited(arguments);
     this.setChoices(this.choices);
+    this.setValue(this.value);
   },
   inputKind: { name: "input", kind: "enyo.Select" },
   setValue: function(val) {
@@ -239,7 +240,7 @@ enyo.kind({
         x[1].forEach(iterChoices);
         parent = parent.parent;
       } else {
-        parent.createComponent({ kind: "enyo.Option", content: x[1], value: x[0], active: v===x[0]});
+        parent.createComponent({ kind: "enyo.Option", content: x[1], value: x[0] });
         choices[x[0]] = i++;
       }
     };

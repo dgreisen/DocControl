@@ -43,22 +43,14 @@ enyo.kind({
     // all fields were sharing the same validators list
     this.validators = enyo.cloneArray(this.validators);
     this.inherited(arguments);
+    // send event to register this field with it's container
+    this.doFieldRegistration();
     //set initial value, if no value specified
     this.value = (this.value === undefined) ? this.initial : this.value;
     // if we are displaying this field, then create the widget.
     if (this.display) {
-      //prepare widget by creating or cloning the widget kind
-      this.widget = enyo.clone((typeof(this.widget)=="string") ? { kind: this.widget } : this.widget);
-      // then add widget attributes
-      var widgetAttrs = enyo.mixin(enyo.clone(this.widgetAttrs), {name: "widget", required: this.required, value: this.value, fieldName: this.getName() });
-      this.widget = enyo.mixin(this.widget, widgetAttrs);
-      // call prepareWidget, which is implemented by subclasses.
-      this.prepareWidget();
-      // create the component
-      this.createComponent(this.widget);
+      this.widgetChanged();
     }
-    // send event to register this field with it's container
-    this.doFieldRegistration();
   },
   handlers: {
     //* a widget will request validation by sending an onRequestValidation event.
@@ -172,6 +164,17 @@ enyo.kind({
   //* useful for subclassing. set any needed attributes on `this.widget` kind definition before widget is created.
   prepareWidget: function() {},
   //* @protected
+  widgetChanged: function() {
+    //prepare widget by creating or cloning the widget kind
+    this.widget = enyo.clone((typeof(this.widget)=="string") ? { kind: this.widget } : this.widget);
+    // then add widget attributes
+    var widgetAttrs = enyo.mixin(enyo.clone(this.widgetAttrs), {name: "widget", required: this.required, value: this.value, fieldName: this.getName() });
+    this.widget = enyo.mixin(this.widget, widgetAttrs);
+    // call prepareWidget, which is implemented by subclasses.
+    this.prepareWidget();
+    // create the component
+    this.createComponent(this.widget);
+  },
   //* you cannot set `clean` manually
   setClean: function() { throw "clean not settable. use setValue, instead."; },
   requiredChanged: function() {

@@ -81,6 +81,7 @@ DATA = [
       state: "ND",
       zip: "00093"
     },
+    type: 0,
     children:3
   }
 ];
