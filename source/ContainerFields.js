@@ -35,7 +35,7 @@ enyo.kind({
     this.invalidFields = {};
     this.inherited(arguments);
     this.schemaChanged();
-    this.setValue(this.value);
+    // this.setValue(this.value);
   },
   handlers: {
     //* when an `onValidation` event is received we update the container's state to reflect it's subfield's validation state
@@ -58,6 +58,7 @@ enyo.kind({
   //set initial values of subfields; registration of a subfield, when this function is called, occurs before subfield creation, so we can modify the field as much as we want here.
   initializeSubfield: function(field) {
     field.validatedOnce = this.validatedOnce;
+    field.skin = this.skin;
   },
   // hash of invalid subfields (to prevent duplication)
   invalidFields: {},
@@ -72,8 +73,9 @@ enyo.kind({
     this.errors = (isEmpty(this.invalidFields)) ? [] : [this.errorMessages.invalid];
     return true;
   },
-  prepareWidget: function() {
-    this.widget.schema = this.schema;
+  prepareWidget: function(widget) {
+    widget.schema = this.schema;
+    return widget;
   },
   // custom isvalid method that validates all child fields as well.
   isValid: function() {
@@ -103,9 +105,12 @@ enyo.kind({
   },
   resetFields: function() {
     // if there are already fields, store their values for later reconstruction
-    // if (this.fields) this.value = this.getValue();
+    if (this.fields && this.fields.length) this.value = this.getValue();
     this.fields = [];
-    if (this.$.widget) this.$.widget.fields = this.fields;
+    if (this.$.widget) {
+      this.$.widget.fields = this.fields;
+      this.$.widget.$.fields.destroyComponents();
+    }
   },
   //* reset validation state of this field and all subfields.
   reset: function() {
@@ -163,7 +168,7 @@ enyo.kind({
   //* @protected
   initializeSubfield: function(field) {
     this.inherited(arguments);
-    field.value = this.value[field.name];
+    if (this.value) field.value = this.value[field.name];
   },
   schemaChanged: function() {
     this.resetFields();
@@ -212,7 +217,7 @@ enyo.kind({
 enyo.kind({
   name: "fields.ListField",
   kind: "fields.BaseContainerField",
-  widget: "widgets.BaseListWidget",
+  widget: "widgets.ListWidget",
   //* accepts an array, where each element in the array is the value for a subfield.
   //* if the optional value `reset` is truthy, then validation state will be reset.
   setValue: function(values, reset) {
@@ -222,7 +227,10 @@ enyo.kind({
     // add each field to widget, if it exists, or to field
     var that = (this.$.widget) ? this.$.widget : this;
     values.forEach(function(x) {that.addField(x);});
-    if (this.$.widget) this.$.widget.validate();
+    if (this.$.widget) {
+      this.$.widget.render();
+      this.$.widget.validate();
+    }
   },
   //* append a subfield to the ListField. If value is not specified, an empty subfield will be created
   addField: function(value) {
@@ -256,7 +264,9 @@ enyo.kind({
     }
   },
   schemaChanged: function() {
+    this.resetFields();
     if (this.$.widget) this.$.widget.setSchema(this.schema);
+    this.setValue(this.value);
   },
   getValue: function() {
     return this.getFields().map(function(x) {return x.getValue();});

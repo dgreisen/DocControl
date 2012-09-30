@@ -24,6 +24,8 @@ enyo.kind({
     errorMessages: {
       required: _i('This field is required.')
     },
+    //* a skin name
+    skin: "",
     //* display method.
     //*  <ul><li> `null` or `undefined`:  no widget</li>
     //* <li>"display": non-editable view of widget (not yet implemented) </li>
@@ -162,18 +164,27 @@ enyo.kind({
     return this.getClean();
   },
   //* useful for subclassing. set any needed attributes on `this.widget` kind definition before widget is created.
-  prepareWidget: function() {},
+  prepareWidget: function(widget) { return widget; },
   //* @protected
   widgetChanged: function() {
     //prepare widget by creating or cloning the widget kind
-    this.widget = enyo.clone((typeof(this.widget)=="string") ? { kind: this.widget } : this.widget);
+    var widget = enyo.clone((typeof(this.widget)=="string") ? { kind: this.widget } : this.widget);
+    
+    // replace the specified widget with a widget of the skin type, if it exists
+    if (this.skin) {
+      var kind = widget.kind.split('.');
+      kind.splice(1,0, this.skin);
+      var x = window;
+      for (var i=0; x && i < kind.length; i++) {x=x[kind[i]];}
+      if (x) widget.kind = kind.join('.');
+    }
     // then add widget attributes
-    var widgetAttrs = enyo.mixin(enyo.clone(this.widgetAttrs), {name: "widget", required: this.required, value: this.value, fieldName: this.getName() });
-    this.widget = enyo.mixin(this.widget, widgetAttrs);
+    var widgetAttrs = enyo.mixin(enyo.clone(this.widgetAttrs), {name: "widget", required: this.required, value: this.value, fieldName: this.getName(), skin: this.skin });
+    widget = enyo.mixin(widget, widgetAttrs);
     // call prepareWidget, which is implemented by subclasses.
-    this.prepareWidget();
+    widget = this.prepareWidget(widget);
     // create the component
-    this.createComponent(this.widget);
+    this.createComponent(widget);
   },
   //* you cannot set `clean` manually
   setClean: function() { throw "clean not settable. use setValue, instead."; },
@@ -436,8 +447,9 @@ enyo.kind({
   },
 
   //* this function creates the widget.
-  prepareWidget: function() {
-    this.widget.choices = this.choices;
+  prepareWidget: function(widget) {
+    widget.choices = this.choices;
+    return widget;
   },
   choicesChanged: function() {
     choices = {};

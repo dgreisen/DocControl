@@ -36,13 +36,7 @@ enyo.kind({
 //* @public
 enyo.kind({
   name: "widgets.onyx.ChoiceWidget",
-  kind: "widgets.Widget",
-  nullValue: "",
-  published: {
-    //* Text to show corresponding to undefined/null
-    //* will not be a choice if (1) initial value is present and (2) field is required.
-    unchosenText: "Pick One..."
-  },
+  kind: "widgets.ChoiceWidget",
   //* @protected
   create: function() {
     this.inherited(arguments);
@@ -55,11 +49,6 @@ enyo.kind({
       components: []
     }
   ]},
-  setValue: function(val) {
-    val = (val === null || val === undefined) ? this.nullValue : val;
-    this.value = val;
-    if (this.choicesIndex && this.choicesIndex[val]) this.$.input.setSelected(this.choicesIndex[val]);
-  },
   getValue: function() {
     return this.value;
   },

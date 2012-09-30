@@ -16,9 +16,10 @@ enyo.kind({
     validationInstant: false,
     //* whether to display the widget in its compact form TODO: only partially implemented
     compact: false,
-    //* a string designating a widget style. choices and implementation depends skin.
-    //* function for skinning this widget
-    skin: "defaultSkin",
+    //* a string designating a widget style. choices and implementation depends on skin.
+    style: "",
+    //* a skin name
+    skin: "",
     //* a string of space-separated classes to apply to the input component
     inputClasses: "",
     //* @protected
@@ -64,10 +65,11 @@ enyo.kind({
     this.labelKind = enyo.clone(this.labelKind);
     this.inputKind = enyo.clone(this.inputKind);
     this.helpKind = enyo.clone(this.helpKind);
-    if (typeof(this.skin) == "string") {
-        this[this.skin]();
+    // skin will actually generate the components
+    if (this[this.skin+"Skin"]) {
+      this[this.skin+"Skin"]();
     } else {
-      this.skin.call(this);
+      this.Skin();
     }
   },
   // handler called by input kind when it has changed, and the user has finished inputing - for example on an `onchange` or `onblur`
@@ -142,7 +144,7 @@ enyo.kind({
     this.doRequestValidation();
   },
   //* skin: default skin with no css
-  defaultSkin: function() {
+  Skin: function() {
     var comps = [this.inputKind, this.helpKind];
     if (this.label && !this.compact) comps.unshift(this.labelKind);
     this.createComponents(comps);
@@ -222,6 +224,7 @@ enyo.kind({
   },
   choicesIndex: undefined,
   setChoices: function(val) {
+    val = enyo.clone(val);
     this.choices = enyo.clone(val);
     // destroy any existing components
     if (this.choicesIndex) {

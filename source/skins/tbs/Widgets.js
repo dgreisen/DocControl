@@ -1,4 +1,11 @@
 enyo.kind({
+  name: "widgets.tbs.ListWidget",
+  kind: "widgets.ListWidget",
+  itemKind: { kind: "widgets.tbs.ListItem" },
+  containerControlKind: { kind: "tbs.Button", ontap: "addField", content: "Add" }
+});
+
+enyo.kind({
   name: "widgets.tbs.ListItem",
   kind: "widgets.ListItem",
   components: [
