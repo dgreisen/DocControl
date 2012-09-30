@@ -34,6 +34,8 @@ enyo.kind({
   create: function() {
     this.invalidFields = {};
     this.inherited(arguments);
+    this.schemaChanged();
+    this.setValue(this.value);
   },
   handlers: {
     //* when an `onValidation` event is received we update the container's state to reflect it's subfield's validation state
@@ -100,12 +102,10 @@ enyo.kind({
     throw "setFields not supported";
   },
   resetFields: function() {
+    // if there are already fields, store their values for later reconstruction
+    // if (this.fields) this.value = this.getValue();
     this.fields = [];
     if (this.$.widget) this.$.widget.fields = this.fields;
-  },
-  schemaChanged: function() {
-    this.resetFields();
-    if (this.display) this.$.widget.setSchema(this.schema);
   },
   //* reset validation state of this field and all subfields.
   reset: function() {
@@ -165,6 +165,13 @@ enyo.kind({
     this.inherited(arguments);
     field.value = this.value[field.name];
   },
+  schemaChanged: function() {
+    this.resetFields();
+    // create the schema in the widget, if it exists; otherwise direct on field.
+    var parent = (this.$.widget) ? this.$.widget.$.fields : this;
+    parent.destroyComponents();
+    parent.createComponents(this.schema);
+  },
   validate: function(value) { return value; },
   getValue: function() {
     var out = {};
@@ -212,8 +219,10 @@ enyo.kind({
     if (!values) return;
     if (!(values instanceof Array)) throw "values must be an array";
     this.resetFields();
-    this.$.widget.setValue(values);
-    if (reset) this.reset();
+    // add each field to widget, if it exists, or to field
+    var that = (this.$.widget) ? this.$.widget : this;
+    values.forEach(function(x) {that.addField(x);});
+    if (this.$.widget) this.$.widget.validate();
   },
   //* append a subfield to the ListField. If value is not specified, an empty subfield will be created
   addField: function(value) {
@@ -245,6 +254,9 @@ enyo.kind({
       this.errors = [interpolate(message, [this.schema.name || (typeof(this.schema.kind) == "string" && this.schema.kind.slice(0,-5)) || "item"])];
       return value;
     }
+  },
+  schemaChanged: function() {
+    if (this.$.widget) this.$.widget.setSchema(this.schema);
   },
   getValue: function() {
     return this.getFields().map(function(x) {return x.getValue();});

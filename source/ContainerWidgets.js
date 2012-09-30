@@ -27,6 +27,8 @@ enyo.kind({
   },
   errorClass: "containererror",
   fieldNameChanged: function() { return; },
+  // the value should always be set by the field.
+  setValue: function(values) {}
 });
 
 
@@ -36,23 +38,7 @@ enyo.kind({
 //* widget for _fields.ContainerField_
 enyo.kind({
   name: "widgets.ContainerWidget",
-  kind: "widgets.BaseContainerWidget",
-  //* @protected
-  // we must explicitly set the schema, which will create all subfields based on schema.
-  create: function() {
-    this.inherited(arguments);
-    this.setSchema(this.schema);
-  },
-  setSchema: function(schema) {
-    this.$.fields.destroyComponents();
-    this.$.fields.createComponents(schema);
-  },
-  listFields: function() {
-    return this.$.fields.children;
-  },
-  // the value should always be set by the field. cannot set value at creation b/c no way to know what value goes with
-  // which field until the fields are created and registered.
-  setValue: function(values) {}
+  kind: "widgets.BaseContainerWidget"
 });
 
 
@@ -70,24 +56,6 @@ enyo.kind({
   },
   getValue: function() {
     return this.listFields().map(function(x) {return x.getValue();});
-  },
-  setValue: function(val) {
-    if (!val) return;
-    if (!(val instanceof Array)) throw "val must be an array";
-    var i;
-
-    // remove existing fields.
-    this.$.fields.destroyComponents();
-
-    var kinds = [];
-    // add new fields with properly set `validatedOnce` and `value`
-    for (i = 0; i < val.length; i++) {
-      kind = enyo.clone(this.schema);
-      kind = enyo.mixin(kind, {value: val[i]});
-      kinds.push(kind);
-    }
-    this.$.fields.createComponents(kinds);
-    this.validate();
   },
   addField: function(value) {
     var kind = enyo.clone(this.schema);
@@ -115,18 +83,6 @@ enyo.kind({
     this.inherited(arguments);
     this.containerControlKind = enyo.clone(this.containerControlKind);
     this.itemKind = enyo.clone(this.itemKind);
-  },
-  setValue: function(values) {
-    if (!values) return;
-    if (!(values instanceof Array)) throw "values must be an array";
-    var i;
-
-    // remove existing fields.
-    this.$.fields.destroyComponents();
-
-    var that = this;
-    values.forEach(function(x) {that.addField(x);});
-    this.validate();
   },
   addField: function(value) {
     var kind = enyo.clone(this.itemKind);
