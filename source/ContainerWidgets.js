@@ -10,6 +10,7 @@ enyo.kind({
     // fixedHeight: false,
   },
   inputKind: { name: "fields", tag: "div" },
+  labelKind: { name: "label", classes: "widget-label container" },
   labelChanged: function() {
     if (this.$.label) this.$.label.setContent(this.label);
   },
@@ -102,18 +103,7 @@ enyo.kind({
   //* control named "_content".
   itemKind: { kind: "widgets.ListItem" },
   //* kind definition for list controls. defaults to an add button
-  containerControlKind: { kind: "enyo.Button", ontap: "addField", content: "Add" },
-  //* skin: skin with twitter bootstrap. you must include a copy of the twitter bootstrap base css.
-  tbsSkin: function() {
-    this.containerControlKind = { kind: "tbs.Button", ontap: "addField", content: "Add" };
-    var comps = [this.helpKind, this.inputKind, this.containerControlKind];
-    if (this.style == "horizontal") comps = [{ tag:"div", classes:"controls", components: comps }];
-    if (this.label && !this.compact) comps.unshift(this.labelKind);
-    this.createComponents(comps);
-    this.addClass("control-group");
-    if (this.$.helpText) this.$.helpText.addClass("help-block");
-    if (this.$.label) this.$.label.addClass("control-label");
-  }
+  containerControlKind: { kind: "enyo.Button", ontap: "addField", content: "Add" }
 });
 
 
@@ -121,12 +111,12 @@ enyo.kind({
 //* wrapper for subfields of a _widgets.ListWidget_. You can subclass and specify it in `ListWidget.itemKind`.
 enyo.kind({
   name: "widgets.ListItem",
-  kind: "enyo.Control",
+  kind: "enyo.FittableColumns",
   events: {
     onDelete: ""
   },
   components: [
-    { name: "_content", kind: "enyo.Control" },
+    { name: "_content", kind: "enyo.Control", fit: true },
     { kind: "enyo.Button", content: "Delete", ontap: "handleDelete" }
   ],
   // this function is here to be set as a handler on widget chrome in this.containerControl

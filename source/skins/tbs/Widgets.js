@@ -1,3 +1,51 @@
+// bootstrap skins
+
+widgets.Widget.prototype.tbs_defaultSkin = function() {
+  var comps = [this.inputKind, this.helpKind];
+  if (this.label && !this.compact) comps.unshift(this.labelKind);
+  this.createComponents(comps);
+  if (this.$.helpText) this.$.helpText.addClass("help-block");
+  this.addClass("control-group");
+  if (this.$.label) this.$.label.addClass("control-label");
+};
+
+widgets.Widget.prototype.tbs_horizontalSkin = function() {
+  var comps = [this.inputKind, this.helpKind];
+  comps = (!this.unnested) ? [{ tag:"div", classes:"controls", components: comps }] : comps;
+  if (this.label && !this.compact) comps.unshift(this.labelKind);
+  this.createComponents(comps);
+  if (this.$.helpText) this.$.helpText.addClass("help-inline");
+  this.addClass("control-group");
+  if (this.$.label) this.$.label.addClass("control-label");
+};
+
+
+widgets.ContainerWidget.prototype.tbs_horizontalSkin = function() {
+  this.addClass("horizontal-form");
+  if (!this.label) this.children[0].removeClass('controls');
+  this.createComponent(this.containerControlKind);
+};
+
+
+//* skin: skin with twitter bootstrap. you must include a copy of the twitter bootstrap base css.
+widgets.ListWidget.prototype.tbs_defaultSkin = function() {
+  this.containerControlKind = { kind: "tbs.Button", ontap: "addField", content: "Add" };
+  widgets.Widget.prototype.tbs_defaultSkin.call(this);
+};
+widgets.ListWidget.prototype.tbs_horizontalSkin = function() {
+  this.containerControlKind = { kind: "tbs.Button", ontap: "addField", content: "Add" };
+  
+  var comps = [this.helpKind, this.inputKind, this.containerControlKind];
+  comps = (!this.unnested) ? [{ tag:"div", classes:"controls", components: comps }] : comps;
+  if (this.label && !this.compact) comps.unshift(this.labelKind);
+  this.createComponents(comps);
+  if (this.$.helpText) this.$.helpText.addClass("help-inline");
+  this.addClass("control-group");
+  if (this.$.label) this.$.label.addClass("control-label");
+
+  this.createComponent(this.containerControlKind);
+};
+
 enyo.kind({
   name: "widgets.tbs.ListWidget",
   kind: "widgets.ListWidget",

@@ -9,19 +9,23 @@ enyo.kind({
     //* widget help text
     helpText: "",
     //* the validation strategy for this widget.
-    //* <ul><li>`"defaultValidation"` strategy does not validate on value change until field's getClean() called.</li>
-    //* <li>`"alwaysValidation"` strategy begins validating on widget creation.</li></ul>
-    validationStrategy: "defaultValidation",
+    //* <ul><li>`"default"` strategy does not validate on value change until field's getClean() called.</li>
+    //* <li>`"always"` strategy begins validating on widget creation.</li></ul>
+    validationStrategy: undefined,
     //* whether to validate every time the value changes or only when the user finishes editing the field (onchange)
-    validationInstant: false,
+    validationInstant: undefined,
     //* whether to display the widget in its compact form TODO: only partially implemented
     compact: false,
-    //* a string designating a widget style. choices and implementation depends on skin.
-    style: "",
-    //* a skin name
-    skin: "",
-    //* a string of space-separated classes to apply to the input component
-    inputClasses: "",
+    //* whether or not to save room for a label.
+    noLabel: undefined,
+    //* whether or not to save room for helpText
+    noHelpText: undefined,
+    //* positive integer size. regular is 3. skin handles converting unitless size into actual size.
+    size: 3,
+    //* a string designating a widget style. e.g. "onyx"
+    widgetSet: "",
+    //* the widgetSet skin to apply to the widget
+    skin: "default",
     //* @protected
     //* whether this widget requires a value; inherited from field
     required: true,
@@ -43,11 +47,9 @@ enyo.kind({
   create: function() {
     this.inherited(arguments);
     this.generateComponents(); // generate the widget components
-    if (this.$.input) this.$.input.addClass(this.inputClasses);
     this.labelChanged();
-    this.setValue(this.value, true);
-    this.helpTextChanged();
-    this.errorMessageChanged();
+    this.setValue(this.value);
+    this.writeHelpText();
     this.validChanged();
     this.fieldNameChanged();
   },
@@ -55,22 +57,20 @@ enyo.kind({
   //* useful for subclassing. The value to be stored when a null/undefined value is written to the field.
   nullValue: "",
   //* Useful for subclassing. The kind definition for the representation of the label. `name` must remain 'label'.
-  labelKind: { name: "label", tag: "label" },
+  labelKind: { name: "label", classes: "widget-label" },
   //* useful for subclassing. The kind definition for the actual input component. You can use as much chrome as you like, but the input should be named `input` to use the default get/setValue machinery. You should also specify any handlers here. They should generally point to `onInputChange` for events equivalent to `onblur`, and to `onInputKey` for events equivalent to `onkeyup`
   inputKind: { name: "input", kind: "enyo.Input", type: "text", onchange: "onInputChange", onkeyup: "onInputKey", onkeydown: "onInputKey" },
   //* useful for subclassing. The kind definition for the help text. `name` must remain 'helpText'.
-  helpKind: { name: "helpText", tag: "span" },
+  helpKind: { name: "helpText", classes: "widget-help" },
   //* useful for subclassing. override this function to rearrange the order of the various kinds making up a widget.
   generateComponents: function() {
     this.labelKind = enyo.clone(this.labelKind);
     this.inputKind = enyo.clone(this.inputKind);
     this.helpKind = enyo.clone(this.helpKind);
     // skin will actually generate the components
-    if (this[this.skin+"Skin"]) {
-      this[this.skin+"Skin"]();
-    } else {
-      this.Skin();
-    }
+    var widgetSet = this.widgetSet || "";
+    var skin = this[widgetSet+"_"+this.skin+"Skin"] || this[widgetSet+"_defaultSkin"] || this.defaultSkin;
+    skin.call(this);
   },
   // handler called by input kind when it has changed, and the user has finished inputing - for example on an `onchange` or `onblur`
   onInputChange: function() {
@@ -89,10 +89,11 @@ enyo.kind({
   //* @private
   //* validates the widget in accordance with the validation strategy.
   validate: function() {
-    if (typeof(this.validationStrategy) == "string") {
-      this[this.validationStrategy]();
+    var validationStrategy = this.validationStrategy || "default";
+    if (typeof(validationStrategy) == "string") {
+      this[validationStrategy+"Validation"]();
     } else {
-      this.validationStrategy.call(this);
+      validationStrategy.call(this);
     }
   },
   labelChanged: function() {
@@ -102,20 +103,29 @@ enyo.kind({
       this.$.label.setContent(this.label);
     }
   },
+  writeHelpText: function() {
+    if (!this.$.helpText) return;
+    if (this.errorMessage || this.helpText) {
+      this.$.helpText.removeClass("none");
+      this.$.helpText.setContent(this.errorMessage || this.helpText);
+    } else {
+      this.$.helpText.addClass("none");
+    }
+  },
   helpTextChanged: function() {
-    if (this.getValid()) this.$.helpText.setContent(this.helpText);
+    this.writeHelpText();
   },
   errorMessageChanged: function() {
-    if (!this.getValid()) this.$.helpText.setContent(this.errorMessage);
+    this.writeHelpText();
   },
   errorClass: "error",
   validChanged: function() {
     if (this.valid) {
       this.removeClass(this.errorClass);
-      this.$.helpText.setContent(this.helpText);
+      if (this.$.helpText) this.$.helpText.setContent(this.helpText);
     } else {
       this.addClass(this.errorClass);
-      this.$.helpText.setContent(this.errorMessage);
+      if (this.$.helpText) this.$.helpText.setContent(this.errorMessage);
     }
   },
   fieldNameChanged: function() {
@@ -126,7 +136,7 @@ enyo.kind({
   //* @public
   //* useful for subclassing.
   setValue: function(val) {
-    val = (val === null || val === undefined) ? this.nullValue : val;
+    var val = (val === null || val === undefined) ? this.nullValue : val;
     this.$.input.setValue(val);
   },
   //* useful for subclassing.
@@ -144,26 +154,10 @@ enyo.kind({
     this.doRequestValidation();
   },
   //* skin: default skin with no css
-  Skin: function() {
+  defaultSkin: function() {
     var comps = [this.inputKind, this.helpKind];
     if (this.label && !this.compact) comps.unshift(this.labelKind);
     this.createComponents(comps);
-  },
-  //* skin: skin with twitter bootstrap. you must include a copy of the twitter bootstrap base css.
-  tbsSkin: function() {
-    var comps = [this.inputKind, this.helpKind];
-    if (this.style == "horizontal") comps = [{ tag:"div", classes:"controls", components: comps }];
-    if (this.label && !this.compact) comps.unshift(this.labelKind);
-    this.createComponents(comps);
-    if (this.$.helpText) {
-      if (this.style == "horizontal" || this.compact) {
-        this.$.helpText.addClass("help-inline");
-      } else {
-        this.$.helpText.addClass("help-block");
-      }
-    }
-    this.addClass("control-group");
-    if (this.$.label) this.$.label.addClass("control-label");
   }
 });
 
@@ -210,7 +204,7 @@ enyo.kind({
   },
   inputKind: { name: "input", kind: "enyo.Select" },
   setValue: function(val) {
-    val = (val === null || val === undefined) ? this.nullValue : val;
+    var val = (val === null || val === undefined) ? this.nullValue : val;
     this.value = val;
     if (this.choicesIndex && this.choicesIndex[val]) this.$.input.setSelected(this.choicesIndex[val]);
   },
@@ -224,7 +218,7 @@ enyo.kind({
   },
   choicesIndex: undefined,
   setChoices: function(val) {
-    val = enyo.clone(val);
+    var val = enyo.clone(val);
     this.choices = enyo.clone(val);
     // destroy any existing components
     if (this.choicesIndex) {

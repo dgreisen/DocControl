@@ -58,7 +58,9 @@ enyo.kind({
   //set initial values of subfields; registration of a subfield, when this function is called, occurs before subfield creation, so we can modify the field as much as we want here.
   initializeSubfield: function(field) {
     field.validatedOnce = this.validatedOnce;
-    field.skin = this.skin;
+    field.parentField = this;
+    field.inherit("widgetSet");
+    field.inherit("widgetAttrs");
   },
   // hash of invalid subfields (to prevent duplication)
   invalidFields: {},
@@ -112,11 +114,6 @@ enyo.kind({
       this.$.widget.$.fields.destroyComponents();
     }
   },
-  //* reset validation state of this field and all subfields.
-  reset: function() {
-    this.inherited(arguments);
-    this.getFields().forEach(function(x) {x.reset();});
-  },
   throwValidationError: function() {
     // test for validity, throw error if not valid
     if (!this.isValid()) { throw this.errors; }
@@ -166,6 +163,11 @@ enyo.kind({
     return out;
   },
   //* @protected
+  //* reset validation state of this field and all subfields.
+  reset: function() {
+    this.inherited(arguments);
+    this.getFields().forEach(function(x) {x.reset();});
+  },
   initializeSubfield: function(field) {
     this.inherited(arguments);
     if (this.value) field.value = this.value[field.name];
@@ -223,6 +225,10 @@ enyo.kind({
   setValue: function(values, reset) {
     if (!values) return;
     if (!(values instanceof Array)) throw "values must be an array";
+    if (reset) {
+      this.validatedOnce = false;
+      this.reset();
+    }
     this.resetFields();
     // add each field to widget, if it exists, or to field
     var that = (this.$.widget) ? this.$.widget : this;
@@ -234,7 +240,14 @@ enyo.kind({
   },
   //* append a subfield to the ListField. If value is not specified, an empty subfield will be created
   addField: function(value) {
-    this.$.widget.addField(value);
+    if (this.$.widget) {
+      this.$.widget.addField(value);
+    } else {
+      var kind = enyo.clone(this.schema);
+      // if value is a component, then we are actually seeing inSender
+      if (value && !(value instanceof enyo.Component)) { kind.value = value; }
+      this.createComponent(kind);
+    }
   },
   //* remove the field at `index`.
   removeField: function(index) {
@@ -256,6 +269,11 @@ enyo.kind({
     return this.getFields().map(function(x) {return x.getErrors();});
   },
   //* @protected
+  widgetChanged: function() {
+    this.resetFields();
+    this.inherited(arguments);
+    this.setValue(this.value);
+  },
   validate: function(value) {
     if (!value.length && this.required) {
       var message = this.errorMessages.required;

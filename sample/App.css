@@ -4,12 +4,52 @@
 */
 .main-content {
 	max-width: 800px;
+	margin-top: 20px;
 	margin-left: auto;
 	margin-right: auto;
 }
 
-.containerControl {
 
+.widget-label {
+	width: 160px;
+	text-align: right;
+	margin-right: 20px;
+	line-height:38px;
+}
+
+.container.widget-label {
+	padding-top: 15px;
+}
+
+.widget {
+	margin-top: 15px;
+}
+
+.error {
+	border-color: #B94A48;
+	color: #B94A48;
+}
+
+.error .onyx-input-decorator {
+	border-color: #B94A48;
+}
+
+.widget-help {
+	margin-left: 10px;
+	padding-top: 9px;
+	color: #595959;
+}
+
+.error .widget-help {
+	color: #B94A48;	
+}
+
+.widget-help.none {
+	display:none;
+}
+
+.large {
+	width: 250px;
 }
 /*
 .error p, .containererror > p {
