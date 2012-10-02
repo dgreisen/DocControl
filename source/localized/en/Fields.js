@@ -147,9 +147,10 @@ enyo.kind({
   errorMessages: {
     invalid: _i('Enter a valid address.')
   },
-  streetField: { name: "street", kind: "fields.CharField", maxLength: 200, widgetAttrs: { label: "Street" } },
-  cityField: { name: "city", kind: "fields.CharField", maxLength: 50, widgetAttrs: { label: "City" } },
-  zipField: { name: "zip", kind: "local.en.USZipCodeField", widgetAttrs: { label: "Zip" }},
+  streetField: { name: "street", kind: "fields.CharField", maxLength: 200, widgetAttrs: { label: "Street", size: 4 } },
+  cityField: { name: "city", kind: "fields.CharField", maxLength: 50, widgetAttrs: { label: "City", size: 2 } },
+  zipField: { name: "zip", kind: "local.en.USZipCodeField", widgetAttrs: { label: "Zip", size: 1 }},
+  statePrefix: "local.en.",
   create: function() {
     this.schema = [];
     for (var i=0; i<this.streetLines; i++) {
@@ -160,7 +161,7 @@ enyo.kind({
       this.schema.push(street);
     }
     this.schema.push(this.cityField);
-    this.schema.push({ name: "state", kind: "local.en." + this.stateFieldType,  widgetAttrs: { label: "State" } });
+    this.schema.push({ name: "state", kind: this.statePrefix + this.stateFieldType,  widgetAttrs: { label: "State", size: 1 } });
     this.schema.push(this.zipField);
     this.inherited(arguments);
   }

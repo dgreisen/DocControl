@@ -2,11 +2,15 @@
 	Put anything you reference with "url()" in ../assets/
 	This way, you can minify your application, and just remove the "source" folder for production
 */
-
-#app {
-	padding: 16px;
+.main-content {
+	max-width: 800px;
+	margin-top: 20px;
+	margin-left: auto;
+	margin-right: auto;
 }
 
+
+/*
 .error p, .containererror > p {
 	color: red;
 }
@@ -14,3 +18,4 @@
 .error .onyx-input-decorator {
 	border-color: red;
 }
+*/

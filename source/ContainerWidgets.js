@@ -9,14 +9,10 @@ enyo.kind({
     // whether this widget has a fixed height. If `true`, then a scroller is provided.
     // fixedHeight: false,
   },
-  components: [
-    { name: "label", tag: "label" },
-    { name: "helpText", tag: "p" },
-    { name: "fields", tag: "div" }
-  ],
-  generateComponents: function() {},
+  inputKind: { name: "fields", tag: "div" },
+  labelKind: { name: "label", classes: "widget-label container" },
   labelChanged: function() {
-    this.$.label.setContent(this.label);
+    if (this.$.label) this.$.label.setContent(this.label);
   },
   getFields: function() {
     return this.$.fields.$;
@@ -31,7 +27,9 @@ enyo.kind({
     throw "BaseContainerWidget and its subclasses do not support toJSON; call BaseContainerField.toJSON()";
   },
   errorClass: "containererror",
-  fieldNameChanged: function() { return; }
+  fieldNameChanged: function() { return; },
+  // the value should always be set by the field.
+  setValue: function(values) {}
 });
 
 
@@ -41,27 +39,7 @@ enyo.kind({
 //* widget for _fields.ContainerField_
 enyo.kind({
   name: "widgets.ContainerWidget",
-  kind: "widgets.BaseContainerWidget",
-  //* @protected
-  // we must explicitly set the schema, which will create all subfields based on schema.
-  create: function() {
-    this.inherited(arguments);
-    this.setSchema(this.schema);
-  },
-  setSchema: function(schema) {
-    this.$.fields.destroyComponents();
-    this.$.fields.createComponents(schema);
-    this.setValidatedOnce(this.validatedOnce);
-  },
-  setValidatedOnce: function(val) {
-    this.fields.forEach(function(x) {if (x.display) x.$.widget.setValidatedOnce(val);});
-  },
-  listFields: function() {
-    return this.$.fields.children;
-  },
-  // the value should always be set by the field. cannot set value at creation b/c no way to know what value goes with
-  // which field until the fields are created and registered.
-  setValue: function(values) {}
+  kind: "widgets.BaseContainerWidget"
 });
 
 
@@ -79,24 +57,6 @@ enyo.kind({
   },
   getValue: function() {
     return this.listFields().map(function(x) {return x.getValue();});
-  },
-  setValue: function(val) {
-    if (!val) return;
-    if (!(val instanceof Array)) throw "val must be an array";
-    var i;
-
-    // remove existing fields.
-    this.$.fields.destroyComponents();
-
-    var kinds = [];
-    // add new fields with properly set `validatedOnce` and `value`
-    for (i = 0; i < values.length; i++) {
-      kind = enyo.clone(this.schema);
-      kind = enyo.mixin(kind, {value: values[i], validatedOnce: this.validatedOnce});
-      kinds.push(kind);
-    }
-    this.$.fields.createComponents(kinds);
-    this.validate();
   },
   addField: function(value) {
     var kind = enyo.clone(this.schema);
@@ -125,21 +85,6 @@ enyo.kind({
     this.containerControlKind = enyo.clone(this.containerControlKind);
     this.itemKind = enyo.clone(this.itemKind);
   },
-  generateComponents: function() {
-    if (this.containerControlKind) this.createComponent(this.containerControlKind);
-  },
-  setValue: function(values) {
-    if (!values) return;
-    if (!(values instanceof Array)) throw "values must be an array";
-    var i;
-
-    // remove existing fields.
-    this.$.fields.destroyComponents();
-
-    var that = this;
-    values.forEach(function(x) {that.addField(x);});
-    this.validate();
-  },
   addField: function(value) {
     var kind = enyo.clone(this.itemKind);
     var item = this.$.fields.createComponent(kind);
@@ -158,7 +103,7 @@ enyo.kind({
   //* control named "_content".
   itemKind: { kind: "widgets.ListItem" },
   //* kind definition for list controls. defaults to an add button
-  containerControlKind: { kind: "onyx.Button", ontap: "addField", content: "Add" }
+  containerControlKind: { kind: "enyo.Button", ontap: "addField", content: "Add" }
 });
 
 
@@ -166,13 +111,13 @@ enyo.kind({
 //* wrapper for subfields of a _widgets.ListWidget_. You can subclass and specify it in `ListWidget.itemKind`.
 enyo.kind({
   name: "widgets.ListItem",
-  kind: "enyo.Control",
+  kind: "enyo.FittableColumns",
   events: {
     onDelete: ""
   },
   components: [
-    { name: "_content", kind: "enyo.Control" },
-    { kind: "onyx.Button", content: "Delete", ontap: "handleDelete" }
+    { name: "_content", kind: "enyo.Control", fit: true },
+    { kind: "enyo.Button", content: "Delete", ontap: "handleDelete" }
   ],
   // this function is here to be set as a handler on widget chrome in this.containerControl
   handleDelete: function() {

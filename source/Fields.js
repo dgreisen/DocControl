@@ -24,11 +24,14 @@ enyo.kind({
     errorMessages: {
       required: _i('This field is required.')
     },
+    //* a string designating a widget style. e.g. "onyx", or "tbs"
+    widgetSet: undefined,
     //* display method.
-    //*  <ul><li> `null` or `undefined`:  no widget</li>
-    //* <li>"display": non-editable view of widget (not yet implemented) </li>
-    //* <li>"visible": standard edit widget</li></ul>
-    display: "visible"
+    //* <li>"view": non-editable view of widget (not yet implemented) </li>
+    //* <li>"edit": standard edit widget (default)</li></ul>
+    display: undefined,
+    //* whether a widget should be created for this field
+    noWidget: undefined
   },
   //* the initial value of the field.
   initial: undefined,
@@ -43,22 +46,12 @@ enyo.kind({
     // all fields were sharing the same validators list
     this.validators = enyo.cloneArray(this.validators);
     this.inherited(arguments);
-    //set initial value, if no value specified
-    this.value = (this.value === undefined) ? this.initial : this.value;
-    // we are displaying this field, then create the widget.
-    if (this.display) {
-      //prepare widget by creating or cloning the widget kind
-      this.widget = enyo.clone((typeof(this.widget)=="string") ? { kind: this.widget } : this.widget);
-      // then add widget attributes
-      var widgetAttrs = enyo.mixin(enyo.clone(this.widgetAttrs), {name: "widget", required: this.required, value: this.value, fieldName: this.getName() });
-      this.widget = enyo.mixin(this.widget, widgetAttrs);
-      // call prepareWidget, which is implemented by subclasses.
-      this.prepareWidget();
-      // create the component
-      this.createComponent(this.widget);
-    }
     // send event to register this field with it's container
     this.doFieldRegistration();
+    //set initial value, if no value specified
+    this.value = (this.value === undefined) ? this.initial : this.value;
+    // if we are displaying this field, then create the widget.
+    this.widgetChanged();
   },
   handlers: {
     //* a widget will request validation by sending an onRequestValidation event.
@@ -80,7 +73,7 @@ enyo.kind({
   //* reset the validation state of the field and associated widget.
   reset: function() {
     this.errors = [];
-    if (this.display) {
+    if (this.$.widget) {
       this.$.widget.setErrorMessage(this.errors[0]);
       this.$.widget.setValid(true);
       this.$.widget.validatedOnce = false;
@@ -147,7 +140,7 @@ enyo.kind({
     var valid = !Boolean(this.errors.length);
     this.clean = (valid) ? value : undefined;
     // if there is a widget, pass validation info
-    if (this.display) {
+    if (this.$.widget) {
       this.$.widget.setErrorMessage(this.errors[0]);
       this.$.widget.setValid(valid);
       this.$.widget.validatedOnce = true;
@@ -170,16 +163,56 @@ enyo.kind({
     return this.getClean();
   },
   //* useful for subclassing. set any needed attributes on `this.widget` kind definition before widget is created.
-  prepareWidget: function() {},
+  prepareWidget: function(widget) { return widget; },
+  //* value (must be a hash) is merged into existing widgetAttrs, overriding existing attributes, and adding new ones.
+  setWidgetAttrs: function(val) {
+    enyo.mixin(this.widgetAttrs, val);
+    this.widgetAttrsChanged();
+  },
   //* @protected
+  widgetChanged: function() {
+    // destroy existing widget
+    if (this.$.widget) this.destroyComponents();
+    // if no widget, return early
+    if (this.getNoWidget()) return;
+    //prepare widget by creating or cloning the widget kind
+    var widget = enyo.clone((typeof(this.widget)=="string") ? { kind: this.widget } : this.widget);
+    
+    // replace the specified widget with a widget of the widgetSet type, if it exists
+    if (this.getWidgetSet()) {
+      var kind = widget.kind.split('.');
+      kind.splice(1,0, this.getWidgetSet());
+      var x = window;
+      for (var i=0; x && i < kind.length; i++) {x=x[kind[i]];}
+      if (x) widget.kind = kind.join('.');
+    }
+    // then add widget attributes
+    var widgetAttrs = enyo.mixin(enyo.clone(this.getWidgetAttrs()), {name: "widget", required: this.required, value: this.value, fieldName: this.getName(), widgetSet: this.getWidgetSet() });
+    widget = enyo.mixin(widget, widgetAttrs);
+    // call prepareWidget, which is implemented by subclasses.
+    widget = this.prepareWidget(widget);
+    // create the component
+    this.createComponent(widget);
+  },
+  getWidgetSet: function() {
+    var out = (this.widgetSet === undefined && this.parentField) ? this.parentField.getWidgetSet() : this.widgetSet;
+    return out;
+  },
+  noWidgetChanged: function() {
+    this.widgetChanged();
+  },
+  getNoWidget: function() {
+    var out = (this.noWidget === undefined && this.parentField) ? this.parentField.getNoWidget() : this.noWidget;
+    return out;
+  },
   //* you cannot set `clean` manually
   setClean: function() { throw "clean not settable. use setValue, instead."; },
   requiredChanged: function() {
-    if (this.display) this.$.widget.setRequired(this.required);
+    if (this.$.widget) this.$.widget.setRequired(this.required);
   },
   //* You should not have to override this in Field subclasses
   setValue: function(val) {
-    if (this.display && val != this.getValue()) {
+    if (this.$.widget && val != this.getValue()) {
       this.$.widget.setValue(val);
     } else {
       this.value = val;
@@ -187,23 +220,31 @@ enyo.kind({
   },
   //* You should not have to override this in Field subclasses
   getValue: function() {
-    if (this.display) {
+    if (this.$.widget) {
       return this.$.widget.getValue();
     } else {
       return this.value;
     }
   },
   getWidget: function() {
-    return (this.display) ? this.$.widget : null;
+    return (this.$.widget) ? this.$.widget : null;
   },
   //* helper function for setting widget attributes on a field for quick definition of a complete schema
-  setWidgetAttrs: function(attrs) {
-    var k;
-    for (k in attrs) {
-      var v = attrs[k];
-      k = "set" + k[0].toUpperCase()+k.substring(1);
-      this.$.widget[k](v);
+  widgetAttrsChanged: function() {
+    this.widgetChanged();
+  },
+  getWidgetAttrs: function() {
+    var out = {};
+    if (this.parentField && this.parentField.getWidgetAttrs()) {
+      var pwa = this.parentField.getWidgetAttrs();
+      enyo.mixin(out, { skin: pwa.skin, validationStrategy: pwa.validationStrategy, validationInstant: pwa.validationInstant });
     }
+    if (this.widgetAttrs) enyo.mixin(out, this.widgetAttrs);
+    return out;
+  },
+  //* handles inheritence - passed a hash of values. if an attribute is undefined, the value from the hash is used.
+  //* also performs inheritence for widgetAttrs in same fashion.
+  inherit: function(attr) {
   }
 });
 
@@ -268,7 +309,7 @@ enyo.kind({
   parseFn: parseInt,
   regex: /^-?\d*$/,
   toJavascript: function(value) {
-    if (!value.match(this.regex)) {
+    if (typeof(value) == "string" && !value.match(this.regex)) {
       this.errors.push(this.errorMessages['invalid']);
       return;
     }
@@ -433,8 +474,9 @@ enyo.kind({
   },
 
   //* this function creates the widget.
-  prepareWidget: function() {
-    this.widget.choices = this.choices;
+  prepareWidget: function(widget) {
+    widget.choices = this.choices;
+    return widget;
   },
   choicesChanged: function() {
     choices = {};
