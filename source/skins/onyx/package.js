@@ -1,3 +1,4 @@
 enyo.depends(
-	"Widgets.js"
+	"Widgets.js",
+	"style.css"
 );
