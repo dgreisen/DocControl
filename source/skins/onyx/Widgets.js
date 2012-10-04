@@ -64,8 +64,11 @@ enyo.kind({
   create: function() {
     this.inputKind = { components: [{ name: "input", kind: "onyx.Checkbox", onchange: "onInputChange", value: this.value }]};
     this.inherited(arguments);
-  },
+    if (this.$.label) this.$.label.addClass("checkbox");
+    if (this.$.helpText) this.$.helpText.addClass("checkbox");
+  }
 });
+
 
 //* @public
 enyo.kind({
@@ -83,7 +86,6 @@ enyo.kind({
       components: []
     }
   ]},
-  labelKind: { name: "label", classes: "widget-label", style: "line-height:42px;" },
   getValue: function() {
     return this.value;
   },
@@ -114,8 +116,59 @@ enyo.kind({
     this.validate();
   },
   defaultSkin: function() {
-    widgets.Widget.prototype.defaultSkin.call(this);
+    this.inherited(arguments);
     this.$.pickerButton.setStyle("width:"+(this.size*70+8)+"px;");
+    if (this.$.label) this.$.label.addClass("picker");
+    if (this.$.helpText) this.$.helpText.addClass("picker");
+  }
+});
+
+
+enyo.kind({
+  name: "widgets.onyx.ChoiceCheckWidget",
+  kind: "widgets.onyx.ChoiceWidget",
+  //* @protected
+  create: function() {
+    this.inherited(arguments);
+    this.setChoices(this.choices);
+  },
+  inputKind: { name: "input", kind: "Group", classes: "onyx-sample-tools group", onActivate:"itemSelected", highlander: true, components: []},
+  itemKind: {kind:"FittableColumns", style: "padding-top:15px;", components: [
+    { components: [{kind:"onyx.Checkbox", checked: true}]},
+    { classes: "widget-help checkbox", allowHtml: true }
+  ]},
+  labelKind: { name: "label", classes: "widget-label checkbox" },
+  setChoices: function(val) {
+    val = enyo.clone(val);
+    if (this.choicesIndex) {
+      this.$.input.destroyComponents();
+      this.choicesIndex = undefined;
+    }
+    var that = this;
+    var choices = {};
+    iterChoices = function(x, i) {
+      if (x[1] instanceof Array) x[1].forEach(iterChoices);
+      else {
+        var comp = enyo.clone(that.itemKind);
+        comp.components[0].components[0].value = x[0];
+        comp.components[0].components[0].checked = (that.value === x[0]);
+        comp.components[1].content = x[1];
+        if (!i) delete comp.style;
+        choices[x[0]] = that.$.input.createComponent(comp).children[0].children[0];
+      }
+    };
+    val.forEach(iterChoices);
+    this.choicesIndex = choices;
+  },
+  setValue: function(val) {
+    var val = (val === null || val === undefined) ? this.nullValue : val;
+    this.value = val;
+    if (this.choicesIndex && this.choicesIndex[val]) this.choicesIndex[val].setActive();
+  },
+  defaultSkin: function() {
+    widgets.Widget.prototype.defaultSkin.call(this);
+    if (this.$.label) this.$.input.setStyle("width:");
+    if (this.$.helpText) this.$.label.addClass("checkbox");
   }
 });
 

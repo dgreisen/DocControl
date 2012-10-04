@@ -45,7 +45,6 @@ enyo.kind({
       kind: "fields.ChoiceField",
       choices: [[0, "Friend"],[1, "Family"], [2, "Coworker"], [3, "Acquaintance"]],
       widgetAttrs: { label: "Contact Type" }
-
     },
     { name: "private",
       kind: "fields.BooleanField",

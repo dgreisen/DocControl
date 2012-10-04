@@ -61,7 +61,7 @@ enyo.kind({
   //* useful for subclassing. The kind definition for the actual input component. You can use as much chrome as you like, but the input should be named `input` to use the default get/setValue machinery. You should also specify any handlers here. They should generally point to `onInputChange` for events equivalent to `onblur`, and to `onInputKey` for events equivalent to `onkeyup`
   inputKind: { name: "input", kind: "enyo.Input", type: "text", onchange: "onInputChange", onkeyup: "onInputKey", onkeydown: "onInputKey" },
   //* useful for subclassing. The kind definition for the help text. `name` must remain 'helpText'.
-  helpKind: { name: "helpText", classes: "widget-help" },
+  helpKind: { name: "helpText", classes: "widget-help", allowHtml: true },
   //* useful for subclassing. override this function to rearrange the order of the various kinds making up a widget.
   generateComponents: function() {
     this.labelKind = enyo.clone(this.labelKind);

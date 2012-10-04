@@ -10,7 +10,7 @@ enyo.kind({
     // fixedHeight: false,
   },
   inputKind: { name: "fields", tag: "div" },
-  labelKind: { name: "label", classes: "widget-label container" },
+  labelKind: { style: "padding-top:15px;", components: [{ name: "label", classes: "widget-label" }] },
   labelChanged: function() {
     if (this.$.label) this.$.label.setContent(this.label);
   },
