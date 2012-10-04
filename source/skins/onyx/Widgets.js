@@ -137,7 +137,7 @@ enyo.kind({
     this.setChoices(this.choices);
   },
   inputKind: { name: "input", kind: "Group", classes: "onyx-sample-tools group", onActivate:"itemSelected", highlander: true, components: []},
-  itemKind: {kind:"FittableColumns", style: "padding-top:15px;", components: [
+  itemKind: {kind:"FittableColumns", style: "padding-top:5px;", components: [
     { components: [{kind:"onyx.Checkbox", checked: true}]},
     { classes: "widget-help checkbox", allowHtml: true }
   ]},

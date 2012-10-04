@@ -48,6 +48,7 @@ enyo.kind({
     this.inherited(arguments);
     this.generateComponents(); // generate the widget components
     this.labelChanged();
+    this.value = (this.value === undefined) ? this.initial : this.value;
     this.setValue(this.value);
     this.writeHelpText();
     this.validChanged();
