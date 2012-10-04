@@ -48,6 +48,7 @@ enyo.kind({
     this.inherited(arguments);
     this.generateComponents(); // generate the widget components
     this.labelChanged();
+    this.requiredChanged();
     this.value = (this.value === undefined) ? this.initial : this.value;
     this.setValue(this.value);
     this.writeHelpText();
@@ -64,6 +65,7 @@ enyo.kind({
   //* useful for subclassing. The kind definition for the help text. `name` must remain 'helpText'.
   helpKind: { name: "helpText", classes: "widget-help", allowHtml: true },
   //* useful for subclassing. override this function to rearrange the order of the various kinds making up a widget.
+  requiredKind: { name: "required", content: "*", allowHtml: true, classes:"widget-required" },
   generateComponents: function() {
     this.labelKind = enyo.clone(this.labelKind);
     this.inputKind = enyo.clone(this.inputKind);
@@ -116,6 +118,14 @@ enyo.kind({
   helpTextChanged: function() {
     this.writeHelpText();
   },
+  requiredChanged: function() {
+    if (!this.$.required) return;
+    if (this.required) {
+      this.$.required.show();
+    } else {
+      this.$.required.hide();
+    }
+  },
   errorMessageChanged: function() {
     this.writeHelpText();
   },
@@ -156,7 +166,7 @@ enyo.kind({
   },
   //* skin: default skin with no css
   defaultSkin: function() {
-    var comps = [this.inputKind, this.helpKind];
+    var comps = [this.inputKind, this.requiredKind, this.helpKind];
     if (this.label && !this.compact) comps.unshift(this.labelKind);
     this.createComponents(comps);
   }

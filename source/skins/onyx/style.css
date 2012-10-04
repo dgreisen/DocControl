@@ -24,11 +24,17 @@
 	color: #595959;
 }
 
+.widget-required {
+	font-weight: bold;
+	padding: 6px;
+}
+
 .widget-help em {
 	font-weight: normal;
 	font-style: normal;
 	color: black;
 }
+
 .widget-help.checkbox, .widget-label.checkbox {
 	padding-top: 6px;
 }

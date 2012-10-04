@@ -1,5 +1,5 @@
 widgets.Widget.prototype.onyx_defaultSkin = function() {
-  var components = [this.inputKind];
+  var components = [this.inputKind, this.requiredKind];
   if (!this.noHelpText) {
     var helpKind = enyo.clone(this.helpKind);
     helpKind.fit = true;
