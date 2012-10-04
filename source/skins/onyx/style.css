@@ -2,11 +2,7 @@
 	width: 160px;
 	text-align: right;
 	margin-right: 20px;
-	line-height:38px;
-}
-
-.container.widget-label {
-	padding-top: 15px;
+	padding-top: 9px;
 }
 
 .widget {
@@ -26,6 +22,19 @@
 	margin-left: 10px;
 	padding-top: 9px;
 	color: #595959;
+}
+
+.widget-help em {
+	font-weight: normal;
+	font-style: normal;
+	color: black;
+}
+.widget-help.checkbox, .widget-label.checkbox {
+	padding-top: 6px;
+}
+
+.widget-help.picker, .widget-label.picker {
+	padding-top: 11px;
 }
 
 .error .widget-help {
