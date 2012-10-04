@@ -119,6 +119,7 @@ enyo.kind({
     this.writeHelpText();
   },
   requiredChanged: function() {
+    this.validate();
     if (!this.$.required) return;
     if (this.required) {
       this.$.required.show();
