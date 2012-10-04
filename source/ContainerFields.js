@@ -162,6 +162,10 @@ enyo.kind({
     this.getFields().forEach(function(x) { if (x.getErrors()) out[x.getName()] = x.getErrors(); });
     return out;
   },
+  //* get a subfield by name
+  getField: function(val) {
+    for (var i=0; i < this.fields.length; i++) { if (this.fields[i].name == val) return this.fields[i]; }
+  },
   //* @protected
   //* reset validation state of this field and all subfields.
   reset: function() {
@@ -267,6 +271,10 @@ enyo.kind({
   getErrors: function() {
     if (!this.errors.length) return null;
     return this.getFields().map(function(x) {return x.getErrors();});
+  },
+  //* get a subfield by index
+  getField: function(val) {
+    return this.fields[val];
   },
   //* @protected
   widgetChanged: function() {
