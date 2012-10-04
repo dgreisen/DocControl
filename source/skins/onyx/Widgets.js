@@ -1,4 +1,4 @@
-widgets.Widget.prototype.defaultSkin = function() {
+widgets.Widget.prototype.onyx_defaultSkin = function() {
   var components = [this.inputKind];
   if (!this.noHelpText) {
     var helpKind = enyo.clone(this.helpKind);
@@ -15,7 +15,7 @@ widgets.Widget.prototype.defaultSkin = function() {
   this.$.input.addStyles("width:"+(this.size*70-10)+"px;");
 };
 
-widgets.BaseContainerWidget.prototype.defaultSkin = function() {
+widgets.BaseContainerWidget.prototype.onyx_defaultSkin = function() {
   var components = [this.inputKind];
   if (!this.noHelpText) components.unshift(this.helpKind);
   if (this.containerControlKind) components.push(this.containerControlKind);
@@ -65,6 +65,10 @@ enyo.kind({
     this.inputKind = { components: [{ name: "input", kind: "onyx.Checkbox", onchange: "onInputChange", value: this.value }]};
     this.inherited(arguments);
   },
+  onyx_defaultSkin: function() {
+    this.inherited(arguments);
+    this.$.input.addStyles("width:");
+  }
 });
 
 //* @public
