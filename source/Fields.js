@@ -254,7 +254,12 @@ enyo.kind({
   //* handles inheritence - passed a hash of values. if an attribute is undefined, the value from the hash is used.
   //* also performs inheritence for widgetAttrs in same fashion.
   inherit: function(attr) {
+  },
+  //* terminate recursive path lookup
+  getPath: function(val) {
+    if (!val.length) return this;
   }
+
 });
 
 

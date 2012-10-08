@@ -26,6 +26,13 @@ enyo.kind({
     //* the list of subfields. This should *never* be set directly, but can be accessed via `getFields`.
     fields: undefined
   },
+  //* get a subfield by index, name or path
+  getPath: function(path) {
+    if (!path.length) return this;
+    var pathBit = path.shift();
+    var subfield = this.getField(pathBit);
+    if (subfield) return subfield.getPath(path);
+  },
   //* @protected
   errorMessages: {
     required: _i('There must be at least one %s.'),
@@ -163,7 +170,7 @@ enyo.kind({
     this.getFields().forEach(function(x) { if (x.getErrors()) out[x.getName()] = x.getErrors(); });
     return out;
   },
-  //* get a subfield by name
+  //* get a subfield by name or path
   getField: function(val) {
     for (var i=0; i < this.fields.length; i++) { if (this.fields[i].name == val) return this.fields[i]; }
   },
