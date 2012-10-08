@@ -59,6 +59,7 @@ enyo.kind({
   initializeSubfield: function(field) {
     field.validatedOnce = this.validatedOnce;
     field.parentField = this;
+    field.path = this.path.concat([this.getFields().length]);
     field.inherit("widgetSet");
     field.inherit("widgetAttrs");
   },
@@ -175,6 +176,7 @@ enyo.kind({
   initializeSubfield: function(field) {
     this.inherited(arguments);
     if (this.value) field.value = this.value[field.name];
+    field.path = this.path.concat([field.name]);
   },
   schemaChanged: function() {
     this.resetFields();

@@ -10,6 +10,13 @@ enyo.kind({
     required: true,
     //* the current value of the field
     value: undefined,
+    //* An array of the unique path to the field. A ListField's subfields are denoted by an integer representing the index of the subfield.
+    //* A ContainerField's subfields are denoted by a string or integer representing the key of the subfield.
+    //* Example:
+    //* {parent: {child1: hello, child2: [the, quick, brown, fox]}}
+    //* ["parent", "child2", 1] points to "quick"
+    //* [] points to {parent: {child1: hello, child2: [the, quick, brown, fox]}}
+    path: undefined,
     //* the cleaned value accessed via `getClean()`; raises error if invalid; this will be a javascript datatype and should be used for any calculations, etc. Use the toJSON() method to get a version appropriate for serialization.
     clean: undefined,
     //* a list of errors for this field.
@@ -45,6 +52,8 @@ enyo.kind({
   create: function() {
     // all fields were sharing the same validators list
     this.validators = enyo.cloneArray(this.validators);
+    // if the parent hasn't set the path, then it is a root field, so set to empty list
+    this.path = this.path || [];
     this.inherited(arguments);
     // send event to register this field with it's container
     this.doFieldRegistration();
