@@ -49,6 +49,7 @@ strip = (str) ->
 
 # generate a field from its schema
 genField = (schema, fields) ->  
+  if not fields[schema.field] then throw Error("Unknown field: "+ schema.field)
   return new fields[schema.field](schema)
 
 utils = 

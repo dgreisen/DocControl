@@ -48,7 +48,7 @@ Field = (function() {
     var sup;
     sup = this.constructor.__super__;
     if (sup != null) {
-      return utils.mixin(utils.clone(sup._walkProto(attr)), this.errorMessages);
+      return utils.mixin(utils.clone(sup._walkProto(attr)), this[attr]);
     } else {
       return this[attr];
     }
@@ -171,6 +171,14 @@ Field = (function() {
       return this.parent.getPath(this);
     } else {
       return [];
+    }
+  };
+
+  Field.prototype.getField = function(path) {
+    if (path.length > 0) {
+      return void 0;
+    } else {
+      return this;
     }
   };
 

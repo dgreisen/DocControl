@@ -36,67 +36,50 @@ class BaseContainerField extends fields.Field
     @value = @opts.value
     @setSchema(@opts.schema)
   handlers:
-    validChanged: "onValidChanged"
-    valueChanged: "onValueChanged"
-  # hash of invalid subfields (to prevent duplication)
-  _invalidFields: {}
-  # false - never been validated
-  # true - been validated in past
-  # "validating" - currently in a validation cycle
-  _validationState = false
-  # add/remove the field from `invalidFields` depending on if the field is invalid or valid, respectively
-  onValidChanged: (inSender, inEvent) ->
-    console.log "onValidChanged"
-    # only deal with events from immediate children and only if we've been validated before
-    if not inSender == inEvent.originator or not @_validationState 
-      return false
-    if inEvent.valid
-      delete @_invalidFields[inSender]
-      @_hasChanged = true
-      @isValid()
-    else if inSender not of @_invalidFields
-      @_invalidFields[inSender] = true
-      @_hasChanged = true
-      @isValid()
-    # we don't want to call @isValid if all that has changed is an error message
-    return false
+    valueChanged: "subfieldChanged"
+    validChanged: "subfieldChanged"
+  # if an immediate subfield has changed, then we want to perform validation next time inValid called
+  subfieldChanged: (inSender, inEvent) ->
+    if inSender == inEvent.originator then @_hasChanged = true
   # custom isvalid method that validates all child fields as well.
   isValid: () ->
-    if not @_hasChanged or @_validationState == "validating" then return @_valid
+    if not @_hasChanged then return @_valid
     # reset the errors array
     oldErrors = @errors
     @errors = []
-
-    # If there are marked invalidFields or we are unable to get the cleaned data, set an error message
-    if utils.isEmpty(@_invalidFields)
+    value = undefined
+    try
+      value = @_querySubfields("getClean")
+    catch e
+      @errors = [@errorMessages.invalid]
+    # run custom validation on the cleaned data
+    if not @errors.length then @validate(value)
+    # try again to get cleaned data if @validate modified subfields
+    if not @errors.length and @_hasChanged
       try
         value = @_querySubfields("getClean")
       catch e
-        @errors = [@errorMessages.invalid]
-    else 
-      @errors = [@errorMessages.invalid]
-
-    # run custom validation on the cleaned data
-    if not @errors.length then @validate(value)
-    # try once more to get cleaned data, incase @validate modified subfields
-    if not @errors.length
-      try
-        @clean = @_querySubfields("getClean")
-      catch e
-        @errors = [@errorMessages.invalid]
-
+        @errors.push(@errorMessages.invalid)
     valid = not @errors.length
+    @clean = if valid then value else undefined
     if valid != @_valid or not valid and not utils.isEqual(oldErrors, @errors)
       @emit("validChanged", valid: valid, errors: @errors)
       @_valid = valid
     @_hasChanged = false
-    @_validationState = true
     return valid
   # get data from each subfield `fn` and put it into the appropriate data structure
   _querySubfields: (fn, args...) ->
     return utils.map(@getFields(), (x) -> x[fn].apply(x, args))
   getFields: () ->
     return @_fields
+  # return an arbitrarily deep subfield given a path. Path can be an array
+  # of indexes/names, or it can be a dot-delimited string
+  getField: (path) ->
+    if typeof path == "string" then path = path.split "."
+    if path.length == 0 then return this
+    subfield = @_getField(path.shift())
+    if not subfield? then return undefined
+    return subfield.getField(path)
   resetFields: () ->
     # if there are already fields, store their values for later reconstruction
     if @_fields && @_fields.length then @value = @getValue()
@@ -107,7 +90,7 @@ class BaseContainerField extends fields.Field
     return @_querySubfields("getValue")
   getClean: () ->
     @throwValidationError()
-    return @_querySubfields("getClean")
+    return @clean
   toJSON: () ->
     @throwValidationError()
     return @_querySubfields("toJSON")
@@ -144,10 +127,10 @@ class ContainerField extends BaseContainerField
     for field in fields
       field.setValue(values[field.name])
     @emit("valueChanged", value: values, original: origValue)
-  # get an immediate subfield by name or path
-  _getField: (val) ->
+  # get an immediate subfield by name
+  _getField: (name) ->
     for field in @getFields()
-      if field.name == val then return field
+      if field.name == name then return field
   setSchema: (schema) ->
     if not schema? or schema == @schema then return
     @schema = schema
@@ -160,7 +143,7 @@ class ContainerField extends BaseContainerField
     return value
   _querySubfields: (fn, args...) ->
     out = {}
-    utils.forEach(@getFields(), (x) -> out[x.name] = x.getValue())
+    utils.forEach(@getFields(), (x) -> out[x.name] = x[fn].apply(x, args))
     return out
   getPath: (subfield) ->
     end = []
@@ -213,8 +196,8 @@ class ListField extends BaseContainerField
     @setValue(value)
     @emit("valueChanged", value: @getValue(), original: value)
   # get an immediate subfield by index
-  _getField: (val) ->
-    return @_fields[val]
+  _getField: (index) ->
+    return @getFields()[index]
   validate: (value) ->
     if not value.length && @required
       message = @errorMessages.required

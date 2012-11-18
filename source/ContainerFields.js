@@ -31,7 +31,6 @@ if (typeof exports !== "undefined" && exports !== null) {
 
 
 BaseContainerField = (function(_super) {
-  var _validationState;
 
   __extends(BaseContainerField, _super);
 
@@ -52,58 +51,41 @@ BaseContainerField = (function(_super) {
   }
 
   BaseContainerField.prototype.handlers = {
-    validChanged: "onValidChanged",
-    valueChanged: "onValueChanged"
+    valueChanged: "subfieldChanged",
+    validChanged: "subfieldChanged"
   };
 
-  BaseContainerField.prototype._invalidFields = {};
-
-  _validationState = false;
-
-  BaseContainerField.prototype.onValidChanged = function(inSender, inEvent) {
-    console.log("onValidChanged");
-    if (!inSender === inEvent.originator || !this._validationState) {
-      return false;
+  BaseContainerField.prototype.subfieldChanged = function(inSender, inEvent) {
+    if (inSender === inEvent.originator) {
+      return this._hasChanged = true;
     }
-    if (inEvent.valid) {
-      delete this._invalidFields[inSender];
-      this._hasChanged = true;
-      this.isValid();
-    } else if (!(inSender in this._invalidFields)) {
-      this._invalidFields[inSender] = true;
-      this._hasChanged = true;
-      this.isValid();
-    }
-    return false;
   };
 
   BaseContainerField.prototype.isValid = function() {
     var oldErrors, valid, value;
-    if (!this._hasChanged || this._validationState === "validating") {
+    if (!this._hasChanged) {
       return this._valid;
     }
     oldErrors = this.errors;
     this.errors = [];
-    if (utils.isEmpty(this._invalidFields)) {
-      try {
-        value = this._querySubfields("getClean");
-      } catch (e) {
-        this.errors = [this.errorMessages.invalid];
-      }
-    } else {
+    value = void 0;
+    try {
+      value = this._querySubfields("getClean");
+    } catch (e) {
       this.errors = [this.errorMessages.invalid];
     }
     if (!this.errors.length) {
       this.validate(value);
     }
-    if (!this.errors.length) {
+    if (!this.errors.length && this._hasChanged) {
       try {
-        this.clean = this._querySubfields("getClean");
+        value = this._querySubfields("getClean");
       } catch (e) {
-        this.errors = [this.errorMessages.invalid];
+        this.errors.push(this.errorMessages.invalid);
       }
     }
     valid = !this.errors.length;
+    this.clean = valid ? value : void 0;
     if (valid !== this._valid || !valid && !utils.isEqual(oldErrors, this.errors)) {
       this.emit("validChanged", {
         valid: valid,
@@ -112,7 +94,6 @@ BaseContainerField = (function(_super) {
       this._valid = valid;
     }
     this._hasChanged = false;
-    this._validationState = true;
     return valid;
   };
 
@@ -126,6 +107,21 @@ BaseContainerField = (function(_super) {
 
   BaseContainerField.prototype.getFields = function() {
     return this._fields;
+  };
+
+  BaseContainerField.prototype.getField = function(path) {
+    var subfield;
+    if (typeof path === "string") {
+      path = path.split(".");
+    }
+    if (path.length === 0) {
+      return this;
+    }
+    subfield = this._getField(path.shift());
+    if (!(subfield != null)) {
+      return void 0;
+    }
+    return subfield.getField(path);
   };
 
   BaseContainerField.prototype.resetFields = function() {
@@ -147,7 +143,7 @@ BaseContainerField = (function(_super) {
 
   BaseContainerField.prototype.getClean = function() {
     this.throwValidationError();
-    return this._querySubfields("getClean");
+    return this.clean;
   };
 
   BaseContainerField.prototype.toJSON = function() {
@@ -221,12 +217,12 @@ ContainerField = (function(_super) {
     });
   };
 
-  ContainerField.prototype._getField = function(val) {
+  ContainerField.prototype._getField = function(name) {
     var field, _i, _len, _ref;
     _ref = this.getFields();
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       field = _ref[_i];
-      if (field.name === val) {
+      if (field.name === name) {
         return field;
       }
     }
@@ -256,7 +252,7 @@ ContainerField = (function(_super) {
     fn = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
     out = {};
     utils.forEach(this.getFields(), function(x) {
-      return out[x.name] = x.getValue();
+      return out[x.name] = x[fn].apply(x, args);
     });
     return out;
   };
@@ -354,8 +350,8 @@ ListField = (function(_super) {
     });
   };
 
-  ListField.prototype._getField = function(val) {
-    return this._fields[val];
+  ListField.prototype._getField = function(index) {
+    return this.getFields()[index];
   };
 
   ListField.prototype.validate = function(value) {

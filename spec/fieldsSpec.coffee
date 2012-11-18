@@ -157,7 +157,8 @@ describe "validation", ->
     expect(@field.isValid()).toBe(true)
     expect(@field.handlers.validChanged.calls.length).toEqual(3)
 
-
+  it "should throw an error when getClean is called and it is not valid", ->
+    expect(=> @field.getClean()).toThrow()
 
 
 describe "genField() - field creation", ->

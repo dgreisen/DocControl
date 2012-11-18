@@ -44,7 +44,7 @@ class Field
   _walkProto: (attr) ->
     sup = @constructor.__super__
     if sup?
-      return utils.mixin(utils.clone(sup._walkProto(attr)), @errorMessages)
+      return utils.mixin(utils.clone(sup._walkProto(attr)), @[attr])
     else
       return this[attr]
   # get the errors for this field. returns null if no errors.
@@ -145,7 +145,9 @@ class Field
       return @parent.getPath(this)
     else
       return []
-
+  # get a field given a path 
+  getField: (path) ->
+    return if path.length > 0 then undefined else this
   # emit an event that bubbles up
   # eventName: name of the event to emit
   # inEvent: optional hash of data to send with the event

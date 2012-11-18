@@ -80,6 +80,9 @@ strip = function(str) {
 };
 
 genField = function(schema, fields) {
+  if (!fields[schema.field]) {
+    throw Error("Unknown field: " + schema.field);
+  }
   return new fields[schema.field](schema);
 };
 
