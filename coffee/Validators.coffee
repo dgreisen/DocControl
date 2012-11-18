@@ -1,6 +1,9 @@
+if exports?
+  utils = require "./utils"
+
 class RegexValidator
   regex: ''
-  message: _i('Enter a valid value.')
+  message: utils._i('Enter a valid value.')
   code: 'invalid'
   constructor: (@regex=@regex, @message=@message, @code=@code) ->
     # Compile the regex if it was not passed pre-compiled.
@@ -12,34 +15,34 @@ class RegexValidator
     Validates that the input matches the regular expression.
     ###
     if not value.match(@regex)
-      throw new ValidationError(@message, @code)
+      throw new utils.ValidationError(@message, @code)
 
 # DJANGODIFF - Cannot ensure url exists
 # DJANGODIFF - Cannot match IDN domains
 class URLValidator extends RegexValidator
   regex: /^(?:http|ftp)s?:\/\/(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|localhost|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?::\d+)?(?:\/?|[\/?]\S+)$/i
-  message: _i('Enter a valid URL.')
+  message: utils._i('Enter a valid URL.')
   
 class IntegerValidator
   validate: (value) ->
     if isNaN(parseInt(value))
-      throw new ValidationError('','')
+      throw new utils.ValidationError('','')
       
 # DJANGODIFF - Cannot match IDN domains
 class EmailValidator extends RegexValidator
   regex: /(^[-!#$%&'*+\/=?^_`{}|~0-9A-Z]+(\.[-!#$%&'*+\/=?^_`{}|~0-9A-Z]+)*|^"([\001-\010\013\014\016-\037!#-\[\]-\177]|\\[\001-\011\013\014\016-\177])*")@((?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?$)|\[(25[0-5]|2[0-4]\d|[0-1]?\d?\d)(\.(25[0-5]|2[0-4]\d|[0-1]?\d?\d)){3}\]$/i
-  message: _i('Enter a valid e-mail address.')
+  message: utils._i('Enter a valid e-mail address.')
   
 class SlugValidator extends RegexValidator
   regex: /^[-\w]+$/
-  message: _i("Enter a valid 'slug' consisting of letters, numbers, underscores or hyphens.")
+  message: utils._i("Enter a valid 'slug' consisting of letters, numbers, underscores or hyphens.")
   
 class IPv4AddressValidator extends RegexValidator
   regex: /^(25[0-5]|2[0-4]\d|[0-1]?\d?\d)(\.(25[0-5]|2[0-4]\d|[0-1]?\d?\d)){3}$/
-  message: _i('Enter a valid IPv4 address.')
+  message: utils._i('Enter a valid IPv4 address.')
 
 class IPv6AddressValidator
-  error: new ValidationError(_i('Enter a valid IPv6 address.'), 'invalid')
+  error: new utils.ValidationError(utils._i('Enter a valid IPv6 address.'), 'invalid')
   
   validate: (value) ->
     # We need to have at least one ':'.
@@ -100,12 +103,12 @@ class IPv46AddressValidator
       try
         new IPv6AddressValidator().validate(value)
       catch e
-        throw ValidationError(_i('Enter a valid IPv4 or IPv6 address.'), 'invalid')
+        throw utils.ValidationError(utils._i('Enter a valid IPv4 or IPv6 address.'), 'invalid')
 
 ip_address_validator_map = 
-  { both: [[IPv46AddressValidator], _i('Enter a valid IPv4 or IPv6 address.')]
-  , ipv4: [[IPv4AddressValidator], _i('Enter a valid IPv4 address.')]
-  , ipv6: [[IPv6AddressValidator], _i('Enter a valid IPv6 address.')]
+  { both: [[IPv46AddressValidator], utils._i('Enter a valid IPv4 or IPv6 address.')]
+  , ipv4: [[IPv4AddressValidator], utils._i('Enter a valid IPv4 address.')]
+  , ipv6: [[IPv6AddressValidator], utils._i('Enter a valid IPv6 address.')]
   }
 
 ip_address_validators = (protocol, unpack_ipv4) ->
@@ -121,16 +124,16 @@ ip_address_validators = (protocol, unpack_ipv4) ->
   try
     return ip_address_validator_map[protocol.lower()]
   catch e
-    raise ValueError(interpolate("The protocol '%s' is unknown. Supported: 'both', 'ipv4', 'ipv6'", [protocol]))
+    raise ValueError(utils.interpolate("The protocol '%s' is unknown. Supported: 'both', 'ipv4', 'ipv6'", [protocol]))
 
 class CommaSeparatedIntegerListValidator extends RegexValidator
   regex = /^[\d,]+$/
-  error = _i('Enter only digits separated by commas.')
+  error = utils._i('Enter only digits separated by commas.')
   
 class BaseValidator
   compare: (a,b) -> return (a isnt b)
   clean: (x) -> return x
-  message: _i("Ensure this value is %(limit_value)s (it is %(show_value)s).")
+  message: utils._i("Ensure this value is %(limit_value)s (it is %(show_value)s).")
   code: 'limit_value'
   
   constructor: (@limit_value) ->
@@ -139,45 +142,45 @@ class BaseValidator
     cleaned = @clean(value)
     params = {limit_value:@limit_value, show_value:cleaned}
     if (@compare(cleaned, @limit_value))
-      throw ValidationError( interpolate(@message, params), @code, params )
+      throw utils.ValidationError( utils.interpolate(@message, params), @code, params )
 
 class MaxValueValidator extends BaseValidator
   compare: (a,b) -> return (a > b)
-  message: _i('Ensure this value is less than or equal to %(limit_value)s.')
+  message: utils._i('Ensure this value is less than or equal to %(limit_value)s.')
   code: 'max_value'
   
 class MinValueValidator extends BaseValidator
   compare: (a, b) -> return (a < b)
-  message: _i('Ensure this value is greater than or equal to %(limit_value)s.')
+  message: utils._i('Ensure this value is greater than or equal to %(limit_value)s.')
   code: 'min_value'
 
 class MinLengthValidator extends BaseValidator
   x: 53
   compare: (a, b) -> return (a < b)
   clean: (x) -> return x.length
-  message: _i('Ensure this value has at least %(limit_value)d characters (it has %(show_value)d).')
+  message: utils._i('Ensure this value has at least %(limit_value)d characters (it has %(show_value)d).')
   code: 'min_length'
 
 class MaxLengthValidator extends BaseValidator
   compare: (a, b) -> return (a > b)
   clean: (x) -> x.length
-  message: _i('Ensure this value has at most %(limit_value)d characters (it has %(show_value)d).')
+  message: utils._i('Ensure this value has at most %(limit_value)d characters (it has %(show_value)d).')
   code: 'max_length'
 
 class MaxDecimalPlacesValidator extends BaseValidator
   compare: (a, b) -> return (a > b)
   clean: (x) -> String(x.split(".")[1] || "").length
-  message: _i('Ensure this value has at most %(limit_value)d digits after the decimal.')
+  message: utils._i('Ensure this value has at most %(limit_value)d digits after the decimal.')
 
 class MinDecimalPlacesValidator extends BaseValidator
   compare: (a, b) -> return (a < b)
   clean: (x) -> String(x.split(".")[1] || "").length
-  message: _i('Ensure this value has at least %(limit_value)d digits after the decimal.')
+  message: utils._i('Ensure this value has at least %(limit_value)d digits after the decimal.')
 
 class MaxDigitsValidator extends BaseValidator
   compare: (a, b) -> return (a > b)
   clean: (x) -> String(x).replace('.','').length
-  message: _i('Ensure this value has at most %(limit_value)d digits.')
+  message: utils._i('Ensure this value has at most %(limit_value)d digits.')
 
 isEmpty = (val) ->
   emptyValues = [null, undefined, '']
@@ -203,9 +206,9 @@ validators =
   MaxLengthValidator: MaxLengthValidator
   isEmpty: isEmpty
   
-if window
+if window?
   window.validators = validators
-else if module
+else if exports?
   module.exports = validators
   
 
@@ -233,11 +236,11 @@ _explode_shorthand_ip_string = (ip_str) ->
       A string, the expanded IPv6 address.
 
   ###
-  if not _is_shorthand_ip(ip_str)
+  if not utils._is_shorthand_ip(ip_str)
       # We've already got a longhand ip_str.
       return ip_str
 
-  new_ip = []
+  newutils._ip = []
   hextet = ip_str.split('::')
 
   # If there is a ::, we need to expand it with zeroes
@@ -250,23 +253,23 @@ _explode_shorthand_ip_string = (ip_str) ->
 
   if len(hextet) > 1
       sep = len(hextet[0].split(':')) + len(hextet[1].split(':'))
-      new_ip = hextet[0].split(':')
+      newutils._ip = hextet[0].split(':')
 
       for _ in xrange(fill_to - sep)
-          new_ip.push('0000')
-      new_ip += hextet[1].split(':')
+          newutils._ip.push('0000')
+      newutils._ip += hextet[1].split(':')
 
   else
-      new_ip = ip_str.split(':')
+      newutils._ip = ip_str.split(':')
 
   # Now need to make sure every hextet is 4 lower case characters.
   # If a hextet is < 4 characters, we've got missing leading 0's.
-  ret_ip = []
-  for hextet in new_ip
-      ret_ip.push(('0' * (4 - len(hextet)) + hextet).lower())
-  return ':'.join(ret_ip)
+  retutils._ip = []
+  for hextet in newutils._ip
+      retutils._ip.push(('0' * (4 - len(hextet)) + hextet).lower())
+  return ':'.join(retutils._ip)
 
-_is_shorthand_ip = (ip_str) ->
+utils._is_shorthand_ip = (ip_str) ->
     ###Determine if the address is shortened.
 
     Args:
