@@ -1,4 +1,54 @@
 enyo.kind({
+  name: "fields.enyo",
+  kind: "Control",
+  published: {
+    //* kind definition for widget (eg { kind: "widget.Widget"})
+    widget: "widgets.Widget",
+    //* hash of attibutes to set on widget (eg `{label: ..., initial: ...}`)
+    widgetAttrs: {},
+    //* a string designating a widget style. e.g. "onyx", or "tbs"
+    widgetSet: undefined,
+    //* display method.
+    //* <li>"view": non-editable view of widget (not yet implemented) </li>
+    //* <li>"edit": standard edit widget (default)</li></ul>
+    display: undefined,
+    //* whether a widget should be created for this field
+    noWidget: undefined
+  },
+  create: function() {
+    this.inherited(arguments);
+    this.widgetChanged();
+  },
+  //* @protected
+  widgetChanged: function() {
+    // destroy existing widget
+    if (this.$.widget) this.destroyComponents();
+    // if no widget, return early
+    if (this.getNoWidget() || !this.getWidget()) return;
+    //prepare widget by creating or cloning the widget kind
+    var widget = enyo.clone((typeof(this.widget)=="string") ? { kind: this.widget } : this.widget);
+    
+    // replace the specified widget with a widget of the widgetSet type, if it exists
+    if (this.getWidgetSet()) {
+      var kind = widget.kind.split('.');
+      kind.splice(1,0, this.getWidgetSet());
+      var x = window;
+      for (var i=0; x && i < kind.length; i++) {x=x[kind[i]];}
+      if (x) widget.kind = kind.join('.');
+    }
+    // then add widget attributes
+    var widgetAttrs = enyo.mixin(enyo.clone(this.getWidgetAttrs()), {name: "widget", required: this.required, value: this.value, fieldName: this.getName(), widgetSet: this.getWidgetSet() });
+    widget = enyo.mixin(widget, widgetAttrs);
+    // call prepareWidget, which is implemented by subclasses.
+    widget = this.prepareWidget(widget);
+    // create the component
+    this.createComponent(widget);
+  },
+
+});
+
+
+enyo.kind({
   name: "widgets.Widget",
   kind: "Control",
   published: {

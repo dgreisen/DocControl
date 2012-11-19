@@ -1,6 +1,9 @@
 if exports?
   utils = require "./utils"
   validators = require "./Validators"
+else if window?
+  utils = window.utils
+  validators = window.validators
 
 class Field
   # the cleaned value accessed via `getClean()`; raises error if invalid; this will be a javascript datatype and should be used for any calculations, etc. Use the toJSON() method to get a version appropriate for serialization.
@@ -323,7 +326,6 @@ fields =
   BooleanField: BooleanField
   NullBooleanField: NullBooleanField
   ChoiceField: ChoiceField
-
 
 if window?
   window.fields = fields

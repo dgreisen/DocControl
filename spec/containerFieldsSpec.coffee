@@ -7,6 +7,7 @@ describe "ListField", ->
     @subSchema = {field: "CharField", name: "sub", minLength: 5}
     @vals = ["hello", "world"]
     @field = new fields.ListField(name:"test", schema: @subSchema, value: @vals)
+
   it "should store its schema in @schema", ->
     expect(@field.schema).toEqual(@subSchema)
 

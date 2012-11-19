@@ -1,6 +1,9 @@
 if exports?
   utils = require "./utils"
   fields = require "./Fields"
+else if window?
+  utils = window.utils
+  fields = window.fields
 
 ###
   _fields.BaseContainerField_ is the baseKind for all container-type fields.

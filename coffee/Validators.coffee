@@ -1,6 +1,8 @@
 if exports?
   utils = require "./utils"
-
+else if window?
+  utils = window.utils
+  
 class RegexValidator
   regex: ''
   message: utils._i('Enter a valid value.')
