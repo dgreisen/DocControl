@@ -15,12 +15,12 @@ class Field
   # hash of error messages; If overriding a parent class, you must include all parent class errorMessages
   errorMessages:
     required: utils._i('This field is required.')
-  # hash of handlers of the form
+  # hash of listeners of the form
   # `'event': (inSender, inEvent) ->`
   # `'event': "handlerMethod"`
   # `'*': "handlerMethod"`
   # wildcard will handle all incoming events
-  handlers: {}
+  listeners: {}
   # parent field, set by parent
   parent: undefined
   # default values for attributes
@@ -38,7 +38,7 @@ class Field
     {@name, @required, @parent} = @opts
     # compile inherited attributes
     @errorMessages = @_walkProto("errorMessages")
-    @handlers = @_walkProto("handlers")
+    @listeners = @_walkProto("listeners")
     # all fields were sharing the same validators list
     @validators = utils.cloneArray(@validators)
     #set initial value
@@ -52,6 +52,7 @@ class Field
       return this[attr]
   # get the errors for this field. returns null if no errors.
   getErrors: () ->
+    @isValid()
     return if @errors.length then @errors else null
   # First function called in validation process.<br />
   # this function converts the raw value to javascript. `value` is the raw value from
@@ -107,7 +108,7 @@ class Field
     valid = !Boolean(@errors.length)
     @clean = if valid then value else undefined
     if valid != @_valid or not valid and not utils.isEqual(oldErrors, @errors)
-      @emit("validChanged", valid: valid, errors: @errors)
+      @emit("onValidChanged", valid: valid, errors: @errors)
       @_valid = valid
     @_hasChanged = false
     return valid
@@ -125,13 +126,12 @@ class Field
   setRequired: (val) ->
     if val != @required
       @_hasChanged = true
-      @emit("requiredChanged", val)
       @required = val
   # You should not have to override this in Field subclasses
   setValue: (val, opts) ->
     if val != @value
       @_hasChanged = true
-      @emit("valueChanged", value: val, original: @value)
+      @emit("onValueChanged", value: val, original: @value)
       @value = val;
   # You should not have to override this in Field subclasses
   getValue: () ->
@@ -157,14 +157,14 @@ class Field
   emit: (eventName, inEvent) ->
     inEvent ?= {}
     inEvent.originator = this
-    @bubble(eventName, null, inEvent)
+    @_bubble(eventName, null, inEvent)
 
   # handle the bubbling
-  bubble: (eventName, inSender, inEvent) ->
-    handler = @handlers[eventName] or @handlers["*"]
+  _bubble: (eventName, inSender, inEvent) ->
+    handler = @listeners[eventName] or @listeners["*"]
     handler = if handler instanceof Function then handler else this[handler]
     if (not handler or not handler.apply(this, [inSender, inEvent])) and @parent
-      @parent.bubble(eventName, this, inEvent)
+      @parent._bubble(eventName, this, inEvent)
 
 
 

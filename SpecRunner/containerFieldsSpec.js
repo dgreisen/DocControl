@@ -37,12 +37,12 @@ describe("ListField", function() {
     return expect(this.field.getValue()).toEqual(["hello", "world"]);
   });
   it("should set values (and emit valueChanged event if changed) when setValue called", function() {
-    this.field.handlers.valueChanged = function(inSender, inEvent) {};
-    spyOn(this.field.handlers, "valueChanged");
+    this.field.listeners.onValueChanged = function(inSender, inEvent) {};
+    spyOn(this.field.listeners, "onValueChanged");
     this.field.setValue(this.vals);
     this.field.setValue(['the', 'quick', 'brown', 'fox']);
     expect(this.field.getFields().length).toBe(4);
-    return expect(this.field.handlers.valueChanged.calls.length).toBe(5);
+    return expect(this.field.listeners.onValueChanged.calls.length).toBe(5);
   });
   it("should throw an error if setValue called with anything other than an Array of values", function() {
     var _this = this;
@@ -211,7 +211,7 @@ describe("field traversal", function() {
     this.vals = {
       firstList: [
         {
-          secondList: ["hello", "world"]
+          secondList: ["hello", "moon"]
         }
       ]
     };
@@ -225,20 +225,44 @@ describe("field traversal", function() {
     expect(this.field.getValue()).toEqual({
       firstList: [
         {
-          secondList: ['hello', 'world']
+          secondList: ['hello', 'moon']
         }
       ]
     });
-    return expect(this.field.getField("firstList.0.secondList.1").getValue()).toBe("world");
+    return expect(this.field.getField("firstList.0.secondList.1").getValue()).toBe("moon");
   });
-  return it("should return a subfield given an array path", function() {
+  it("should return a subfield given an array path", function() {
     expect(this.field.getValue()).toEqual({
       firstList: [
         {
-          secondList: ['hello', 'world']
+          secondList: ['hello', 'moon']
         }
       ]
     });
-    return expect(this.field.getField(["firstList", 0, "secondList", 1]).getValue()).toBe("world");
+    return expect(this.field.getField(["firstList", 0, "secondList", 1]).getValue()).toBe("moon");
+  });
+  it("should get isValid for specific field if passed opts.path", function() {
+    return expect(this.field.isValid({
+      path: "firstList.0.secondList.1"
+    })).toEqual(false);
+  });
+  it("should setValue of specific field, and getValue and json for specific field if passed opts.path", function() {
+    this.field.setValue("world", {
+      path: "firstList.0.secondList.1"
+    });
+    expect(this.field.getValue({
+      path: "firstList.0.secondList"
+    })).toEqual(["hello", "world"]);
+    expect(this.field.toJSON({
+      path: "firstList.0.secondList"
+    })).toEqual(["hello", "world"]);
+    return expect(this.field.getClean({
+      path: "firstList.0.secondList"
+    })).toEqual(["hello", "world"]);
+  });
+  return it("should get errors for specific field if passed opts.path", function() {
+    return expect(this.field.getErrors({
+      path: "firstList.0.secondList.1"
+    })).toEqual(['Ensure this value has at least 5 characters (it has 4).']);
   });
 });

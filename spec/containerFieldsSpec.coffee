@@ -25,13 +25,13 @@ describe "ListField", ->
     expect(@field.getValue()).toEqual(["hello", "world"])
 
   it "should set values (and emit valueChanged event if changed) when setValue called", ->
-    @field.handlers.valueChanged = (inSender, inEvent) ->
-    spyOn @field.handlers, "valueChanged"
+    @field.listeners.onValueChanged = (inSender, inEvent) ->
+    spyOn @field.listeners, "onValueChanged"
     @field.setValue(@vals)
     @field.setValue(['the', 'quick', 'brown', 'fox'])
     expect(@field.getFields().length).toBe(4)
     # 4 subfields and one field valueChanged events from the second setValue call
-    expect(@field.handlers.valueChanged.calls.length).toBe(5)
+    expect(@field.listeners.onValueChanged.calls.length).toBe(5)
     
   it "should throw an error if setValue called with anything other than an Array of values", ->
     expect(=> @field.setValue('hello')).toThrow()
@@ -134,13 +134,26 @@ describe "field traversal", ->
         ]
       }
     ]
-    @vals = {firstList: [{secondList:["hello", "world"]}]}
+    @vals = {firstList: [{secondList:["hello", "moon"]}]}
     @field = new fields.ContainerField(name:"firstContainer", schema: @schema, value: @vals)
 
   it "should return a subfield given a string path", ->
-    expect(@field.getValue()).toEqual({ firstList : [ { secondList : [ 'hello', 'world' ] } ] })
-    expect(@field.getField("firstList.0.secondList.1").getValue()).toBe("world")
+    expect(@field.getValue()).toEqual({ firstList : [ { secondList : [ 'hello', 'moon' ] } ] })
+    expect(@field.getField("firstList.0.secondList.1").getValue()).toBe("moon")
 
   it "should return a subfield given an array path", ->
-    expect(@field.getValue()).toEqual({ firstList : [ { secondList : [ 'hello', 'world' ] } ] })
-    expect(@field.getField(["firstList", 0, "secondList", 1]).getValue()).toBe("world")
+    expect(@field.getValue()).toEqual({ firstList : [ { secondList : [ 'hello', 'moon' ] } ] })
+    expect(@field.getField(["firstList", 0, "secondList", 1]).getValue()).toBe("moon")
+
+  it "should get isValid for specific field if passed opts.path", ->
+    expect(@field.isValid(path: "firstList.0.secondList.1")).toEqual(false)
+
+  it "should setValue of specific field, and getValue and json for specific field if passed opts.path", ->
+    @field.setValue("world", path: "firstList.0.secondList.1")
+    expect(@field.getValue(path: "firstList.0.secondList")).toEqual(["hello", "world"])
+    expect(@field.toJSON(path: "firstList.0.secondList")).toEqual(["hello", "world"])
+    expect(@field.getClean(path: "firstList.0.secondList")).toEqual(["hello", "world"])
+
+  it "should get errors for specific field if passed opts.path", ->
+    expect(@field.getErrors(path: "firstList.0.secondList.1")).toEqual(['Ensure this value has at least 5 characters (it has 4).'])
+

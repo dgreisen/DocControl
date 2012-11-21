@@ -24,7 +24,7 @@
       required: utils._i('This field is required.')
     };
 
-    Field.prototype.handlers = {};
+    Field.prototype.listeners = {};
 
     Field.prototype.parent = void 0;
 
@@ -43,7 +43,7 @@
       this.opts = utils.mixin(utils.clone(this.defaults), opts);
       _ref1 = this.opts, this.name = _ref1.name, this.required = _ref1.required, this.parent = _ref1.parent;
       this.errorMessages = this._walkProto("errorMessages");
-      this.handlers = this._walkProto("handlers");
+      this.listeners = this._walkProto("listeners");
       this.validators = utils.cloneArray(this.validators);
       this.setValue(this.opts.value);
     }
@@ -59,6 +59,7 @@
     };
 
     Field.prototype.getErrors = function() {
+      this.isValid();
       if (this.errors.length) {
         return this.errors;
       } else {
@@ -124,7 +125,7 @@
       valid = !Boolean(this.errors.length);
       this.clean = valid ? value : void 0;
       if (valid !== this._valid || !valid && !utils.isEqual(oldErrors, this.errors)) {
-        this.emit("validChanged", {
+        this.emit("onValidChanged", {
           valid: valid,
           errors: this.errors
         });
@@ -150,7 +151,6 @@
     Field.prototype.setRequired = function(val) {
       if (val !== this.required) {
         this._hasChanged = true;
-        this.emit("requiredChanged", val);
         return this.required = val;
       }
     };
@@ -158,7 +158,7 @@
     Field.prototype.setValue = function(val, opts) {
       if (val !== this.value) {
         this._hasChanged = true;
-        this.emit("valueChanged", {
+        this.emit("onValueChanged", {
           value: val,
           original: this.value
         });
@@ -191,15 +191,15 @@
         inEvent = {};
       }
       inEvent.originator = this;
-      return this.bubble(eventName, null, inEvent);
+      return this._bubble(eventName, null, inEvent);
     };
 
-    Field.prototype.bubble = function(eventName, inSender, inEvent) {
+    Field.prototype._bubble = function(eventName, inSender, inEvent) {
       var handler;
-      handler = this.handlers[eventName] || this.handlers["*"];
+      handler = this.listeners[eventName] || this.listeners["*"];
       handler = handler instanceof Function ? handler : this[handler];
       if ((!handler || !handler.apply(this, [inSender, inEvent])) && this.parent) {
-        return this.parent.bubble(eventName, this, inEvent);
+        return this.parent._bubble(eventName, this, inEvent);
       }
     };
 

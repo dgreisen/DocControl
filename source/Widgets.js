@@ -1,3 +1,13 @@
+genWidgetDef = function(schema) {
+  var widget = enyo.clone(schema);
+  widget.kind = windowfields[schema.field];
+  widget.fieldName = schema.name;
+  delete widget.name;
+  enyo.mixin(widget, widget.widget || {});
+  delete widget.widget;
+  return widget;
+};
+
 enyo.kind({
   name: "fields.enyo",
   kind: "Control",
@@ -27,7 +37,6 @@ enyo.kind({
     if (this.getNoWidget() || !this.getWidget()) return;
     //prepare widget by creating or cloning the widget kind
     var widget = enyo.clone((typeof(this.widget)=="string") ? { kind: this.widget } : this.widget);
-    
     // replace the specified widget with a widget of the widgetSet type, if it exists
     if (this.getWidgetSet()) {
       var kind = widget.kind.split('.');
@@ -37,16 +46,112 @@ enyo.kind({
       if (x) widget.kind = kind.join('.');
     }
     // then add widget attributes
-    var widgetAttrs = enyo.mixin(enyo.clone(this.getWidgetAttrs()), {name: "widget", required: this.required, value: this.value, fieldName: this.getName(), widgetSet: this.getWidgetSet() });
+    var widgetAttrs = enyo.mixin(enyo.clone(this.getWidgetAttrs()), {
+      name: "widget",
+      required: this.required,
+      value: this.value,
+      fieldName: this.getName(),
+
+      widgetSet: this.getWidgetSet()
+    });
     widget = enyo.mixin(widget, widgetAttrs);
     // call prepareWidget, which is implemented by subclasses.
     widget = this.prepareWidget(widget);
     // create the component
     this.createComponent(widget);
-  },
+  }
 
 });
 
+enyo.kind({
+  name: "widgets.Form",
+  kind: "Control",
+  published: {
+    //* form schema
+    schema: undefined,
+    //* value of the form
+    value: undefined,
+    //* the validation strategy for this widget.
+    //* <ul><li>`"default"` strategy does not validate on value change until field's getClean() called.</li>
+    //* <li>`"always"` strategy begins validating on widget creation.</li></ul>
+    validationStrategy: undefined
+  },
+  create: function() {
+    this.inherited(arguments);
+    var schema = enyo.clone(this.schema);
+    schema.value = this.value;
+    this.fields = utils.genField(this.schema, window.fields);
+    this.schemaChanged();
+  },
+  events: {
+    onValueChanged: "",
+    onValidChanged: ""
+  },
+  //* listeners for field events
+  listeners: {
+    onValueChanged: "onFieldValueChanged",
+    onValidChanged: "onFieldValidChanged"
+  },
+  // * handlers for widget events
+  handlers: {
+    onValueChanged: "onWidgetValueChanged"
+  },
+  onFieldValueChanged: function(inSender, inEvent) {
+    this.widgets.setValue(inEvent.value, inEvent.originator.getPath());
+    inEvent.field = inEvent.originator;
+    this.doValueChanged(inSender, inEvent);
+    // validate, if required by validationStrategy
+    var validationStrategy = this.validationStrategy || "default";
+    validationStrategy = (typeof(validationStrategy) == "string") ? this[validationStrategy+"Validation"]() : validationStrategy;
+    if (validationStrategy()) this.isValid();
+  },
+  onFieldValidChanged: function(inSender, inEvent) {
+    this.widgets.setErrors(inEvent.errors, inEvent.originator.getPath());
+    inEvent.field = inEvent.originator;
+  },
+  onWidgetValueChanged: function(inSender, inEvent) {
+    this.setValue(inEvent.value, {path: inEvent.path});
+  },
+  //* proxy field functions
+  getField: function(path) {
+    return this.fields.getField(path);
+  },
+  getValue: function(opts) {
+    return this.fields.getValue(opts);
+  },
+  setValue: function(val, opts) {
+    return this.fields.setValue(val, opts);
+  },
+  getClean: function(opts) {
+    this._validatedOnce = true;
+    return this.fields.getClean(opts);
+  },
+  toJSON: function(opts) {
+    this._validatedOnce = true;
+    return this.fields.toJSON(opts);
+  },
+  getErrors: function(opts) {
+    this._validatedOnce = true;
+    return this.fields.getErrors(opts);
+  },
+  isValid: function(opts) {
+    this._validatedOnce = true;
+    return this.isValid(opts);
+  },
+  //* validation strategy: validate automatically on change only after validation has been called manually once.
+  defaultValidation: function() {
+    return this._validatedOnce;
+  },
+  //* validation strategy: validate automatically on change starting from widget creation
+  alwaysValidation: function() {
+    return true;
+  },
+  _bubble: function(eventName, inSender, inEvent) {
+    var handler = this.listeners[eventName] || this.listeners["*"];
+    handler = (handler instanceof Function) ? handler : this[handler];
+    if (handler) handler.apply(this, [inSender, inEvent]);
+  }
+});
 
 enyo.kind({
   name: "widgets.Widget",
@@ -58,12 +163,8 @@ enyo.kind({
     value: undefined,
     //* widget help text
     helpText: "",
-    //* the validation strategy for this widget.
-    //* <ul><li>`"default"` strategy does not validate on value change until field's getClean() called.</li>
-    //* <li>`"always"` strategy begins validating on widget creation.</li></ul>
-    validationStrategy: undefined,
-    //* whether to validate every time the value changes or only when the user finishes editing the field (onchange)
-    validationInstant: undefined,
+    //* whether to update the corresponding field every time the widget changes or only when the user finishes editing the field (onchange)
+    instantUpdate: undefined,
     //* whether to display the widget in its compact form TODO: only partially implemented
     compact: false,
     //* whether or not to save room for a label.
@@ -83,6 +184,8 @@ enyo.kind({
     fieldName: undefined,
     //* whether the field has been validated before - used by some validationStrategies; set by field
     validatedOnce: false,
+    //* list of error messages from field validation
+    errors: [],
     //* error message to display; set by field
     errorMessage: "",
     //* whether the current widget is in valid state. IMPORTANT: just because `valid` is true, doesn't mean value passes field's validation method. Just specifies whether widget displays error messages or not. set by field
@@ -127,27 +230,11 @@ enyo.kind({
   },
   // handler called by input kind when it has changed, and the user has finished inputing - for example on an `onchange` or `onblur`
   onInputChange: function() {
-    this.value = this.$.input.getValue();
-    this.validate();
-    return true;
+    this.setValue(this.$.input.getValue())
   },
   // handler called by input kind when it has made an instantaneous change - for example on an `onkeyup`
   onInputKey: function() {
-    this.value = this.$.input.getValue();
-    if (this.validationInstant) {
-      this.validate();
-    }
-    return true;
-  },
-  //* @private
-  //* validates the widget in accordance with the validation strategy.
-  validate: function() {
-    var validationStrategy = this.validationStrategy || "default";
-    if (typeof(validationStrategy) == "string") {
-      this[validationStrategy+"Validation"]();
-    } else {
-      validationStrategy.call(this);
-    }
+    if (this.instantUpdate) this.setValue(this.$.input.getValue());
   },
   labelChanged: function() {
     if (this.compact) {
@@ -169,14 +256,10 @@ enyo.kind({
     this.writeHelpText();
   },
   requiredChanged: function() {
-    this.validate();
     if (!this.$.required) return;
-    if (this.required) {
-      this.$.required.show();
-    } else {
-      this.$.required.hide();
-    }
+    this.$.required.setShowing(this.required);
   },
+  errorsChanged: function
   errorMessageChanged: function() {
     this.writeHelpText();
   },
@@ -195,32 +278,43 @@ enyo.kind({
     if (this.$.label) this.$.label.setAttribute("for", this.fieldName);
     this.render();
   },
+  //* set the value of the field, or a subfield specified by path
+  //* Do Not Override - instead, override _setValue(val)
+  setValue: function(val, path) {
+    if (path and path.length) throw Error("widget does not exist");
+    if ("_setValue" in this) {
+      this._setValue(val);
+    }
+    else if (val !== this.value) {
+      this.value = val;
+      if ("valueChanged" in this) return this.valueChanged();
+    }
+    this.doValueChanged({value:this.getValue()});
+  },
   //* @public
   //* useful for subclassing.
-  setValue: function(val) {
+  valueChanged: function(val) {
     var val = (val === null || val === undefined) ? this.nullValue : val;
     this.$.input.setValue(val);
   },
-  //* useful for subclassing.
-  getValue: function() {
-    return this.$.input.getValue();
-  },
-  //* validation strategy: validate automatically on change only after validation has been called manually once.
-  defaultValidation: function() {
-    if (this.validatedOnce) {
-      this.doRequestValidation();
+  //* set the errors for this field, or a subfield specified by path
+  //* Do Not Override - instead, override _setErrors(val)
+  setErrors: function(val, path) {
+    if (path and path.length) throw Error("widget does not exist");
+    if ("_setErrors" in this) {
+      this._setErrors(val);
     }
-  },
-  //* validation strategy: validate automatically on change starting from widget creation
-  alwaysValidation: function() {
-    this.doRequestValidation();
+    else if (utils.isEqual(val, this.value)) {
+      this.value = val;
+      if ("errorsChanged" in this) return this.errorsChanged();
+    }
   },
   //* skin: default skin with no css
   defaultSkin: function() {
     var comps = [this.inputKind, this.requiredKind, this.helpKind];
     if (this.label && !this.compact) comps.unshift(this.labelKind);
     this.createComponents(comps);
-  }
+  },
 });
 
 

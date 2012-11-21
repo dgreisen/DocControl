@@ -9,55 +9,55 @@ if (typeof exports !== "undefined" && exports !== null) {
 describe("events", function() {
   beforeEach(function() {
     this.parent = {
-      bubble: function(event, args) {
+      _bubble: function(event, args) {
         this.event = event;
         this.args = args;
       }
     };
     this.field = new fields.Field();
     this.field.parent = this.parent;
-    return spyOn(this.parent, "bubble");
+    return spyOn(this.parent, "_bubble");
   });
-  it("should call bubble when emit is called; adding a \nnull sender and originator to the arguments", function() {
-    spyOn(this.field, "bubble");
-    this.field.emit("testEvent", {
+  it("should call _bubble when emit is called; adding a \nnull sender and originator to the arguments", function() {
+    spyOn(this.field, "_bubble");
+    this.field.emit("onTestEvent", {
       a: 1,
       b: 2
     });
-    return expect(this.field.bubble).toHaveBeenCalledWith("testEvent", null, {
+    return expect(this.field._bubble).toHaveBeenCalledWith("onTestEvent", null, {
       originator: this.field,
       a: 1,
       b: 2
     });
   });
   it("should call event handler specific to event if it exists", function() {
-    this.field.handlers = {
-      testEvent: function(inSender, inEvent) {},
+    this.field.listeners = {
+      onTestEvent: function(inSender, inEvent) {},
       "*": function(inSender, inEvent) {}
     };
-    spyOn(this.field.handlers, "testEvent");
-    spyOn(this.field.handlers, "*");
-    this.field.emit("testEvent", {
+    spyOn(this.field.listeners, "onTestEvent");
+    spyOn(this.field.listeners, "*");
+    this.field.emit("onTestEvent", {
       a: 1,
       b: 2
     });
-    expect(this.field.handlers.testEvent).toHaveBeenCalledWith(null, {
+    expect(this.field.listeners.onTestEvent).toHaveBeenCalledWith(null, {
       originator: this.field,
       a: 1,
       b: 2
     });
-    return expect(this.field.handlers["*"]).not.toHaveBeenCalled();
+    return expect(this.field.listeners["*"]).not.toHaveBeenCalled();
   });
   it("should call wildcard handler if exists and specific handler doesn't", function() {
-    this.field.handlers = {
+    this.field.listeners = {
       "*": function(inSender, inEvent) {}
     };
-    spyOn(this.field.handlers, "*");
-    this.field.emit("testEvent", {
+    spyOn(this.field.listeners, "*");
+    this.field.emit("onTestEvent", {
       a: 1,
       b: 2
     });
-    return expect(this.field.handlers["*"]).toHaveBeenCalledWith(null, {
+    return expect(this.field.listeners["*"]).toHaveBeenCalledWith(null, {
       originator: this.field,
       a: 1,
       b: 2
@@ -65,67 +65,67 @@ describe("events", function() {
   });
   it("should call method identified by handler if handler is a string", function() {
     this.field.handler = function(inSender, inEvent) {};
-    this.field.handlers = {
-      testEvent: "handler"
+    this.field.listeners = {
+      onTestEvent: "handler"
     };
     spyOn(this.field, "handler");
-    this.field.emit("testEvent", {
+    this.field.emit("onTestEvent", {
       a: 1,
       b: 2
     });
     return expect(this.field.handler).toHaveBeenCalled();
   });
   it("should stop bubbling event if handler returns true", function() {
-    this.field.handlers = {
-      testEvent: function(inSender, inEvent) {
+    this.field.listeners = {
+      onTestEvent: function(inSender, inEvent) {
         return true;
       }
     };
-    this.field.emit("testEvent", {
+    this.field.emit("onTestEvent", {
       a: 1,
       b: 2
     });
-    return expect(this.parent.bubble).not.toHaveBeenCalled();
+    return expect(this.parent._bubble).not.toHaveBeenCalled();
   });
-  it("should call any handlers and stop bubbling event if no parent", function() {
+  it("should call any listeners and stop bubbling event if no parent", function() {
     this.field.parent = void 0;
-    this.field.handlers = {
-      testEvent: function(inSender, inEvent) {}
+    this.field.listeners = {
+      onTestEvent: function(inSender, inEvent) {}
     };
-    spyOn(this.field.handlers, "testEvent");
-    this.field.emit("testEvent", {
+    spyOn(this.field.listeners, "onTestEvent");
+    this.field.emit("onTestEvent", {
       a: 1,
       b: 2
     });
-    return expect(this.field.handlers.testEvent).toHaveBeenCalled();
+    return expect(this.field.listeners.onTestEvent).toHaveBeenCalled();
   });
-  it("should bubble event if handler returns true, updating inSender to itself", function() {
-    this.field.handlers = {
-      testEvent: function(inSender, inEvent) {
+  it("should _bubble event if handler returns true, updating inSender to itself", function() {
+    this.field.listeners = {
+      onTestEvent: function(inSender, inEvent) {
         return false;
       }
     };
-    this.field.emit("testEvent", {
+    this.field.emit("onTestEvent", {
       a: 1,
       b: 2
     });
-    return expect(this.parent.bubble).toHaveBeenCalledWith("testEvent", this.field, {
+    return expect(this.parent._bubble).toHaveBeenCalledWith("onTestEvent", this.field, {
       originator: this.field,
       a: 1,
       b: 2
     });
   });
-  return it("should bubble event if no handler, updating inSender to itself", function() {
-    this.field.handlers = {
-      testEvent: function(inSender, inEvent) {
+  return it("should _bubble event if no handler, updating inSender to itself", function() {
+    this.field.listeners = {
+      onTestEvent: function(inSender, inEvent) {
         return false;
       }
     };
-    this.field.emit("testEvent", {
+    this.field.emit("onTestEvent", {
       a: 1,
       b: 2
     });
-    return expect(this.parent.bubble).toHaveBeenCalledWith("testEvent", this.field, {
+    return expect(this.parent._bubble).toHaveBeenCalledWith("onTestEvent", this.field, {
       originator: this.field,
       a: 1,
       b: 2
@@ -219,36 +219,36 @@ describe("validation", function() {
     this.field.isValid();
     return expect(this.field.validate).toHaveBeenCalled();
   });
-  it("should emit a validChanged event, with any errors, when its valid status changes or when the errors list changes, but not otherwise", function() {
+  it("should emit a onValidChanged event, with any errors, when its valid status changes or when the errors list changes, but not otherwise", function() {
     this.field = new fields.CharField({
       name: "test",
       minLength: 5
     });
-    this.field.handlers.validChanged = function(inSender, inOriginator, valid, errors) {};
-    spyOn(this.field.handlers, "validChanged");
+    this.field.listeners.onValidChanged = function(inSender, inOriginator, valid, errors) {};
+    spyOn(this.field.listeners, "onValidChanged");
     expect(this.field.isValid()).toBe(false);
-    expect(this.field.handlers.validChanged).toHaveBeenCalledWith(null, {
+    expect(this.field.listeners.onValidChanged).toHaveBeenCalledWith(null, {
       originator: this.field,
       valid: false,
       errors: ['This field is required.']
     });
     this.field.setValue("a");
     expect(this.field.isValid()).toBe(false);
-    expect(this.field.handlers.validChanged).toHaveBeenCalledWith(null, {
+    expect(this.field.listeners.onValidChanged).toHaveBeenCalledWith(null, {
       originator: this.field,
       valid: false,
       errors: ['Ensure this value has at least 5 characters (it has 1).']
     });
     this.field.setValue("hello");
     expect(this.field.isValid()).toBe(true);
-    expect(this.field.handlers.validChanged).toHaveBeenCalledWith(null, {
+    expect(this.field.listeners.onValidChanged).toHaveBeenCalledWith(null, {
       originator: this.field,
       valid: true,
       errors: []
     });
     this.field.setValue("hello world");
     expect(this.field.isValid()).toBe(true);
-    return expect(this.field.handlers.validChanged.calls.length).toEqual(3);
+    return expect(this.field.listeners.onValidChanged.calls.length).toEqual(3);
   });
   return it("should throw an error when getClean is called and it is not valid", function() {
     var _this = this;
@@ -273,35 +273,40 @@ describe("genField() - field creation", function() {
 
 describe("field", function() {
   beforeEach(function() {
-    return this.field = new fields.Field({
+    return this.field = new fields.IntegerField({
       name: "test",
-      value: 5
+      value: 5,
+      minValue: 0
     });
   });
-  it("should emit valueChanged only when its value changes", function() {
-    this.field.handlers.valueChanged = function(inSender, inEvent) {};
-    spyOn(this.field.handlers, "valueChanged");
+  it("should emit onValueChanged only when its value changes", function() {
+    this.field.listeners.onValueChanged = function(inSender, inEvent) {};
+    spyOn(this.field.listeners, "onValueChanged");
     this.field.setValue(5);
-    expect(this.field.handlers.valueChanged).not.toHaveBeenCalled();
+    expect(this.field.listeners.onValueChanged).not.toHaveBeenCalled();
     this.field.setValue(6);
-    expect(this.field.handlers.valueChanged).toHaveBeenCalledWith(null, {
+    expect(this.field.listeners.onValueChanged).toHaveBeenCalledWith(null, {
       originator: this.field,
       value: 6,
       original: 5
     });
     return this.field.setValue();
   });
-  return it("should emit valueChanged if it is created with a value", function() {
+  it("should emit onValueChanged if it is created with a value", function() {
     var parent;
     parent = {
-      bubble: function() {}
+      _bubble: function() {}
     };
-    spyOn(parent, "bubble");
+    spyOn(parent, "_bubble");
     this.field = new fields.Field({
       name: "test",
       value: 5,
       parent: parent
     });
     return this.field.setValue(6);
+  });
+  return it("should return list of all errors", function() {
+    this.field.setValue(-4);
+    return expect(this.field.getErrors()).toEqual(['Ensure this value is greater than or equal to 0.']);
   });
 });

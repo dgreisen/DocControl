@@ -38,14 +38,15 @@ class BaseContainerField extends fields.Field
     # we have to specifically set the value so because setValue before didn't work without having the schema set
     @value = @opts.value
     @setSchema(@opts.schema)
-  handlers:
-    valueChanged: "subfieldChanged"
-    validChanged: "subfieldChanged"
+  listeners:
+    onValueChanged: "subfieldChanged"
+    onValidChanged: "subfieldChanged"
   # if an immediate subfield has changed, then we want to perform validation next time inValid called
   subfieldChanged: (inSender, inEvent) ->
     if inSender == inEvent.originator then @_hasChanged = true
   # custom isvalid method that validates all child fields as well.
-  isValid: () ->
+  isValid: (opts) ->
+    if opts?.path? then return @_applyToSubfield("isValid", opts)
     if not @_hasChanged then return @_valid
     # reset the errors array
     oldErrors = @errors
@@ -66,14 +67,15 @@ class BaseContainerField extends fields.Field
     valid = not @errors.length
     @clean = if valid then value else undefined
     if valid != @_valid or not valid and not utils.isEqual(oldErrors, @errors)
-      @emit("validChanged", valid: valid, errors: @errors)
+      @emit("onValidChanged", valid: valid, errors: @errors)
       @_valid = valid
     @_hasChanged = false
     return valid
   # get data from each subfield `fn` and put it into the appropriate data structure
   _querySubfields: (fn, args...) ->
     return utils.map(@getFields(), (x) -> x[fn].apply(x, args))
-  getFields: () ->
+  getFields: (opts) ->
+    if opts?.path? then return @_applyToSubfield("getFields", opts)
     return @_fields
   # return an arbitrarily deep subfield given a path. Path can be an array
   # of indexes/names, or it can be a dot-delimited string
@@ -89,15 +91,19 @@ class BaseContainerField extends fields.Field
     @_fields = []
   throwValidationError: () ->
     if not @isValid() then throw @errors
-  getValue: () ->
+  getValue: (opts) ->
+    if opts?.path? then return @_applyToSubfield("getValue", opts)
     return @_querySubfields("getValue")
-  getClean: () ->
+  getClean: (opts) ->
+    if opts?.path? then return @_applyToSubfield("getClean", opts)
     @throwValidationError()
     return @clean
-  toJSON: () ->
+  toJSON: (opts) ->
+    if opts?.path? then return @_applyToSubfield("toJSON", opts)
     @throwValidationError()
     return @_querySubfields("toJSON")
-  getErrors: () ->
+  getErrors: (opts) ->
+    if opts?.path? then return @_applyToSubfield("getErrors", opts)
     @isValid()
     if not @errors.length then return null
     return @_querySubfields("getErrors")
@@ -108,6 +114,11 @@ class BaseContainerField extends fields.Field
     field = utils.genField(definition, fields)
     @_fields.push(field)
     return field
+  _applyToSubfield: (fn, opts, args...) ->
+    subfield =  @getField(opts.path)
+    delete opts.path
+    args.push(opts)
+    return subfield[fn].apply(subfield, args)
 
 
 ###
@@ -122,19 +133,21 @@ class BaseContainerField extends fields.Field
 ###
 class ContainerField extends BaseContainerField
   widget: "widgets.ContainerWidget"
-  setValue: (values) ->
+  setValue: (values, opts) ->
+    if opts?.path? then return @_applyToSubfield("setValue", opts, values)
     origValue = @getValue()
     if not values or utils.isEqual(values, origValue) or not @_fields then return
     if values not instanceof Object or values instanceof Array then throw "values must be a hash"
     fields = @getFields()
     for field in fields
       field.setValue(values[field.name])
-    @emit("valueChanged", value: values, original: origValue)
+    @emit("onValueChanged", value: values, original: origValue)
   # get an immediate subfield by name
   _getField: (name) ->
     for field in @getFields()
       if field.name == name then return field
-  setSchema: (schema) ->
+  setSchema: (schema, opts) ->
+    if opts?.path? then return @_applyToSubfield("setSchema", opts, schema)
     if not schema? or schema == @schema then return
     @schema = schema
     @resetFields()
@@ -173,6 +186,7 @@ class ContainerField extends BaseContainerField
 class ListField extends BaseContainerField
   widget: "widgets.ListWidget",
   setSchema: (schema) ->
+    if opts?.path? then return @_applyToSubfield("setSchema", opts, schema)
     if not schema? or schema == @schema then return
     @schema = schema
     @resetFields()
@@ -181,23 +195,24 @@ class ListField extends BaseContainerField
   # accepts an array, where each element in the array is the value for a subfield.
   # if the optional value `reset` is truthy, then validation state will be reset.
   setValue: (values) ->
+    if opts?.path? then return @_applyToSubfield("setValue", opts, values)
     if not values or not @schema or utils.isEqual(values, @getValue()) then return
     if values not instanceof Array then throw "values must be an array"
     @resetFields()
     for value in values
       @_addField(@schema, value)
-    @emit("valueChanged", value: values, original: @value)
+    @emit("onValueChanged", value: values, original: @value)
     @value = undefined
   # remove the field at `index`.
   addField: (definition, fields=fields) ->
     value = @getValue()
     @_addField(definition, fields)
-    @emit("valueChanged", value: @getValue(), original: value)
+    @emit("onValueChanged", value: @getValue(), original: value)
   removeField: (index) ->
     value = @getValue()
     value.splice(index, 1)
     @setValue(value)
-    @emit("valueChanged", value: @getValue(), original: value)
+    @emit("onValueChanged", value: @getValue(), original: value)
   # get an immediate subfield by index
   _getField: (index) ->
     return @getFields()[index]

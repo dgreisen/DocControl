@@ -54,9 +54,9 @@
       this.setSchema(this.opts.schema);
     }
 
-    BaseContainerField.prototype.handlers = {
-      valueChanged: "subfieldChanged",
-      validChanged: "subfieldChanged"
+    BaseContainerField.prototype.listeners = {
+      onValueChanged: "subfieldChanged",
+      onValidChanged: "subfieldChanged"
     };
 
     BaseContainerField.prototype.subfieldChanged = function(inSender, inEvent) {
@@ -65,8 +65,11 @@
       }
     };
 
-    BaseContainerField.prototype.isValid = function() {
+    BaseContainerField.prototype.isValid = function(opts) {
       var oldErrors, valid, value;
+      if ((opts != null ? opts.path : void 0) != null) {
+        return this._applyToSubfield("isValid", opts);
+      }
       if (!this._hasChanged) {
         return this._valid;
       }
@@ -91,7 +94,7 @@
       valid = !this.errors.length;
       this.clean = valid ? value : void 0;
       if (valid !== this._valid || !valid && !utils.isEqual(oldErrors, this.errors)) {
-        this.emit("validChanged", {
+        this.emit("onValidChanged", {
           valid: valid,
           errors: this.errors
         });
@@ -109,7 +112,10 @@
       });
     };
 
-    BaseContainerField.prototype.getFields = function() {
+    BaseContainerField.prototype.getFields = function(opts) {
+      if ((opts != null ? opts.path : void 0) != null) {
+        return this._applyToSubfield("getFields", opts);
+      }
       return this._fields;
     };
 
@@ -141,21 +147,33 @@
       }
     };
 
-    BaseContainerField.prototype.getValue = function() {
+    BaseContainerField.prototype.getValue = function(opts) {
+      if ((opts != null ? opts.path : void 0) != null) {
+        return this._applyToSubfield("getValue", opts);
+      }
       return this._querySubfields("getValue");
     };
 
-    BaseContainerField.prototype.getClean = function() {
+    BaseContainerField.prototype.getClean = function(opts) {
+      if ((opts != null ? opts.path : void 0) != null) {
+        return this._applyToSubfield("getClean", opts);
+      }
       this.throwValidationError();
       return this.clean;
     };
 
-    BaseContainerField.prototype.toJSON = function() {
+    BaseContainerField.prototype.toJSON = function(opts) {
+      if ((opts != null ? opts.path : void 0) != null) {
+        return this._applyToSubfield("toJSON", opts);
+      }
       this.throwValidationError();
       return this._querySubfields("toJSON");
     };
 
-    BaseContainerField.prototype.getErrors = function() {
+    BaseContainerField.prototype.getErrors = function(opts) {
+      if ((opts != null ? opts.path : void 0) != null) {
+        return this._applyToSubfield("getErrors", opts);
+      }
       this.isValid();
       if (!this.errors.length) {
         return null;
@@ -173,6 +191,15 @@
       field = utils.genField(definition, fields);
       this._fields.push(field);
       return field;
+    };
+
+    BaseContainerField.prototype._applyToSubfield = function() {
+      var args, fn, opts, subfield;
+      fn = arguments[0], opts = arguments[1], args = 3 <= arguments.length ? __slice.call(arguments, 2) : [];
+      subfield = this.getField(opts.path);
+      delete opts.path;
+      args.push(opts);
+      return subfield[fn].apply(subfield, args);
     };
 
     return BaseContainerField;
@@ -201,8 +228,11 @@
 
     ContainerField.prototype.widget = "widgets.ContainerWidget";
 
-    ContainerField.prototype.setValue = function(values) {
+    ContainerField.prototype.setValue = function(values, opts) {
       var field, origValue, _i, _len;
+      if ((opts != null ? opts.path : void 0) != null) {
+        return this._applyToSubfield("setValue", opts, values);
+      }
       origValue = this.getValue();
       if (!values || utils.isEqual(values, origValue) || !this._fields) {
         return;
@@ -215,7 +245,7 @@
         field = fields[_i];
         field.setValue(values[field.name]);
       }
-      return this.emit("valueChanged", {
+      return this.emit("onValueChanged", {
         value: values,
         original: origValue
       });
@@ -232,8 +262,11 @@
       }
     };
 
-    ContainerField.prototype.setSchema = function(schema) {
+    ContainerField.prototype.setSchema = function(schema, opts) {
       var definition, value, _i, _len;
+      if ((opts != null ? opts.path : void 0) != null) {
+        return this._applyToSubfield("setSchema", opts, schema);
+      }
       if (!(schema != null) || schema === this.schema) {
         return;
       }
@@ -301,6 +334,9 @@
     ListField.prototype.widget = "widgets.ListWidget";
 
     ListField.prototype.setSchema = function(schema) {
+      if ((typeof opts !== "undefined" && opts !== null ? opts.path : void 0) != null) {
+        return this._applyToSubfield("setSchema", opts, schema);
+      }
       if (!(schema != null) || schema === this.schema) {
         return;
       }
@@ -312,6 +348,9 @@
 
     ListField.prototype.setValue = function(values) {
       var value, _i, _len;
+      if ((typeof opts !== "undefined" && opts !== null ? opts.path : void 0) != null) {
+        return this._applyToSubfield("setValue", opts, values);
+      }
       if (!values || !this.schema || utils.isEqual(values, this.getValue())) {
         return;
       }
@@ -323,7 +362,7 @@
         value = values[_i];
         this._addField(this.schema, value);
       }
-      this.emit("valueChanged", {
+      this.emit("onValueChanged", {
         value: values,
         original: this.value
       });
@@ -337,7 +376,7 @@
       }
       value = this.getValue();
       this._addField(definition, fields);
-      return this.emit("valueChanged", {
+      return this.emit("onValueChanged", {
         value: this.getValue(),
         original: value
       });
@@ -348,7 +387,7 @@
       value = this.getValue();
       value.splice(index, 1);
       this.setValue(value);
-      return this.emit("valueChanged", {
+      return this.emit("onValueChanged", {
         value: this.getValue(),
         original: value
       });

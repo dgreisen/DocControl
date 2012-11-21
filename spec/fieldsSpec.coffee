@@ -5,68 +5,68 @@ if exports?
 describe "events", ->
   beforeEach ->
     @parent = {
-      bubble: (@event, @args) ->
+      _bubble: (@event, @args) ->
     }
     @field = new fields.Field()
     @field.parent = @parent
-    spyOn @parent, "bubble"
+    spyOn @parent, "_bubble"
 
   it """
-     should call bubble when emit is called; adding a 
+     should call _bubble when emit is called; adding a 
      null sender and originator to the arguments
      """, ->
-    spyOn @field, "bubble"
-    @field.emit "testEvent", a:1, b:2
-    expect(@field.bubble).toHaveBeenCalledWith("testEvent", null, originator: @field, a:1, b:2)
+    spyOn @field, "_bubble"
+    @field.emit "onTestEvent", a:1, b:2
+    expect(@field._bubble).toHaveBeenCalledWith("onTestEvent", null, originator: @field, a:1, b:2)
 
   it "should call event handler specific to event if it exists", ->
 
-    @field.handlers =
-      testEvent: (inSender, inEvent) ->
+    @field.listeners =
+      onTestEvent: (inSender, inEvent) ->
       "*": (inSender, inEvent) ->
-    spyOn @field.handlers, "testEvent"
-    spyOn @field.handlers, "*"
-    @field.emit "testEvent", a:1, b: 2
-    expect(@field.handlers.testEvent).toHaveBeenCalledWith(null, {originator: @field, a:1, b:2})
-    expect(@field.handlers["*"]).not.toHaveBeenCalled()
+    spyOn @field.listeners, "onTestEvent"
+    spyOn @field.listeners, "*"
+    @field.emit "onTestEvent", a:1, b: 2
+    expect(@field.listeners.onTestEvent).toHaveBeenCalledWith(null, {originator: @field, a:1, b:2})
+    expect(@field.listeners["*"]).not.toHaveBeenCalled()
 
   it "should call wildcard handler if exists and specific handler doesn't", ->
-    @field.handlers = "*": (inSender, inEvent) ->
-    spyOn @field.handlers, "*"
-    @field.emit "testEvent", a:1, b:2
-    expect(@field.handlers["*"]).toHaveBeenCalledWith(null, originator: @field, a:1, b:2)
+    @field.listeners = "*": (inSender, inEvent) ->
+    spyOn @field.listeners, "*"
+    @field.emit "onTestEvent", a:1, b:2
+    expect(@field.listeners["*"]).toHaveBeenCalledWith(null, originator: @field, a:1, b:2)
     
   it "should call method identified by handler if handler is a string", ->
     @field.handler = (inSender, inEvent) ->
-    @field.handlers = testEvent: "handler"
+    @field.listeners = onTestEvent: "handler"
     spyOn @field, "handler"
-    @field.emit "testEvent", a:1, b:2
+    @field.emit "onTestEvent", a:1, b:2
     expect(@field.handler).toHaveBeenCalled()
 
   it "should stop bubbling event if handler returns true", ->
-    @field.handlers = testEvent: (inSender, inEvent) ->
+    @field.listeners = onTestEvent: (inSender, inEvent) ->
       return true
-    @field.emit "testEvent", a:1, b:2
-    expect(@parent.bubble).not.toHaveBeenCalled()
+    @field.emit "onTestEvent", a:1, b:2
+    expect(@parent._bubble).not.toHaveBeenCalled()
 
-  it "should call any handlers and stop bubbling event if no parent", ->
+  it "should call any listeners and stop bubbling event if no parent", ->
     @field.parent = undefined
-    @field.handlers = testEvent: (inSender, inEvent) ->
-    spyOn @field.handlers, "testEvent"
-    @field.emit "testEvent", a:1, b:2
-    expect(@field.handlers.testEvent).toHaveBeenCalled()
+    @field.listeners = onTestEvent: (inSender, inEvent) ->
+    spyOn @field.listeners, "onTestEvent"
+    @field.emit "onTestEvent", a:1, b:2
+    expect(@field.listeners.onTestEvent).toHaveBeenCalled()
 
-  it "should bubble event if handler returns true, updating inSender to itself", ->
-    @field.handlers = testEvent: (inSender, inEvent) ->
+  it "should _bubble event if handler returns true, updating inSender to itself", ->
+    @field.listeners = onTestEvent: (inSender, inEvent) ->
       return false
-    @field.emit "testEvent", a:1, b:2
-    expect(@parent.bubble).toHaveBeenCalledWith("testEvent", @field, originator: @field, a:1, b:2)
+    @field.emit "onTestEvent", a:1, b:2
+    expect(@parent._bubble).toHaveBeenCalledWith("onTestEvent", @field, originator: @field, a:1, b:2)
 
-  it "should bubble event if no handler, updating inSender to itself", ->
-    @field.handlers = testEvent: (inSender, inEvent) ->
+  it "should _bubble event if no handler, updating inSender to itself", ->
+    @field.listeners = onTestEvent: (inSender, inEvent) ->
       return false
-    @field.emit "testEvent", a:1, b:2
-    expect(@parent.bubble).toHaveBeenCalledWith("testEvent", @field, originator: @field, a:1, b:2)
+    @field.emit "onTestEvent", a:1, b:2
+    expect(@parent._bubble).toHaveBeenCalledWith("onTestEvent", @field, originator: @field, a:1, b:2)
 
 
 
@@ -141,21 +141,21 @@ describe "validation", ->
     @field.isValid()
     expect(@field.validate).toHaveBeenCalled()
 
-  it "should emit a validChanged event, with any errors, when its valid status changes or when the errors list changes, but not otherwise", ->
+  it "should emit a onValidChanged event, with any errors, when its valid status changes or when the errors list changes, but not otherwise", ->
     @field = new fields.CharField(name: "test", minLength:5)
-    @field.handlers.validChanged = (inSender, inOriginator, valid, errors) ->
-    spyOn @field.handlers, "validChanged"
+    @field.listeners.onValidChanged = (inSender, inOriginator, valid, errors) ->
+    spyOn @field.listeners, "onValidChanged"
     expect(@field.isValid()).toBe(false)
-    expect(@field.handlers.validChanged).toHaveBeenCalledWith(null, originator: @field, valid: false, errors: ['This field is required.'])    
+    expect(@field.listeners.onValidChanged).toHaveBeenCalledWith(null, originator: @field, valid: false, errors: ['This field is required.'])    
     @field.setValue("a")
     expect(@field.isValid()).toBe(false)
-    expect(@field.handlers.validChanged).toHaveBeenCalledWith(null, originator: @field, valid: false, errors: ['Ensure this value has at least 5 characters (it has 1).'])
+    expect(@field.listeners.onValidChanged).toHaveBeenCalledWith(null, originator: @field, valid: false, errors: ['Ensure this value has at least 5 characters (it has 1).'])
     @field.setValue("hello")
     expect(@field.isValid()).toBe(true)
-    expect(@field.handlers.validChanged).toHaveBeenCalledWith(null, originator: @field, valid: true, errors: [])
+    expect(@field.listeners.onValidChanged).toHaveBeenCalledWith(null, originator: @field, valid: true, errors: [])
     @field.setValue("hello world")
     expect(@field.isValid()).toBe(true)
-    expect(@field.handlers.validChanged.calls.length).toEqual(3)
+    expect(@field.listeners.onValidChanged.calls.length).toEqual(3)
 
   it "should throw an error when getClean is called and it is not valid", ->
     expect(=> @field.getClean()).toThrow()
@@ -169,17 +169,22 @@ describe "genField() - field creation", ->
 
 describe "field", ->
   beforeEach ->
-    @field = new fields.Field(name:"test", value: 5)
-  it "should emit valueChanged only when its value changes", ->
-    @field.handlers.valueChanged = (inSender, inEvent) ->
-    spyOn @field.handlers, "valueChanged"
+    @field = new fields.IntegerField(name:"test", value: 5, minValue: 0)
+  it "should emit onValueChanged only when its value changes", ->
+    @field.listeners.onValueChanged = (inSender, inEvent) ->
+    spyOn @field.listeners, "onValueChanged"
     @field.setValue(5)
-    expect(@field.handlers.valueChanged).not.toHaveBeenCalled()
+    expect(@field.listeners.onValueChanged).not.toHaveBeenCalled()
     @field.setValue(6)
-    expect(@field.handlers.valueChanged).toHaveBeenCalledWith(null, originator: @field, value: 6, original: 5)
+    expect(@field.listeners.onValueChanged).toHaveBeenCalledWith(null, originator: @field, value: 6, original: 5)
     @field.setValue()
-  it "should emit valueChanged if it is created with a value", ->
-    parent = bubble: ->
-    spyOn parent, "bubble"
+  it "should emit onValueChanged if it is created with a value", ->
+    parent = _bubble: ->
+    spyOn parent, "_bubble"
     @field = new fields.Field(name:"test", value: 5, parent: parent)
     @field.setValue(6)
+
+  it "should return list of all errors", ->
+    @field.setValue(-4)
+    expect(@field.getErrors()).toEqual(['Ensure this value is greater than or equal to 0.'])
+    
