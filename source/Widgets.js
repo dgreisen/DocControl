@@ -1,67 +1,30 @@
-genWidgetDef = function(schema) {
+// A kind could be given as a string, a function or as a hash. standardize it to a hash
+_getKindHash = function(kind) {
+  if (typeof(kind) == "string" || kind instanceof Function) return {kind: kind};
+  return kind || {};
+}
+// generate a widget definition from a schema
+_genWidgetDef = function(schema, parent, value) {
   var widget = enyo.clone(schema);
-  widget.kind = windowfields[schema.field];
+  // if our schema doesn't define a kind, get it from the field
+  if (!schema.widget || !(typeof(schema.widget) == "string" || schema.widget.kind)) {
+    var kind = window.fields[schema.field].prototype.widget;
+    enyo.mixin(widget, _getKindHash(kind));
+  }
+  // update with widget attrs
+  if (schema.widget) {
+    enyo.mixin(widget, _getKindHash(schema.widget));
+    delete widget.widget;
+  }
   widget.fieldName = schema.name;
   delete widget.name;
-  enyo.mixin(widget, widget.widget || {});
-  delete widget.widget;
+  widget.parentWidget = parent;
+  widget.value = (value === undefined) ? widget.value : value;
   return widget;
 };
 
-enyo.kind({
-  name: "fields.enyo",
-  kind: "Control",
-  published: {
-    //* kind definition for widget (eg { kind: "widget.Widget"})
-    widget: "widgets.Widget",
-    //* hash of attibutes to set on widget (eg `{label: ..., initial: ...}`)
-    widgetAttrs: {},
-    //* a string designating a widget style. e.g. "onyx", or "tbs"
-    widgetSet: undefined,
-    //* display method.
-    //* <li>"view": non-editable view of widget (not yet implemented) </li>
-    //* <li>"edit": standard edit widget (default)</li></ul>
-    display: undefined,
-    //* whether a widget should be created for this field
-    noWidget: undefined
-  },
-  create: function() {
-    this.inherited(arguments);
-    this.widgetChanged();
-  },
-  //* @protected
-  widgetChanged: function() {
-    // destroy existing widget
-    if (this.$.widget) this.destroyComponents();
-    // if no widget, return early
-    if (this.getNoWidget() || !this.getWidget()) return;
-    //prepare widget by creating or cloning the widget kind
-    var widget = enyo.clone((typeof(this.widget)=="string") ? { kind: this.widget } : this.widget);
-    // replace the specified widget with a widget of the widgetSet type, if it exists
-    if (this.getWidgetSet()) {
-      var kind = widget.kind.split('.');
-      kind.splice(1,0, this.getWidgetSet());
-      var x = window;
-      for (var i=0; x && i < kind.length; i++) {x=x[kind[i]];}
-      if (x) widget.kind = kind.join('.');
-    }
-    // then add widget attributes
-    var widgetAttrs = enyo.mixin(enyo.clone(this.getWidgetAttrs()), {
-      name: "widget",
-      required: this.required,
-      value: this.value,
-      fieldName: this.getName(),
 
-      widgetSet: this.getWidgetSet()
-    });
-    widget = enyo.mixin(widget, widgetAttrs);
-    // call prepareWidget, which is implemented by subclasses.
-    widget = this.prepareWidget(widget);
-    // create the component
-    this.createComponent(widget);
-  }
 
-});
 
 enyo.kind({
   name: "widgets.Form",
@@ -112,6 +75,13 @@ enyo.kind({
   onWidgetValueChanged: function(inSender, inEvent) {
     this.setValue(inEvent.value, {path: inEvent.path});
   },
+  schemaChanged: function() {
+    var widget = _genWidgetDef(this.schema);
+    widget.name = "widget";
+    this.destroyComponents();
+    this.createComponent(widget);
+    this.widgets = this.$.widget;
+  },
   //* proxy field functions
   getField: function(path) {
     return this.fields.getField(path);
@@ -153,6 +123,10 @@ enyo.kind({
   }
 });
 
+
+
+
+
 enyo.kind({
   name: "widgets.Widget",
   kind: "Control",
@@ -185,27 +159,21 @@ enyo.kind({
     //* whether the field has been validated before - used by some validationStrategies; set by field
     validatedOnce: false,
     //* list of error messages from field validation
-    errors: [],
-    //* error message to display; set by field
-    errorMessage: "",
-    //* whether the current widget is in valid state. IMPORTANT: just because `valid` is true, doesn't mean value passes field's validation method. Just specifies whether widget displays error messages or not. set by field
-    valid: true
+    errors: []
   },
-  //* the initial value of the widget; set by field
-  initial: "",
+  //* the parent widget
+  parentWidget: undefined,
   events: {
-    //* request that the parent field perform validation
-    onRequestValidation: ""
+    //* triggered when the value changes
+    onValueChanged: ""
   },
   create: function() {
     this.inherited(arguments);
     this.generateComponents(); // generate the widget components
     this.labelChanged();
     this.requiredChanged();
-    this.value = (this.value === undefined) ? this.initial : this.value;
     this.setValue(this.value);
     this.writeHelpText();
-    this.validChanged();
     this.fieldNameChanged();
   },
   //* @public
@@ -230,7 +198,7 @@ enyo.kind({
   },
   // handler called by input kind when it has changed, and the user has finished inputing - for example on an `onchange` or `onblur`
   onInputChange: function() {
-    this.setValue(this.$.input.getValue())
+    this.setValue(this.$.input.getValue());
   },
   // handler called by input kind when it has made an instantaneous change - for example on an `onkeyup`
   onInputKey: function() {
@@ -243,35 +211,15 @@ enyo.kind({
       this.$.label.setContent(this.label);
     }
   },
-  writeHelpText: function() {
-    if (!this.$.helpText) return;
-    if (this.errorMessage || this.helpText) {
-      this.$.helpText.removeClass("none");
-      this.$.helpText.setContent(this.errorMessage || this.helpText);
-    } else {
-      this.$.helpText.addClass("none");
-    }
-  },
-  helpTextChanged: function() {
-    this.writeHelpText();
-  },
   requiredChanged: function() {
     if (!this.$.required) return;
     this.$.required.setShowing(this.required);
   },
-  errorsChanged: function
-  errorMessageChanged: function() {
+  helpTextChanged: function() {
     this.writeHelpText();
   },
-  errorClass: "error",
-  validChanged: function() {
-    if (this.valid) {
-      this.removeClass(this.errorClass);
-      if (this.$.helpText) this.$.helpText.setContent(this.helpText);
-    } else {
-      this.addClass(this.errorClass);
-      if (this.$.helpText) this.$.helpText.setContent(this.errorMessage);
-    }
+  getValid: function() {
+    return Boolean(this.errors.length);
   },
   fieldNameChanged: function() {
     this.$.input.setAttribute("name", this.fieldName);
@@ -281,7 +229,7 @@ enyo.kind({
   //* set the value of the field, or a subfield specified by path
   //* Do Not Override - instead, override _setValue(val)
   setValue: function(val, path) {
-    if (path and path.length) throw Error("widget does not exist");
+    if (path && path.length) throw Error("widget does not exist");
     if ("_setValue" in this) {
       this._setValue(val);
     }
@@ -294,13 +242,13 @@ enyo.kind({
   //* @public
   //* useful for subclassing.
   valueChanged: function(val) {
-    var val = (val === null || val === undefined) ? this.nullValue : val;
+    val = (val === null || val === undefined) ? this.nullValue : val;
     this.$.input.setValue(val);
   },
   //* set the errors for this field, or a subfield specified by path
   //* Do Not Override - instead, override _setErrors(val)
   setErrors: function(val, path) {
-    if (path and path.length) throw Error("widget does not exist");
+    if (path && path.length) throw Error("widget does not exist");
     if ("_setErrors" in this) {
       this._setErrors(val);
     }
@@ -309,12 +257,34 @@ enyo.kind({
       if ("errorsChanged" in this) return this.errorsChanged();
     }
   },
+  errorClass: "error",
+  errorsChanged: function() {
+    this.writeHelpText();
+    if (this.getValid()) {
+      this.removeClass(this.errorClass);
+      if (this.$.helpText) this.$.helpText.setContent(this.helpText);
+    } else {
+      this.addClass(this.errorClass);
+      if (this.$.helpText) this.$.helpText.setContent(this.errors[0]);
+    }
+  },
+  writeHelpText: function() {
+    if (!this.$.helpText) return;
+    if (!this.getValid() || this.helpText) {
+      this.$.helpText.removeClass("none");
+      var txt = (this.errors.length) ? this.errors[0] : this.helpText;
+      this.$.helpText.setContent(txt);
+    } else {
+      this.$.helpText.setContent("");
+      this.$.helpText.addClass("none");
+    }
+  },
   //* skin: default skin with no css
   defaultSkin: function() {
     var comps = [this.inputKind, this.requiredKind, this.helpKind];
     if (this.label && !this.compact) comps.unshift(this.labelKind);
     this.createComponents(comps);
-  },
+  }
 });
 
 
@@ -359,8 +329,8 @@ enyo.kind({
     this.setValue(this.value);
   },
   inputKind: { name: "input", kind: "enyo.Select" },
-  setValue: function(val) {
-    var val = (val === null || val === undefined) ? this.nullValue : val;
+  _setValue: function(val) {
+    val = (val === null || val === undefined) ? this.nullValue : val;
     this.value = val;
     if (this.choicesIndex && this.choicesIndex[val]) this.$.input.setSelected(this.choicesIndex[val]);
   },
@@ -374,7 +344,7 @@ enyo.kind({
   },
   choicesIndex: undefined,
   setChoices: function(val) {
-    var val = enyo.clone(val);
+    val = enyo.clone(val);
     this.choices = enyo.clone(val);
     // destroy any existing components
     if (this.choicesIndex) {

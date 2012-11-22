@@ -23,6 +23,8 @@ class Field
   listeners: {}
   # parent field, set by parent
   parent: undefined
+  # kind definition for widget to display (eg { kind: "widget.Widget"}, or simply the string name of the widget kind)
+  widget: "widgets.Widget",
   # default values for attributes
   defaults:
     # the name/identifier for this field

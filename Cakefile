@@ -7,8 +7,11 @@ task 'build', 'Build the .js files', (options) ->
 	exec "coffee --compile --output source/ coffee/", (err, stdout, stderr) ->
 		throw err if err
 		console.log stdout + stderr
-	console.log('Compiling Coffee from spec to SpecRunner')
+	console.log('Compiling Coffee tests')
 	exec "coffee --compile --bare --output SpecRunner/ spec/", (err, stdout, stderr) ->
+		throw err if err
+		console.log stdout + stderr
+	exec "coffee --compile --bare --output SpecRunner/ SpecRunner/", (err, stdout, stderr) ->
 		throw err if err
 		console.log stdout + stderr
 	
@@ -22,3 +25,6 @@ task 'watch', 'Watch coffee directory and build the .js files', (options) ->
 	cp2 = exec "coffee --watch --bare --output SpecRunner/ spec/"
 	cp2.stdout.on "data", (data) -> console.log(data)
 	cp2.stderr.on "data", (data) -> console.log(data)
+	cp3 = exec "coffee --watch --bare --output SpecRunner/ SpecRunner/"
+	cp3.stdout.on "data", (data) -> console.log(data)
+	cp3.stderr.on "data", (data) -> console.log(data)

@@ -28,6 +28,8 @@
 
     Field.prototype.parent = void 0;
 
+    Field.prototype.widget = "widgets.Widget";
+
     Field.prototype.defaults = {
       name: void 0,
       required: true,

@@ -9,6 +9,10 @@ enyo.kind({
     // whether this widget has a fixed height. If `true`, then a scroller is provided.
     // fixedHeight: false,
   },
+  create: function() {
+    this.inherited(arguments);
+    this.schemaChanged();
+  },
   inputKind: { name: "fields", tag: "div" },
   labelKind: { style: "padding-top:15px;", components: [{ name: "label", classes: "widget-label" }] },
   labelChanged: function() {
@@ -28,7 +32,6 @@ enyo.kind({
   },
   errorClass: "containererror",
   fieldNameChanged: function() { return; },
-  // the value should always be set by the field.
   setValue: function(values) {}
 });
 
@@ -39,7 +42,10 @@ enyo.kind({
 //* widget for _fields.ContainerField_
 enyo.kind({
   name: "widgets.ContainerWidget",
-  kind: "widgets.BaseContainerWidget"
+  kind: "widgets.BaseContainerWidget",
+  schemaChanged: function() {
+    
+  }
 });
 
 
