@@ -24,16 +24,4 @@ describe "genWidgetDef", ->
     kind = _genWidgetDef(@schema)
     expect(kind).toEqual(@output)
 
-describe "widgets.Form", ->
-  beforeEach ->
-    @schema = { 
-      name: "name",
-      field: "CharField",
-      maxLength: 40,
-      widget: { label: "Name" }
-    }
-    @form = new widgets.Form(schema: @schema)
-
-  it "should create a widget and a field given a schema", ->
-    expect(@form.fields instanceof fields.Field).toBe(true)
-    expect(@form.widgets instanceof widgets.Widget).toBe(true)
+  

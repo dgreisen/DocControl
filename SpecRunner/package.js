@@ -1,0 +1,10 @@
+enyo.depends(
+	"../lib/layout",
+	"../lib/onyx",
+	"../source/utils.js",
+	"../source/Validators.js",
+	"../source/Fields.js",
+	"../source/ContainerFields.js",
+	"../source/Widgets.js",
+	"../source/ContainerWidgets.js"
+);
