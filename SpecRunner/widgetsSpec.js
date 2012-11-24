@@ -32,8 +32,9 @@ describe("genWidgetDef", function() {
   });
 });
 
-describe("widgets.Form", function() {
+describe("widgets", function() {
   beforeEach(function() {
+    var _genWidgetDef;
     this.schema = {
       name: "name",
       field: "CharField",
@@ -42,12 +43,16 @@ describe("widgets.Form", function() {
         label: "Name"
       }
     };
-    return this.form = new widgets.Form({
-      schema: this.schema
-    });
+    _genWidgetDef = widgets.Form.prototype._genWidgetDef;
+    return this.widget = new widgets.Widget(_genWidgetDef(this.schema));
   });
-  return it("should create a widget and a field given a schema", function() {
-    expect(this.form.fields instanceof fields.Field).toBe(true);
-    return expect(this.form.widgets instanceof widgets.Widget).toBe(true);
+  it("should ");
+  it("should set its value in the input", function() {
+    this.widget.setValue("hello world");
+    return expect(this.widget.$.input.getValue()).toBe("hello world");
+  });
+  return it("should set input value to this.nullValue if null or undefined", function() {
+    this.widget.setValue(null);
+    return expect(this.widget.$.input.getValue()).toBe("");
   });
 });

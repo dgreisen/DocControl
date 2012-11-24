@@ -164,7 +164,7 @@ describe "validation", ->
 describe "genField() - field creation", ->
   it "should create a field from a schema", ->
     schema = {field: "CharField", name: "test", minLength: 5}
-    field = utils.genField(schema, fields)
+    field = utils.genField(schema, undefined, undefined, fields)
     expect(field instanceof fields.CharField).toBe(true)
 
 describe "field", ->

@@ -61,13 +61,14 @@
 
     BaseContainerField.prototype.subfieldChanged = function(inSender, inEvent) {
       if (inSender === inEvent.originator) {
-        return this._hasChanged = true;
+        this._hasChanged = true;
       }
+      return false;
     };
 
     BaseContainerField.prototype.isValid = function(opts) {
-      var oldErrors, valid, value;
-      if ((opts != null ? opts.path : void 0) != null) {
+      var oldErrors, valid, value, _ref;
+      if (opts != null ? (_ref = opts.path) != null ? _ref.length : void 0 : void 0) {
         return this._applyToSubfield("isValid", opts);
       }
       if (!this._hasChanged) {
@@ -113,7 +114,8 @@
     };
 
     BaseContainerField.prototype.getFields = function(opts) {
-      if ((opts != null ? opts.path : void 0) != null) {
+      var _ref;
+      if (opts != null ? (_ref = opts.path) != null ? _ref.length : void 0 : void 0) {
         return this._applyToSubfield("getFields", opts);
       }
       return this._fields;
@@ -148,14 +150,16 @@
     };
 
     BaseContainerField.prototype.getValue = function(opts) {
-      if ((opts != null ? opts.path : void 0) != null) {
+      var _ref;
+      if (opts != null ? (_ref = opts.path) != null ? _ref.length : void 0 : void 0) {
         return this._applyToSubfield("getValue", opts);
       }
       return this._querySubfields("getValue");
     };
 
     BaseContainerField.prototype.getClean = function(opts) {
-      if ((opts != null ? opts.path : void 0) != null) {
+      var _ref;
+      if (opts != null ? (_ref = opts.path) != null ? _ref.length : void 0 : void 0) {
         return this._applyToSubfield("getClean", opts);
       }
       this.throwValidationError();
@@ -163,7 +167,8 @@
     };
 
     BaseContainerField.prototype.toJSON = function(opts) {
-      if ((opts != null ? opts.path : void 0) != null) {
+      var _ref;
+      if (opts != null ? (_ref = opts.path) != null ? _ref.length : void 0 : void 0) {
         return this._applyToSubfield("toJSON", opts);
       }
       this.throwValidationError();
@@ -171,7 +176,8 @@
     };
 
     BaseContainerField.prototype.getErrors = function(opts) {
-      if ((opts != null ? opts.path : void 0) != null) {
+      var _ref;
+      if (opts != null ? (_ref = opts.path) != null ? _ref.length : void 0 : void 0) {
         return this._applyToSubfield("getErrors", opts);
       }
       this.isValid();
@@ -188,8 +194,7 @@
       if (value != null) {
         definition.value = value;
       }
-      field = utils.genField(definition, fields);
-      this._fields.push(field);
+      field = utils.genField(definition, this, value, fields);
       return field;
     };
 
@@ -197,6 +202,9 @@
       var args, fn, opts, subfield;
       fn = arguments[0], opts = arguments[1], args = 3 <= arguments.length ? __slice.call(arguments, 2) : [];
       subfield = this.getField(opts.path);
+      if (!subfield) {
+        throw Error("Field does not exist: " + String(opts.path));
+      }
       delete opts.path;
       args.push(opts);
       return subfield[fn].apply(subfield, args);
@@ -229,8 +237,8 @@
     ContainerField.prototype.widget = "widgets.ContainerWidget";
 
     ContainerField.prototype.setValue = function(values, opts) {
-      var field, origValue, _i, _len;
-      if ((opts != null ? opts.path : void 0) != null) {
+      var field, origValue, _i, _len, _ref;
+      if (opts != null ? (_ref = opts.path) != null ? _ref.length : void 0 : void 0) {
         return this._applyToSubfield("setValue", opts, values);
       }
       origValue = this.getValue();
@@ -246,7 +254,7 @@
         field.setValue(values[field.name]);
       }
       return this.emit("onValueChanged", {
-        value: values,
+        value: this.getValue(),
         original: origValue
       });
     };
@@ -263,8 +271,8 @@
     };
 
     ContainerField.prototype.setSchema = function(schema, opts) {
-      var definition, value, _i, _len;
-      if ((opts != null ? opts.path : void 0) != null) {
+      var definition, value, _i, _len, _ref;
+      if (opts != null ? (_ref = opts.path) != null ? _ref.length : void 0 : void 0) {
         return this._applyToSubfield("setSchema", opts, schema);
       }
       if (!(schema != null) || schema === this.schema) {
@@ -334,7 +342,8 @@
     ListField.prototype.widget = "widgets.ListWidget";
 
     ListField.prototype.setSchema = function(schema) {
-      if ((typeof opts !== "undefined" && opts !== null ? opts.path : void 0) != null) {
+      var _ref;
+      if (typeof opts !== "undefined" && opts !== null ? (_ref = opts.path) != null ? _ref.length : void 0 : void 0) {
         return this._applyToSubfield("setSchema", opts, schema);
       }
       if (!(schema != null) || schema === this.schema) {
@@ -346,9 +355,15 @@
       return this.value = void 0;
     };
 
-    ListField.prototype.setValue = function(values) {
-      var value, _i, _len;
-      if ((typeof opts !== "undefined" && opts !== null ? opts.path : void 0) != null) {
+    ListField.prototype.setValue = function(values, opts) {
+      var path, value, _i, _len, _ref;
+      if (opts != null ? (_ref = opts.path) != null ? _ref.length : void 0 : void 0) {
+        if (typeof path === "string") {
+          path = path.split(".");
+        }
+        if (opts.path.length === 1 && this.getFields().length === parseInt(opts.path[0])) {
+          return this._addField(this.schema, values);
+        }
         return this._applyToSubfield("setValue", opts, values);
       }
       if (!values || !this.schema || utils.isEqual(values, this.getValue())) {
@@ -363,27 +378,19 @@
         this._addField(this.schema, value);
       }
       this.emit("onValueChanged", {
-        value: values,
+        value: this.getValue(),
         original: this.value
       });
       return this.value = void 0;
     };
 
-    ListField.prototype.addField = function(definition, fields) {
-      var value;
-      if (fields == null) {
-        fields = fields;
-      }
-      value = this.getValue();
-      this._addField(definition, fields);
-      return this.emit("onValueChanged", {
-        value: this.getValue(),
-        original: value
-      });
+    ListField.prototype.addField = function(value) {
+      return this._addField(this.schema, value);
     };
 
     ListField.prototype.removeField = function(index) {
       var value;
+      this._getField(index).emit("onDelete");
       value = this.getValue();
       value.splice(index, 1);
       this.setValue(value);

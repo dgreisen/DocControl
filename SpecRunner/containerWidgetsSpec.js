@@ -59,10 +59,16 @@ describe("widgets.ListWidget", function() {
     _genWidgetDef = widgets.Form.prototype._genWidgetDef;
     return this.widget = new widgets.ListWidget(_genWidgetDef(this.schema));
   });
-  return it("should create child widgets, add to _widgets, and set value and parentWidget", function() {
+  it("should create child widgets, add to _widgets, and set value and parentWidget", function() {
     expect(this.widget._widgets.length).toBe(2);
     expect(this.widget._widgets[0].parentWidget).toBe(this.widget);
     return expect(this.widget._widgets[0].value).toBe("hello");
+  });
+  return it("should create a new empty child widget when getWidget called with a path one greater than the number of childWidgets", function() {
+    expect(this.widget.getWidget([0]).getValue()).toBe("hello");
+    expect(this.widget.getWidget([3])).toBe(void 0);
+    expect(this.widget.getWidget([2]).kind).toBe("widgets.Widget");
+    return expect(this.widget._widgets.length).toBe(3);
   });
 });
 

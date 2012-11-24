@@ -24,4 +24,26 @@ describe "genWidgetDef", ->
     kind = _genWidgetDef(@schema)
     expect(kind).toEqual(@output)
 
-  
+
+
+
+describe "widgets", ->
+  beforeEach ->
+    @schema = { 
+      name: "name",
+      field: "CharField",
+      maxLength: 40,
+      widget: { label: "Name" }
+    }
+    _genWidgetDef = widgets.Form.prototype._genWidgetDef
+    @widget = new widgets.Widget(_genWidgetDef(@schema))
+
+  it "should "
+
+  it "should set its value in the input", ->
+    @widget.setValue("hello world")
+    expect(@widget.$.input.getValue()).toBe("hello world")
+
+  it "should set input value to this.nullValue if null or undefined", ->
+    @widget.setValue(null)
+    expect(@widget.$.input.getValue()).toBe("")

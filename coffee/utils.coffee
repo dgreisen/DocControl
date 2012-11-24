@@ -48,7 +48,9 @@ strip = (str) ->
   return String(str).replace(/^\s*|\s*$/g, '')
 
 # generate a field from its schema
-genField = (schema, fields) ->
+genField = (schema, parent, value, fields) ->
+  schema.parent = parent
+  if value? then schema.value = value
   if not fields[schema.field] then throw Error("Unknown field: "+ schema.field)
   return new fields[schema.field](schema)
 

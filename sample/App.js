@@ -3,70 +3,79 @@
 
 // Phone Field
 // -----------
-enyo.kind({
+phoneSchema = {
   name: "phoneField",
-  kind: "fields.ContainerField",
-  widgetAttrs: { noLabel: true, noHelpText: true },
+  field: "ContainerField",
+  widget: { noLabel: true, noHelpText: true },
   schema: [
-  { name: "label",
-    kind: "fields.ChoiceField",
-    choices: [['h', 'Home'], ['w', 'Work'], ['m', 'Mobile']],
-    widgetAttrs: { label: "Label", compact: true, noLabel: true, size:1 },
-    inputClasses:"input-medium"
-  },
-  { name: "phone",
-    kind: "local.en.USPhoneNumberField",
-    widgetAttrs: { label: "Number", compact: true, noLabel: true, helpText: "enter 10 digit phone", size:2 }
-  }]
-});
+    { name: "label",
+      field: "ChoiceField",
+      choices: [['h', 'Home'], ['w', 'Work'], ['m', 'Mobile']],
+      widget: { label: "Label", compact: true, noLabel: true, size:1 },
+      inputClasses:"input-medium"
+    },
+    { name: "phone",
+      field: "local.en.USPhoneNumberField",
+      widget: { label: "Number", compact: true, noLabel: true, helpText: "enter 10 digit phone", size:2 }
+    }]
+};
+
 
 // ContactField
 // ------------
-enyo.kind({
+contactSchema = {
   name: "ContactField",
-  kind: "fields.ContainerField",
-  widgetAttrs: { skin: "horizontal", noLabel: true, noHelpText: true },
+  field: "ContainerField",
+  widget: { skin: "horizontal", noLabel: true, noHelpText: true },
   schema: [
     { name: "name",
-      kind: "fields.CharField",
+      field: "CharField",
       maxLength: 40,
-      widgetAttrs: { label: "Name" }
+      widget: { label: "Name" }
     },
     { name: "phones",
-      kind: "fields.ListField",
-      schema: { kind: phoneField },
-      widgetAttrs: { label: "Phone Numbers", noHelpText: true }
+      field: "ListField",
+      schema: phoneSchema,
+      widget: { label: "Phone Numbers", noHelpText: true }
     },
     { name: "address",
-      kind: "local.en.USAddressField",
-      widgetAttrs: { noLabel: true }
+      field: "local.en.USAddressField",
+      widget: { noLabel: true }
     },
     { name: "type",
-      kind: "fields.ChoiceField",
+      field: "ChoiceField",
       choices: [[0, "Friend"],[1, "Family"], [2, "Coworker"], [3, "Acquaintance"]],
-      widgetAttrs: { label: "Contact Type" }
+      widget: { label: "Contact Type" }
     },
     { name: "private",
-      kind: "fields.BooleanField",
+      field: "BooleanField",
       required: false,
-      widgetAttrs: { label: "Private", initial: true }
+      widget: { label: "Private", initial: true }
     },
     { name: "emails",
-      kind: "fields.ListField",
-      schema: { kind: "fields.EmailField", widgetAttrs: { label: "Email", compact: true, noLabel: true } },
-      widgetAttrs: {
+      field: "ListField",
+      schema: { kind: "fields.EmailField", widget: { label: "Email", compact: true, noLabel: true } },
+      widget: {
         label: "Emails",
         unnested: true
       }
     },
     { name: "children",
-      kind: "fields.IntegerField",
+      field: "IntegerField",
       maxValue: 30,
       minValue: 0,
-      widgetAttrs: { label: "# of Children", initial: 0 }
+      widget: { label: "# of Children", initial: 0 }
     }
   ]
-});
+};
+
+contactsSchema = {
+  name: "contactsForm", kind: "fields.ListField", classes: "main-content form-horizontal",
+  schema: "ContactSchema",
+  widget: { kind: "widgets.ListWidget", noLabel: true, noHelpText: true },
+  value: DATA,
+  widgetSet: "onyx",
+};
 
 // INITIAL DATA
 // ============
@@ -109,15 +118,8 @@ enyo.kind({
       {kind: "onyx.Button", content: "help", ontap: "displayHelp"}
     ]},
     { kind: "Scroller", fit: true, components: [
-      { classes: "main-content", content: "You can inspect the contacts in the debugger by looking at 'window.contacts', even when there are no widgets"},
-      { name: "contactsForm", kind: "fields.ListField", classes: "main-content form-horizontal",
-        schema: { kind: "ContactField" },
-        widget: "widgets.ListWidget",
-        value: DATA,
-        widgetSet: "onyx",
-        widgetAttrs: {
-          noLabel: true, noHelpText: true
-      }}
+      { classes: "main-content", content: "You can inspect the contacts in the debugger by looking at 'window.contacts', even when there are no widgets"}
+      //<<>>
     ]},
     { kind: "onyx.Toolbar", components: [
       { kind: "onyx.Button", ontap: "onSubmit", content: "Submit"},

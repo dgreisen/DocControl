@@ -28,3 +28,4 @@ task 'watch', 'Watch coffee directory and build the .js files', (options) ->
 	cp3 = exec "coffee --watch --bare --output SpecRunner/ SpecRunner/"
 	cp3.stdout.on "data", (data) -> console.log(data)
 	cp3.stderr.on "data", (data) -> console.log(data)
+	

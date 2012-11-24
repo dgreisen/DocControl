@@ -38,6 +38,9 @@ class Field
     @opts ?= {}
     @opts = utils.mixin(utils.clone(@defaults), opts)
     {@name, @required, @parent} = @opts
+    # add this field to its parent's list of subfields (have to do it 
+    # here so it can be found when it emits events during construction)
+    if @parent?._fields? then @parent._fields.push(this)
     # compile inherited attributes
     @errorMessages = @_walkProto("errorMessages")
     @listeners = @_walkProto("listeners")
@@ -133,8 +136,9 @@ class Field
   setValue: (val, opts) ->
     if val != @value
       @_hasChanged = true
-      @emit("onValueChanged", value: val, original: @value)
-      @value = val;
+      origValue = @value
+      @value = val;      
+      @emit("onValueChanged", value: @getValue(), original: origValue)
   # You should not have to override this in Field subclasses
   getValue: () ->
     return @value;

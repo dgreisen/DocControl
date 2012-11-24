@@ -40,6 +40,16 @@ describe "ListField", ->
   it "should be able to get immediate child by index", ->
     expect(@field._getField(0).getValue()).toBe("hello")
 
+  it "should create a new child with the given value when setValue is called with a path one greater than the number of subfields", ->
+    @field.setValue("three", path: "2");
+    expect(@field.getValue()).toEqual(["hello", "world", "three"])
+
+  it "should getValue of listField when path is empty", ->
+    expect(@field.getValue(path: "")).toEqual(@field.getValue())
+    expect(@field.getValue(path: [])).toEqual(@field.getValue())
+
+
+
 
 
 describe "ContainerField", ->
@@ -69,6 +79,10 @@ describe "ContainerField", ->
   it "should throw an error if setValue called with anything other than a hash of values", ->
     expect(=> @field.setValue('hello')).toThrow()
     expect(=> @field.setValue(['hello'])).toThrow()
+
+  it "should getValue of Containerfield when path is empty", ->
+    expect(@field.getValue(path: "")).toEqual(@field.getValue())
+    expect(@field.getValue(path: [])).toEqual(@field.getValue())
 
 
 
@@ -117,36 +131,41 @@ describe "ContainerField Validation", ->
 
 describe "field traversal", ->
   beforeEach -> 
-    @schema = [
-      field: "ListField"
-      name: "firstList"
+    @schema = [{
+      field: "ListField",
+      name: "firstList",
       schema: {
-        field: "ContainerField"
-        name: "secondContainer"
-        schema: [
-          field: "ListField"
-          name: "secondList"
+        field: "ContainerField",
+        name: "secondContainer",
+        schema: [{
+          field: "ListField",
+          name: "secondList",
           schema: {
-            field: "CharField"
-            name: "text"
+            field: "CharField",
+            name: "text",
             minLength: 5
           }
-        ]
+        }]
       }
-    ]
+    }]
     @vals = {firstList: [{secondList:["hello", "moon"]}]}
     @field = new fields.ContainerField(name:"firstContainer", schema: @schema, value: @vals)
 
-  it "should return a subfield given a string path", ->
+  it "should recursively input values and create subfield", ->
     expect(@field.getValue()).toEqual({ firstList : [ { secondList : [ 'hello', 'moon' ] } ] })
+
+  it "should return a subfield given a string path", ->
     expect(@field.getField("firstList.0.secondList.1").getValue()).toBe("moon")
 
   it "should return a subfield given an array path", ->
-    expect(@field.getValue()).toEqual({ firstList : [ { secondList : [ 'hello', 'moon' ] } ] })
     expect(@field.getField(["firstList", 0, "secondList", 1]).getValue()).toBe("moon")
 
+  it "should return undefined if getField is passed an invalid path", ->
+    expect(@field.getField("noField")).toBe(undefined)
+    expect(@field.getField("firstList.22")).toBe(undefined)
+
   it "should get isValid for specific field if passed opts.path", ->
-    expect(@field.isValid(path: "firstList.0.secondList.1")).toEqual(false)
+    expect(@field.isValid(path: "firstList.0.secondList.1")).toBe(false)
 
   it "should setValue of specific field, and getValue and json for specific field if passed opts.path", ->
     @field.setValue("world", path: "firstList.0.secondList.1")

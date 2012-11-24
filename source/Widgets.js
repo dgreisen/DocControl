@@ -2,7 +2,7 @@
 _getKindHash = function(kind) {
   if (typeof(kind) == "string" || kind instanceof Function) return {kind: kind};
   return kind || {};
-}
+};
 // generate a widget definition from a schema
 _genWidgetDef = function(schema, parent, value) {
   var widget = enyo.clone(schema);
@@ -42,9 +42,9 @@ enyo.kind({
   create: function() {
     this.inherited(arguments);
     var schema = enyo.clone(this.schema);
-    schema.value = this.value;
-    this.fields = utils.genField(this.schema, window.fields);
     this.schemaChanged();
+    this.fields = utils.genField(this.schema, this, this.value, window.fields);
+    this._validate();
   },
   events: {
     onValueChanged: "",
@@ -57,26 +57,39 @@ enyo.kind({
   },
   // * handlers for widget events
   handlers: {
-    onValueChanged: "onWidgetValueChanged"
+    onValueChanged: "onWidgetValueChanged",
+    onDelete: "onWidgetListDelete"
   },
   onFieldValueChanged: function(inSender, inEvent) {
-    this.widgets.setValue(inEvent.value, inEvent.originator.getPath());
+    var path = inEvent.originator.getPath();
+    var widget = this.getWidget(path);
+    if (!widget) return;
+    widget.setValue(inEvent.value);
     inEvent.field = inEvent.originator;
+    delete inEvent.originator;
     this.doValueChanged(inSender, inEvent);
-    // validate, if required by validationStrategy
-    var validationStrategy = this.validationStrategy || "default";
-    validationStrategy = (typeof(validationStrategy) == "string") ? this[validationStrategy+"Validation"]() : validationStrategy;
-    if (validationStrategy()) this.isValid();
+    this._validate();
   },
   onFieldValidChanged: function(inSender, inEvent) {
-    this.widgets.setErrors(inEvent.errors, inEvent.originator.getPath());
+    var path = inEvent.originator.getPath();
+    var widget = this.getWidget(path);
+    if (!widget) return;
+    widget.setErrors(inEvent.errors);
     inEvent.field = inEvent.originator;
+    delete inEvent.originator;
+    this.doValidChanged(inEvent);
   },
   onWidgetValueChanged: function(inSender, inEvent) {
-    this.setValue(inEvent.value, {path: inEvent.path});
+    if (!this.fields || inEvent.originator == this) return;
+    this.setValue(inEvent.value, {path: inEvent.originator.getPath()});
+  },
+  onWidgetListDelete: function(inSender, inEvent) {
+    var path = inEvent.widget.getPath();
+    var index = path.pop();
+    this.fields.getField(path).removeField(index);
   },
   schemaChanged: function() {
-    var widget = _genWidgetDef(this.schema);
+    var widget = _genWidgetDef(this.schema, this);
     widget.name = "widget";
     this.destroyComponents();
     this.createComponent(widget);
@@ -106,7 +119,17 @@ enyo.kind({
   },
   isValid: function(opts) {
     this._validatedOnce = true;
-    return this.isValid(opts);
+    return this.fields.isValid(opts);
+  },
+  _validate: function() {
+    // field valueChanged events are emitted before the field has been assigned
+    // to this.fields so we don't call if no this.fields, and call again when
+    // assignment complete
+    if (!this.fields) return;
+    // validate, if required by validationStrategy
+    var validationStrategy = this.validationStrategy || "default";
+    validationStrategy = (typeof(validationStrategy) == "string") ? this[validationStrategy+"Validation"] : validationStrategy;
+    if (validationStrategy.call(this)) this.isValid();
   },
   //* validation strategy: validate automatically on change only after validation has been called manually once.
   defaultValidation: function() {
@@ -116,11 +139,20 @@ enyo.kind({
   alwaysValidation: function() {
     return true;
   },
+  getPath: function() {
+    return [];
+  },
   _bubble: function(eventName, inSender, inEvent) {
     var handler = this.listeners[eventName] || this.listeners["*"];
     handler = (handler instanceof Function) ? handler : this[handler];
     if (handler) handler.apply(this, [inSender, inEvent]);
-  }
+  },
+  getWidget: function(path) {
+    if (!path) path = [];
+    if (typeof path == "string") path = path.split(".");
+    return this.widgets.getWidget(path);
+  },
+  _genWidgetDef: _genWidgetDef
 });
 
 
@@ -165,10 +197,12 @@ enyo.kind({
   parentWidget: undefined,
   events: {
     //* triggered when the value changes
-    onValueChanged: ""
+    onValueChanged: "",
+    onRegistration: ""
   },
   create: function() {
     this.inherited(arguments);
+    this.doRegistration();
     this.generateComponents(); // generate the widget components
     this.labelChanged();
     this.requiredChanged();
@@ -226,36 +260,13 @@ enyo.kind({
     if (this.$.label) this.$.label.setAttribute("for", this.fieldName);
     this.render();
   },
-  //* set the value of the field, or a subfield specified by path
-  //* Do Not Override - instead, override _setValue(val)
-  setValue: function(val, path) {
-    if (path && path.length) throw Error("widget does not exist");
-    if ("_setValue" in this) {
-      this._setValue(val);
-    }
-    else if (val !== this.value) {
-      this.value = val;
-      if ("valueChanged" in this) return this.valueChanged();
-    }
-    this.doValueChanged({value:this.getValue()});
-  },
   //* @public
   //* useful for subclassing.
-  valueChanged: function(val) {
-    val = (val === null || val === undefined) ? this.nullValue : val;
+  //* you must ensure doValueChanged is always called when value changes
+  valueChanged: function() {
+    var val = (this.value === null || this.value === undefined) ? this.nullValue : this.value;
     this.$.input.setValue(val);
-  },
-  //* set the errors for this field, or a subfield specified by path
-  //* Do Not Override - instead, override _setErrors(val)
-  setErrors: function(val, path) {
-    if (path && path.length) throw Error("widget does not exist");
-    if ("_setErrors" in this) {
-      this._setErrors(val);
-    }
-    else if (utils.isEqual(val, this.value)) {
-      this.value = val;
-      if ("errorsChanged" in this) return this.errorsChanged();
-    }
+    this.doValueChanged({value:this.value});
   },
   errorClass: "error",
   errorsChanged: function() {
@@ -279,6 +290,15 @@ enyo.kind({
       this.$.helpText.addClass("none");
     }
   },
+  getWidget: function(path) {
+    if (path.length > 0) return undefined;
+    return this;
+  },
+  getPath: function() {
+    // if no parent, then the path is simply the empty list
+    return (this.parentWidget) ? this.parentWidget.getPath(this) : [];
+  },
+    _genWidgetDef: _genWidgetDef,
   //* skin: default skin with no css
   defaultSkin: function() {
     var comps = [this.inputKind, this.requiredKind, this.helpKind];
@@ -329,7 +349,7 @@ enyo.kind({
     this.setValue(this.value);
   },
   inputKind: { name: "input", kind: "enyo.Select" },
-  _setValue: function(val) {
+  setValue: function(val) {
     val = (val === null || val === undefined) ? this.nullValue : val;
     this.value = val;
     if (this.choicesIndex && this.choicesIndex[val]) this.$.input.setSelected(this.choicesIndex[val]);

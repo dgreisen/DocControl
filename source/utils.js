@@ -80,7 +80,11 @@
     return String(str).replace(/^\s*|\s*$/g, '');
   };
 
-  genField = function(schema, fields) {
+  genField = function(schema, parent, value, fields) {
+    schema.parent = parent;
+    if (value != null) {
+      schema.value = value;
+    }
     if (!fields[schema.field]) {
       throw Error("Unknown field: " + schema.field);
     }

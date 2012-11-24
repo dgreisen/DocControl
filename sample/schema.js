@@ -35,7 +35,7 @@ contactSchema = {
     },
     { name: "phones",
       field: "ListField",
-      schema: { kind: phoneField },
+      schema: phoneSchema,
       widget: { label: "Phone Numbers", noHelpText: true }
     },
     { name: "address",

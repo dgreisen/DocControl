@@ -10,7 +10,13 @@ describe("widgets.Form", function() {
         label: "Name"
       }
     };
+    this.listSchema = {
+      name: "list",
+      field: "ListField",
+      schema: this.schema
+    };
     this.val = "hello world";
+    this.listVal = ["hello", "world"];
     return this.form = new widgets.Form({
       schema: this.schema
     });
@@ -38,15 +44,80 @@ describe("widgets.Form", function() {
     this.form.setValue('hello world');
     return expect(this.form.onFieldValueChanged).toHaveBeenCalled();
   });
-  return it("should set value of both widget and field when initial value provided", function() {
+  it("should set value of both widget and field when initial value provided", function() {
     var schema;
     schema = enyo.clone(this.schema);
-    console.log(schema);
     this.form = new widgets.Form({
       schema: this.schema,
       value: this.val
     });
-    console.log(1);
-    return expect(this.form.getValue()).toBe("hello world");
+    expect(this.form.getValue()).toBe("hello world");
+    return expect(this.form.widgets.getValue()).toBe("hello world");
+  });
+  it("should pass field errors to widget", function() {
+    this.form.isValid();
+    return expect(this.form.widgets.getErrors()).toEqual(['This field is required.']);
+  });
+  it("shouldn't auto-validate until manually validated once with defaultValidation", function() {
+    expect(this.form.fields.errors).toEqual([]);
+    this.form.isValid();
+    expect(this.form.fields.errors).toEqual(['This field is required.']);
+    this.form.setValue("hello world");
+    return expect(this.form.fields.errors).toEqual([]);
+  });
+  it("should always auto-validate with alwaysValidation", function() {
+    this.form = new widgets.Form({
+      schema: this.schema,
+      validationStrategy: "always",
+      value: ""
+    });
+    expect(this.form.fields.errors).toEqual(['This field is required.']);
+    this.form.setValue("hello world");
+    return expect(this.form.fields.errors).toEqual([]);
+  });
+  it("should handle list field creation and modification properly", function() {
+    var listVal2;
+    this.form = new widgets.Form({
+      schema: this.listSchema,
+      value: this.listVal
+    });
+    expect(this.form.getValue()).toEqual(this.listVal);
+    expect(this.form.getWidget("1").getValue()).toEqual("world");
+    listVal2 = ["four", "items", "in", "list"];
+    this.form.setValue(listVal2);
+    expect(this.form.getValue()).toEqual(listVal2);
+    return expect(this.form.getWidget("2").getValue()).toEqual("in");
+  });
+  it("should handle list item addition by widget", function() {
+    this.form = new widgets.Form({
+      schema: this.listSchema,
+      value: this.listVal
+    });
+    expect(this.form.getValue()).toEqual(this.listVal);
+    this.form.getWidget("").addWidget();
+    expect(this.form.getWidget("")._widgets.length).toBe(3);
+    return this.form.getWidget("2").setValue("new widget");
+  });
+  it("should handle list item addition by field", function() {
+    this.form = new widgets.Form({
+      schema: this.listSchema,
+      value: this.listVal
+    });
+    expect(this.form.getValue()).toEqual(this.listVal);
+    this.form.setValue("new widget", {
+      path: "2"
+    });
+    expect(this.form.fields.getFields().length).toBe(3);
+    return expect(this.form.getWidget("2").getValue()).toBe("new widget");
+  });
+  return it("should handle list item deletion", function() {
+    this.form = new widgets.Form({
+      schema: this.listSchema,
+      value: this.listVal
+    });
+    this.form.setValue(["the", "quick", "brown", "fox"]);
+    this.form.getWidget().$.widgets.children[1].handleDelete();
+    expect(this.form.getValue()).toEqual(["the", "brown", "fox"]);
+    return expect(this.form.getWidget("2").getValue()).toEqual("fox");
   });
 });

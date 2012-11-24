@@ -266,7 +266,7 @@ describe("genField() - field creation", function() {
       name: "test",
       minLength: 5
     };
-    field = utils.genField(schema, fields);
+    field = utils.genField(schema, void 0, void 0, fields);
     return expect(field instanceof fields.CharField).toBe(true);
   });
 });

@@ -55,8 +55,22 @@ describe("ListField", function() {
       });
     }).toThrow();
   });
-  return it("should be able to get immediate child by index", function() {
+  it("should be able to get immediate child by index", function() {
     return expect(this.field._getField(0).getValue()).toBe("hello");
+  });
+  it("should create a new child with the given value when setValue is called with a path one greater than the number of subfields", function() {
+    this.field.setValue("three", {
+      path: "2"
+    });
+    return expect(this.field.getValue()).toEqual(["hello", "world", "three"]);
+  });
+  return it("should getValue of listField when path is empty", function() {
+    expect(this.field.getValue({
+      path: ""
+    })).toEqual(this.field.getValue());
+    return expect(this.field.getValue({
+      path: []
+    })).toEqual(this.field.getValue());
   });
 });
 
@@ -104,7 +118,7 @@ describe("ContainerField", function() {
   it("should be able to get immediate child by name", function() {
     return expect(this.field._getField("sub").getValue()).toBe("hello world");
   });
-  return it("should throw an error if setValue called with anything other than a hash of values", function() {
+  it("should throw an error if setValue called with anything other than a hash of values", function() {
     var _this = this;
     expect(function() {
       return _this.field.setValue('hello');
@@ -112,6 +126,14 @@ describe("ContainerField", function() {
     return expect(function() {
       return _this.field.setValue(['hello']);
     }).toThrow();
+  });
+  return it("should getValue of Containerfield when path is empty", function() {
+    expect(this.field.getValue({
+      path: ""
+    })).toEqual(this.field.getValue());
+    return expect(this.field.getValue({
+      path: []
+    })).toEqual(this.field.getValue());
   });
 });
 
@@ -221,30 +243,29 @@ describe("field traversal", function() {
       value: this.vals
     });
   });
-  it("should return a subfield given a string path", function() {
-    expect(this.field.getValue()).toEqual({
+  it("should recursively input values and create subfield", function() {
+    return expect(this.field.getValue()).toEqual({
       firstList: [
         {
           secondList: ['hello', 'moon']
         }
       ]
     });
+  });
+  it("should return a subfield given a string path", function() {
     return expect(this.field.getField("firstList.0.secondList.1").getValue()).toBe("moon");
   });
   it("should return a subfield given an array path", function() {
-    expect(this.field.getValue()).toEqual({
-      firstList: [
-        {
-          secondList: ['hello', 'moon']
-        }
-      ]
-    });
     return expect(this.field.getField(["firstList", 0, "secondList", 1]).getValue()).toBe("moon");
+  });
+  it("should return undefined if getField is passed an invalid path", function() {
+    expect(this.field.getField("noField")).toBe(void 0);
+    return expect(this.field.getField("firstList.22")).toBe(void 0);
   });
   it("should get isValid for specific field if passed opts.path", function() {
     return expect(this.field.isValid({
       path: "firstList.0.secondList.1"
-    })).toEqual(false);
+    })).toBe(false);
   });
   it("should setValue of specific field, and getValue and json for specific field if passed opts.path", function() {
     this.field.setValue("world", {

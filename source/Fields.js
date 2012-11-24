@@ -37,13 +37,16 @@
     };
 
     function Field(opts) {
-      var _ref, _ref1;
+      var _ref, _ref1, _ref2;
       this.defaults = this._walkProto("defaults");
       if ((_ref = this.opts) == null) {
         this.opts = {};
       }
       this.opts = utils.mixin(utils.clone(this.defaults), opts);
       _ref1 = this.opts, this.name = _ref1.name, this.required = _ref1.required, this.parent = _ref1.parent;
+      if (((_ref2 = this.parent) != null ? _ref2._fields : void 0) != null) {
+        this.parent._fields.push(this);
+      }
       this.errorMessages = this._walkProto("errorMessages");
       this.listeners = this._walkProto("listeners");
       this.validators = utils.cloneArray(this.validators);
@@ -158,13 +161,15 @@
     };
 
     Field.prototype.setValue = function(val, opts) {
+      var origValue;
       if (val !== this.value) {
         this._hasChanged = true;
-        this.emit("onValueChanged", {
-          value: val,
-          original: this.value
+        origValue = this.value;
+        this.value = val;
+        return this.emit("onValueChanged", {
+          value: this.getValue(),
+          original: origValue
         });
-        return this.value = val;
       }
     };
 
