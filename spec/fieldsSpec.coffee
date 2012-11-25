@@ -1,6 +1,6 @@
 if exports?
-  fields = require("../coffee/ContainerFields")
   utils = require("../coffee/utils")
+  fields = require("../coffee/Fields")
 
 describe "events", ->
   beforeEach ->
@@ -164,7 +164,7 @@ describe "validation", ->
 describe "genField() - field creation", ->
   it "should create a field from a schema", ->
     schema = {field: "CharField", name: "test", minLength: 5}
-    field = utils.genField(schema, undefined, undefined, fields)
+    field = fields.genField(schema, undefined, undefined)
     expect(field instanceof fields.CharField).toBe(true)
 
 describe "field", ->

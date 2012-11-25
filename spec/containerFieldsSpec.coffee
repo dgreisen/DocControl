@@ -1,5 +1,5 @@
 if exports?
-  fields = require("../coffee/ContainerFields")
+  fields = require("../coffee/Fields")
   utils = require("../coffee/utils")
 
 describe "ListField", ->

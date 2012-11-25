@@ -43,7 +43,7 @@ enyo.kind({
     this.inherited(arguments);
     var schema = enyo.clone(this.schema);
     this.schemaChanged();
-    this.fields = utils.genField(this.schema, this, this.value, window.fields);
+    this.fields = fields.genField(this.schema, this, this.value);
     this._validate();
   },
   events: {

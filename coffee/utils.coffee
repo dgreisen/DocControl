@@ -47,13 +47,6 @@ isEqual = (v1, v2) ->
 strip = (str) ->
   return String(str).replace(/^\s*|\s*$/g, '')
 
-# generate a field from its schema
-genField = (schema, parent, value, fields) ->
-  schema.parent = parent
-  if value? then schema.value = value
-  if not fields[schema.field] then throw Error("Unknown field: "+ schema.field)
-  return new fields[schema.field](schema)
-
 utils = 
   _i: _i
   interpolate: interpolate
@@ -62,7 +55,6 @@ utils =
   isEmpty: isEmpty
   isEqual: isEqual
   strip: strip
-  genField: genField
   forEach: if enyo? then enyo.forEach else _.forEach
   map: if enyo? then enyo.map else _.map
   cloneArray: if enyo? then enyo.cloneArray else _.clone

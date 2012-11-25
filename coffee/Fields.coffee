@@ -320,8 +320,6 @@ class ChoiceField extends Field
   getDisplay: () ->
     return @choices[@getClean()]
 
-
-
 fields =
   Field: Field
   CharField: CharField
@@ -332,8 +330,24 @@ fields =
   BooleanField: BooleanField
   NullBooleanField: NullBooleanField
   ChoiceField: ChoiceField
+  # get a variable from the global variable, g, identified by a dot-delimited string
+  getField: (path) ->
+    path = path.split(".")
+    out = this
+    for part in path
+      out = out[part]
+    return out
+  # generate a field from its schema
+  genField: (schema, parent, value) ->
+    schema.parent = parent
+    if value? then schema.value = value
+    field = @getField(schema.field)
+    if not field then throw Error("Unknown field: "+ schema.field)
+    return new field(schema)
+
 
 if window?
   window.fields = fields
 else if exports?
+  require("./ContainerFields")(fields)
   module.exports = fields

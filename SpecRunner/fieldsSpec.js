@@ -2,8 +2,8 @@
 var fields, utils;
 
 if (typeof exports !== "undefined" && exports !== null) {
-  fields = require("../coffee/ContainerFields");
   utils = require("../coffee/utils");
+  fields = require("../coffee/Fields");
 }
 
 describe("events", function() {
@@ -266,7 +266,7 @@ describe("genField() - field creation", function() {
       name: "test",
       minLength: 5
     };
-    field = utils.genField(schema, void 0, void 0, fields);
+    field = fields.genField(schema, void 0, void 0);
     return expect(field instanceof fields.CharField).toBe(true);
   });
 });

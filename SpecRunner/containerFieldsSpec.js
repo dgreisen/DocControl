@@ -2,7 +2,7 @@
 var fields, utils;
 
 if (typeof exports !== "undefined" && exports !== null) {
-  fields = require("../coffee/ContainerFields");
+  fields = require("../coffee/Fields");
   utils = require("../coffee/utils");
 }
 

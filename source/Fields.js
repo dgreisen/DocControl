@@ -481,12 +481,35 @@
     EmailField: EmailField,
     BooleanField: BooleanField,
     NullBooleanField: NullBooleanField,
-    ChoiceField: ChoiceField
+    ChoiceField: ChoiceField,
+    getField: function(path) {
+      var out, part, _i, _len;
+      path = path.split(".");
+      out = this;
+      for (_i = 0, _len = path.length; _i < _len; _i++) {
+        part = path[_i];
+        out = out[part];
+      }
+      return out;
+    },
+    genField: function(schema, parent, value) {
+      var field;
+      schema.parent = parent;
+      if (value != null) {
+        schema.value = value;
+      }
+      field = this.getField(schema.field);
+      if (!field) {
+        throw Error("Unknown field: " + schema.field);
+      }
+      return new field(schema);
+    }
   };
 
   if (typeof window !== "undefined" && window !== null) {
     window.fields = fields;
   } else if (typeof exports !== "undefined" && exports !== null) {
+    require("./ContainerFields")(fields);
     module.exports = fields;
   }
 

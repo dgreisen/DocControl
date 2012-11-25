@@ -70,11 +70,10 @@ contactSchema = {
 };
 
 contactsSchema = {
-  name: "contactsForm", kind: "fields.ListField", classes: "main-content form-horizontal",
-  schema: "ContactSchema",
-  widget: { kind: "widgets.ListWidget", noLabel: true, noHelpText: true },
-  value: DATA,
-  widgetSet: "onyx",
+  name: "contacts",
+  field: "ListField",
+  schema: contactSchema,
+  widget: { kind: "widgets.ListWidget", noLabel: true, noHelpText: true }
 };
 
 // INITIAL DATA
@@ -118,8 +117,8 @@ enyo.kind({
       {kind: "onyx.Button", content: "help", ontap: "displayHelp"}
     ]},
     { kind: "Scroller", fit: true, components: [
-      { classes: "main-content", content: "You can inspect the contacts in the debugger by looking at 'window.contacts', even when there are no widgets"}
-      //<<>>
+      { classes: "main-content", content: "You can inspect the contacts in the debugger by looking at 'window.contacts', even when there are no widgets"},
+      { name: "contactsForm", kind: "widgets.Form", classes: "main-content form-horizontal", schema: contactsSchema, value: DATA }
     ]},
     { kind: "onyx.Toolbar", components: [
       { kind: "onyx.Button", ontap: "onSubmit", content: "Submit"},
