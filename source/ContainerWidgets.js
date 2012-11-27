@@ -49,7 +49,7 @@ enyo.kind({
   kind: "widgets.BaseContainerWidget",
   schemaChanged: function() {
     var that = this;
-    var widgets = enyo.map(this.schema, function(x) {return that._genWidgetDef(x, that);});
+    var widgets = enyo.map(this.schema, function(x) {return that._genWidgetDef(x, {parent: that, skin: that.skin, widgetSet: that.widgetSet});});
     this.$.widgets.destroyComponents();
     this.$.widgets.createComponents(widgets);
   },
@@ -83,7 +83,7 @@ enyo.kind({
   schemaChanged: function(index) {
     this.$.widgets.destroyComponents();
     this._widgets = [];
-    this.schema = this._genWidgetDef(this.schema, this);
+    this.schema = this._genWidgetDef(this.schema, {parent: this, skin: this.skin, widgetSet: this.widgetSet});
   },
   valueChanged: function() {
     if (!this.schema.parentWidget) return;

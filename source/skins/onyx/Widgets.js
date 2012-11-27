@@ -79,10 +79,6 @@ enyo.kind({
   name: "widgets.onyx.ChoiceWidget",
   kind: "widgets.ChoiceWidget",
   //* @protected
-  create: function() {
-    this.inherited(arguments);
-    this.setChoices(this.choices);
-  },
   inputKind: {kind: "onyx.PickerDecorator", components: [
     {},
     { name: "input",
@@ -90,8 +86,13 @@ enyo.kind({
       components: []
     }
   ]},
-  getValue: function() {
-    return this.value;
+  valueChanged: function() {
+    val = this.getValue();
+    val = (val === null || val === undefined) ? this.nullValue : val;
+    if (this.choicesIndex && this.choicesIndex[val]) {
+      this.$.input.setSelected(this.choicesIndex[val]);
+      this.doValueChanged({value:this.getValue()});
+    }
   },
   setChoices: function(val) {
     val = enyo.clone(val);
@@ -116,8 +117,7 @@ enyo.kind({
   },
   handlers: { onSelect: "itemSelected" },
   itemSelected: function(inSender, inEvent) {
-    this.value = inEvent.originator.value;
-    this.validate();
+    this.setValue(inEvent.originator.value);
   },
   defaultSkin: function() {
     this.inherited(arguments);
@@ -164,10 +164,13 @@ enyo.kind({
     val.forEach(iterChoices);
     this.choicesIndex = choices;
   },
-  setValue: function(val) {
-    var val = (val === null || val === undefined) ? this.nullValue : val;
-    this.value = val;
-    if (this.choicesIndex && this.choicesIndex[val]) this.choicesIndex[val].setActive();
+  valueChanged: function() {
+    val = this.getValue();
+    val = (val === null || val === undefined) ? this.nullValue : val;
+    if (this.choicesIndex && this.choicesIndex[val]) {
+      this.choicesIndex[val].setActive();
+      this.doValueChanged({value:this.getValue()});
+    }
   },
   defaultSkin: function() {
     widgets.Widget.prototype.defaultSkin.call(this);
@@ -189,7 +192,7 @@ enyo.kind({
   name: "widgets.onyx.ListWidget",
   kind: "widgets.ListWidget",
   //* @protected
-  containerControlKind: { kind: "onyx.IconButton", src:"assets/plus.png", ontap: "addField", style:"margin-top:17px"},
+  containerControlKind: { kind: "onyx.IconButton", src:"assets/plus.png", ontap: "addWidget", style:"margin-top:17px"},
   itemKind: { kind: "widgets.onyx.ListItem" }
 });
 

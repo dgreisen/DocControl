@@ -4,11 +4,12 @@ _getKindHash = function(kind) {
   return kind || {};
 };
 // generate a widget definition from a schema
-_genWidgetDef = function(schema, parent, value) {
+_genWidgetDef = function(schema, opts) {
+  if (!opts) opts = {};
   var widget = enyo.clone(schema);
   // if our schema doesn't define a kind, get it from the field
   if (!schema.widget || !(typeof(schema.widget) == "string" || schema.widget.kind)) {
-    var kind = window.fields[schema.field].prototype.widget;
+    var kind = window.fields.getField(schema.field).prototype.widget;
     enyo.mixin(widget, _getKindHash(kind));
   }
   // update with widget attrs
@@ -18,8 +19,16 @@ _genWidgetDef = function(schema, parent, value) {
   }
   widget.fieldName = schema.name;
   delete widget.name;
-  widget.parentWidget = parent;
-  widget.value = (value === undefined) ? widget.value : value;
+    opts.parentWidget = opts.parentWidget || opts.parent;
+    delete opts.parent;
+    enyo.mixin(widget, opts);
+  if (opts.widgetSet)  {
+      var widgetKind = widget.kind.split('.');
+      widgetKind.splice(1,0, opts.widgetSet);
+      var x = window;
+      for (var i=0; x && i < widgetKind.length; i++) {x=x[widgetKind[i]];}
+      if (x) widget.kind = widgetKind.join('.');
+  }
   return widget;
 };
 
@@ -37,7 +46,11 @@ enyo.kind({
     //* the validation strategy for this widget.
     //* <ul><li>`"default"` strategy does not validate on value change until field's getClean() called.</li>
     //* <li>`"always"` strategy begins validating on widget creation.</li></ul>
-    validationStrategy: undefined
+    validationStrategy: undefined,
+    //* a string designating a widget style. e.g. "onyx"
+    widgetSet: "",
+    //* the widgetSet skin to apply to the widget
+    skin: "default"
   },
   create: function() {
     this.inherited(arguments);
@@ -89,7 +102,7 @@ enyo.kind({
     this.fields.getField(path).removeField(index);
   },
   schemaChanged: function() {
-    var widget = _genWidgetDef(this.schema, this);
+    var widget = _genWidgetDef(this.schema, {parent: this, skin: this.skin, widgetSet: this.widgetSet});
     widget.name = "widget";
     this.destroyComponents();
     this.createComponent(widget);
@@ -346,13 +359,16 @@ enyo.kind({
   create: function() {
     this.inherited(arguments);
     this.setChoices(this.choices);
-    this.setValue(this.value);
+    this.valueChanged();
   },
   inputKind: { name: "input", kind: "enyo.Select" },
-  setValue: function(val) {
+  valueChanged: function() {
+    val = this.getValue();
     val = (val === null || val === undefined) ? this.nullValue : val;
-    this.value = val;
-    if (this.choicesIndex && this.choicesIndex[val]) this.$.input.setSelected(this.choicesIndex[val]);
+    if (this.choicesIndex && this.choicesIndex[val]) {
+      this.$.input.setValue(val); // setSelected(this.choicesIndex[val]);
+      this.doValueChanged({value:this.getValue()});
+    }
   },
   labelChanged: function() {
     if (this.compact) {
@@ -362,6 +378,7 @@ enyo.kind({
       this.$.label.setContent(this.label);
     }
   },
+  // a hash of all choice values and their index
   choicesIndex: undefined,
   setChoices: function(val) {
     val = enyo.clone(val);
@@ -392,6 +409,6 @@ enyo.kind({
   },
   handlers: { onchange: "itemSelected" },
   itemSelected: function(inSender, inEvent) {
-    this.validate();
+    this.setValue(this.$.input.getValue());
   }
 });

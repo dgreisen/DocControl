@@ -238,7 +238,7 @@
           label = (_ref1 = i > 1) != null ? _ref1 : " " + {
             i: ""
           };
-          street.widgetAttrs.label = street.widget.label + label;
+          street.widget.label = street.widget.label + label;
           this.schema.push(street);
         }
         this.schema.push(this.cityField);

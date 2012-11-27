@@ -74,7 +74,7 @@ class Field
   # return the value with any modifications. When validation fails, push an error string
   # from `@errorMessages` onto `@errors`. You can perform string interpolation using
   # utils.utils.interpolate("%(arg)s", {arg: value, ...}).
-  # be sure to call `@inherited(arguments) <br />
+  # be sure to call `@super <br />
   # default action is to check if the field is required
   validate: (value) ->
     if (validators.isEmpty(value) && @required)
@@ -252,7 +252,7 @@ class RegexField extends Field
   errorMessage: undefined
   # @protected
   constructor: (opts) ->
-    @inherited(arguments)
+    super(opts)
     @validators.push(new validators.RegexValidator(@regex))
     if @errorMessage
       @errorMessages.invalid = @errorMessage
@@ -302,7 +302,7 @@ class ChoiceField extends Field
   setChoices: (val) ->
     choices = {};
     iterChoices = (x) ->
-      if (x[1] instanceof Array) utils.forEach(x[1], iterChoices)
+      if (x[1] instanceof Array) then utils.forEach(x[1], iterChoices)
       else choices[x[0]] = x[1];
     utils.forEach(@choices, iterChoices)
     @choicesIndex = choices

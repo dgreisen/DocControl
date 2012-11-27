@@ -54,7 +54,7 @@ contactSchema = {
     },
     { name: "emails",
       field: "ListField",
-      schema: { kind: "fields.EmailField", widget: { label: "Email", compact: true, noLabel: true } },
+      schema: { field: "EmailField", widget: { label: "Email", compact: true, noLabel: true } },
       widget: {
         label: "Emails",
         unnested: true
@@ -118,7 +118,13 @@ enyo.kind({
     ]},
     { kind: "Scroller", fit: true, components: [
       { classes: "main-content", content: "You can inspect the contacts in the debugger by looking at 'window.contacts', even when there are no widgets"},
-      { name: "contactsForm", kind: "widgets.Form", classes: "main-content form-horizontal", schema: contactsSchema, value: DATA }
+      { name: "contactsForm",
+        kind: "widgets.Form",
+        classes: "main-content form-horizontal",
+        schema: contactsSchema,
+        value: DATA,
+        widgetSet: "onyx"
+      }
     ]},
     { kind: "onyx.Toolbar", components: [
       { kind: "onyx.Button", ontap: "onSubmit", content: "Submit"},
@@ -139,7 +145,7 @@ enyo.kind({
     this.$.submitPop.show();
   },
   onReset: function() {
-    this.$.contactsForm.setValue(DATA, true);
+    this.$.contactsForm.setValue(DATA);
   },
   startup: 2,
   toggleWidgets: function(inSender, inEvent) {

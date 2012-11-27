@@ -46,7 +46,6 @@ describe("widgets", function() {
     _genWidgetDef = widgets.Form.prototype._genWidgetDef;
     return this.widget = new widgets.Widget(_genWidgetDef(this.schema));
   });
-  it("should ");
   it("should set its value in the input", function() {
     this.widget.setValue("hello world");
     return expect(this.widget.$.input.getValue()).toBe("hello world");
@@ -54,5 +53,33 @@ describe("widgets", function() {
   return it("should set input value to this.nullValue if null or undefined", function() {
     this.widget.setValue(null);
     return expect(this.widget.$.input.getValue()).toBe("");
+  });
+});
+
+describe("widgets.ChoiceWidget", function() {
+  beforeEach(function() {
+    var _genWidgetDef;
+    this.schema = {
+      name: "label",
+      field: "ChoiceField",
+      choices: [['h', 'Home'], ['w', 'Work'], ['m', 'Mobile']],
+      widget: {
+        label: "Label",
+        compact: true,
+        noLabel: true,
+        size: 1
+      },
+      inputClasses: "input-medium"
+    };
+    _genWidgetDef = widgets.Form.prototype._genWidgetDef;
+    return this.widget = new widgets.Widget(_genWidgetDef(this.schema));
+  });
+  it("should set its value in the input", function() {
+    this.widget.setValue("w");
+    return expect(this.widget.$.input.getValue()).toBe("w");
+  });
+  return it("should update its value when input changes", function() {
+    this.widget.$.input.setValue('w');
+    return expect(this.widget.$.input.getValue()).toBe("w");
   });
 });

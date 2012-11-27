@@ -333,7 +333,7 @@
     RegexField.prototype.errorMessage = void 0;
 
     function RegexField(opts) {
-      this.inherited(arguments);
+      RegexField.__super__.constructor.call(this, opts);
       this.validators.push(new validators.RegexValidator(this.regex));
       if (this.errorMessage) {
         this.errorMessages.invalid = this.errorMessage;
@@ -435,8 +435,8 @@
       var choices, iterChoices;
       choices = {};
       iterChoices = function(x) {
-        if ((x[1] instanceof Array)(utils.forEach(x[1], iterChoices))) {
-
+        if (x[1] instanceof Array) {
+          return utils.forEach(x[1], iterChoices);
         } else {
           return choices[x[0]] = x[1];
         }
