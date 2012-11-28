@@ -101,10 +101,19 @@ describe "ListField Validation", ->
     @vals = ["hello", "worl"]
     @field = new fields.ListField(name:"test", schema: @subSchema, value: @vals)
 
-  it "should perform revalidation if value has changed", ->
+  it "should perform revalidation if subfield value has changed", ->
     @field.isValid()
     spyOn @field, "validate"
     @field.getFields()[1].setValue("world")
+    @field.isValid()
+    expect(@field.validate).toHaveBeenCalled()
+
+  it "should perform revalidation if subfield required has changed", ->
+    @field.setValue('world', {path:"1"})
+    @field.isValid()
+    spyOn @field, "validate"
+    expect(@field.getFields()[1].required).toBe(true)
+    @field.getFields()[1].setRequired(false)
     @field.isValid()
     expect(@field.validate).toHaveBeenCalled()
 

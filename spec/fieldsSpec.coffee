@@ -143,7 +143,7 @@ describe "validation", ->
 
   it "should emit a onValidChanged event, with any errors, when its valid status changes or when the errors list changes, but not otherwise", ->
     @field = new fields.CharField(name: "test", minLength:5)
-    @field.listeners.onValidChanged = (inSender, inOriginator, valid, errors) ->
+    @field.listeners.onValidChanged = (inSender, inEvent) ->
     spyOn @field.listeners, "onValidChanged"
     expect(@field.isValid()).toBe(false)
     expect(@field.listeners.onValidChanged).toHaveBeenCalledWith(null, originator: @field, valid: false, errors: ['This field is required.'])    
@@ -156,6 +156,13 @@ describe "validation", ->
     @field.setValue("hello world")
     expect(@field.isValid()).toBe(true)
     expect(@field.listeners.onValidChanged.calls.length).toEqual(3)
+
+  it "should emit an onRequiredChanged event when required has changed", ->
+    @field.listeners.onRequiredChanged = (inSender, inEvent) ->
+    spyOn @field.listeners, "onRequiredChanged"
+    expect(@field.required).toBe(true)
+    @field.setRequired(false)
+    expect(@field.listeners.onRequiredChanged).toHaveBeenCalled()
 
   it "should throw an error when getClean is called and it is not valid", ->
     expect(=> @field.getClean()).toThrow()

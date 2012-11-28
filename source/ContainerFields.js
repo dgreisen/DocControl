@@ -54,7 +54,8 @@
 
       BaseContainerField.prototype.listeners = {
         onValueChanged: "subfieldChanged",
-        onValidChanged: "subfieldChanged"
+        onValidChanged: "subfieldChanged",
+        onRequiredChanged: "subfieldChanged"
       };
 
       BaseContainerField.prototype.subfieldChanged = function(inSender, inEvent) {

@@ -157,10 +157,21 @@ describe("ListField Validation", function() {
       value: this.vals
     });
   });
-  it("should perform revalidation if value has changed", function() {
+  it("should perform revalidation if subfield value has changed", function() {
     this.field.isValid();
     spyOn(this.field, "validate");
     this.field.getFields()[1].setValue("world");
+    this.field.isValid();
+    return expect(this.field.validate).toHaveBeenCalled();
+  });
+  it("should perform revalidation if subfield required has changed", function() {
+    this.field.setValue('world', {
+      path: "1"
+    });
+    this.field.isValid();
+    spyOn(this.field, "validate");
+    expect(this.field.getFields()[1].required).toBe(true);
+    this.field.getFields()[1].setRequired(false);
     this.field.isValid();
     return expect(this.field.validate).toHaveBeenCalled();
   });

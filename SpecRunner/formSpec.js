@@ -58,6 +58,13 @@ describe("widgets.Form", function() {
     this.form.isValid();
     return expect(this.form.widgets.getErrors()).toEqual(['This field is required.']);
   });
+  it("should listen for required changes and send to the widgets; also validate if indicated by validationStrategy", function() {
+    spyOn(this.form, "onFieldRequiredChanged").andCallThrough();
+    spyOn(this.form, "_validate");
+    this.form.getField('').setRequired(false);
+    expect(this.form.onFieldRequiredChanged).toHaveBeenCalled();
+    return expect(this.form._validate).toHaveBeenCalled();
+  });
   it("shouldn't auto-validate until manually validated once with defaultValidation", function() {
     expect(this.form.fields.errors).toEqual([]);
     this.form.isValid();

@@ -113,6 +113,7 @@ enyo.kind({
     var widget = this.getWidget(path);
     if (!widget) return;
     widget.setRequired(inEvent.required);
+    this._validate();
     this.emit("doRequiredChanged", inEvent);
   },
   onFieldAdded: function(inSender, inEvent) {

@@ -224,7 +224,7 @@ describe("validation", function() {
       name: "test",
       minLength: 5
     });
-    this.field.listeners.onValidChanged = function(inSender, inOriginator, valid, errors) {};
+    this.field.listeners.onValidChanged = function(inSender, inEvent) {};
     spyOn(this.field.listeners, "onValidChanged");
     expect(this.field.isValid()).toBe(false);
     expect(this.field.listeners.onValidChanged).toHaveBeenCalledWith(null, {
@@ -249,6 +249,13 @@ describe("validation", function() {
     this.field.setValue("hello world");
     expect(this.field.isValid()).toBe(true);
     return expect(this.field.listeners.onValidChanged.calls.length).toEqual(3);
+  });
+  it("should emit an onRequiredChanged event when required has changed", function() {
+    this.field.listeners.onRequiredChanged = function(inSender, inEvent) {};
+    spyOn(this.field.listeners, "onRequiredChanged");
+    expect(this.field.required).toBe(true);
+    this.field.setRequired(false);
+    return expect(this.field.listeners.onRequiredChanged).toHaveBeenCalled();
   });
   return it("should throw an error when getClean is called and it is not valid", function() {
     var _this = this;

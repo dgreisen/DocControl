@@ -40,6 +40,7 @@ addFields = (fields) ->
     listeners:
       onValueChanged: "subfieldChanged"
       onValidChanged: "subfieldChanged"
+      onRequiredChanged: "subfieldChanged"
     # if an immediate subfield has changed, then we want to perform validation next time inValid called
     subfieldChanged: (inSender, inEvent) ->
       @_hasChanged = true

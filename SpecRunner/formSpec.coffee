@@ -48,6 +48,13 @@ describe "widgets.Form", ->
     @form.isValid()
     expect(@form.widgets.getErrors()).toEqual(['This field is required.'])
 
+  it "should listen for required changes and send to the widgets; also validate if indicated by validationStrategy", ->
+    spyOn(@form, "onFieldRequiredChanged").andCallThrough()
+    spyOn @form, "_validate"
+    @form.getField('').setRequired(false)
+    expect(@form.onFieldRequiredChanged).toHaveBeenCalled()
+    expect(@form._validate).toHaveBeenCalled()
+    
   it "shouldn't auto-validate until manually validated once with defaultValidation", ->
     expect(@form.fields.errors).toEqual([])
     @form.isValid()
@@ -82,7 +89,6 @@ describe "widgets.Form", ->
     @form.getField("").addField("new widget")
     expect(@form.fields.getFields().length).toBe(3)
     expect(@form.getWidget("2").getValue()).toBe("new widget")
-
 
   it "should handle list item deletion", ->
     @form = new widgets.Form(schema: @listSchema, value: @listVal)
