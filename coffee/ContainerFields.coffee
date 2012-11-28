@@ -33,7 +33,6 @@ addFields = (fields) ->
       invalid: utils._i('Please fix the errors indicated below.')
     constructor: (opts) ->
       super(opts)
-      @_invalidFields = {}
       # we have to specifically set the value so because setValue before didn't work without having the schema set
       @value = @opts.value
       @setSchema(@opts.schema)
@@ -42,7 +41,7 @@ addFields = (fields) ->
       onValidChanged: "subfieldChanged"
     # if an immediate subfield has changed, then we want to perform validation next time inValid called
     subfieldChanged: (inSender, inEvent) ->
-      if inSender == inEvent.originator then @_hasChanged = true
+      @_hasChanged = true
       return false
     # custom isvalid method that validates all child fields as well.
     isValid: (opts) ->
@@ -80,8 +79,8 @@ addFields = (fields) ->
     # return an arbitrarily deep subfield given a path. Path can be an array
     # of indexes/names, or it can be a dot-delimited string
     getField: (path) ->
+      if not path or path.length == 0 then return this
       if typeof path == "string" then path = path.split "."
-      if path.length == 0 then return this
       subfield = @_getField(path.shift())
       if not subfield? then return undefined
       return subfield.getField(path)
@@ -196,12 +195,7 @@ addFields = (fields) ->
     # accepts an array, where each element in the array is the value for a subfield.
     # if the optional value `reset` is truthy, then validation state will be reset.
     setValue: (values, opts) ->
-      if opts?.path?.length
-        # create new subfield if index is exactly one beyond the current last index
-        if typeof path == "string" then path = path.split "."
-        if opts.path.length == 1 and @getFields().length == parseInt(opts.path[0])
-          return @_addField(@schema, values)
-        return @_applyToSubfield("setValue", opts, values)
+      if opts?.path?.length then return @_applyToSubfield("setValue", opts, values)
       if not values or not @schema or utils.isEqual(values, @getValue()) then return
       if values not instanceof Array then throw "values must be an array"
       @resetFields()
@@ -209,9 +203,13 @@ addFields = (fields) ->
         @_addField(@schema, value)
       @emit("onValueChanged", value: @getValue(), original: @value)
       @value = undefined
+    addField: (value, index, silent) ->
+      if index? and index != @_fields.length then return
+      @_addField(@schema, value, silent)
+    _addField: (definition, value, silent) ->
+      if not silent then @emit("onAddListSubfield", value: value, index: @_fields.length)
+      super(definition, value)
     # remove the field at `index`.
-    addField: (value) ->
-      @_addField(@schema, value)
     removeField: (index) ->
       @_getField(index).emit("onDelete")
       value = @getValue()

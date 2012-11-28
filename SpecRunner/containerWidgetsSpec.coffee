@@ -43,9 +43,8 @@ describe "widgets.ListWidget", ->
     expect(@widget._widgets[0].parentWidget).toBe(@widget)
     expect(@widget._widgets[0].value).toBe("hello")
 
-  it "should create a new empty child widget when getWidget called with a path one greater than the number of childWidgets", ->
-    expect(@widget.getWidget([0]).getValue()).toBe("hello")
-    expect(@widget.getWidget([3])).toBe(undefined)
+  it "should create a new empty child widget when addWidget called", ->
+    @widget.addWidget()
     expect(@widget.getWidget([2]).kind).toBe("widgets.Widget")
     expect(@widget._widgets.length).toBe(3)
 

@@ -22,7 +22,7 @@ addFields = (fields) ->
       value = value.replace(/(\(|\)|\s+)/g, '')
       match = value.match(this.regex)
       if match
-        value = interpolate("%s-%s-%s", match.slice(1))
+        value = utils.interpolate("%s-%s-%s", match.slice(1))
         this.setValue(value)
       else
         this.errors.push(this.errorMessages['invalid'])
@@ -63,7 +63,7 @@ addFields = (fields) ->
           (area == '987' and group == '65' and 4320 <= int(serial) and int(serial) <= 4329) or
           value == '078-05-1120' or
           value == '219-09-9999' then this.errors.push(invalidEM)
-      value = interpolate('%s-%s-%s', [area, group, serial])
+      value = utils.interpolate('%s-%s-%s', [area, group, serial])
       this.setValue(value)
       return value
 
@@ -114,21 +114,21 @@ addFields = (fields) ->
     # @protected
     errorMessages:
       invalid: utils._i('Enter a valid address.')
-    streetField: { name: "street", field: "fields.CharField", maxLength: 200, widget: { label: "Street", size: 4 } },
-    cityField: { name: "city", field: "fields.CharField", maxLength: 50, widget: { label: "City", size: 2 } },
+    streetField: { name: "street", field: "CharField", maxLength: 200, widget: { label: "Street", size: 4 } },
+    cityField: { name: "city", field: "CharField", maxLength: 50, widget: { label: "City", size: 2 } },
     zipField: { name: "zip", field: "local.en.USZipCodeField", widget: { label: "Zip", size: 1 }},
     statePrefix: "local.en.",
     constructor: (opts) ->
-      this.schema = []
+      opts.schema = []
       for i in [1..@streetLines]
         street = utils.clone(this.streetField)
         street.name = street.name+(i)
         label = (i>1) ? " "+ i : ""
         street.widget.label = street.widget.label + label
-        this.schema.push(street)
-      this.schema.push(this.cityField)
-      this.schema.push({ name: "state", field: this.statePrefix + this.stateFieldType,  widgetAttrs: { label: "State", size: 1 } })
-      this.schema.push(this.zipField)
+        opts.schema.push(street)
+      opts.schema.push(this.cityField)
+      opts.schema.push({ name: "state", field: this.statePrefix + this.stateFieldType,  widgetAttrs: { label: "State", size: 1 } })
+      opts.schema.push(this.zipField)
       super(opts)
 
   if not fields.local? then fields.local = {}

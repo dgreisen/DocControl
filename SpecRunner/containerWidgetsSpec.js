@@ -64,9 +64,8 @@ describe("widgets.ListWidget", function() {
     expect(this.widget._widgets[0].parentWidget).toBe(this.widget);
     return expect(this.widget._widgets[0].value).toBe("hello");
   });
-  return it("should create a new empty child widget when getWidget called with a path one greater than the number of childWidgets", function() {
-    expect(this.widget.getWidget([0]).getValue()).toBe("hello");
-    expect(this.widget.getWidget([3])).toBe(void 0);
+  return it("should create a new empty child widget when addWidget called", function() {
+    this.widget.addWidget();
     expect(this.widget.getWidget([2]).kind).toBe("widgets.Widget");
     return expect(this.widget._widgets.length).toBe(3);
   });

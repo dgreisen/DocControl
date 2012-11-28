@@ -54,7 +54,7 @@
         value = value.replace(/(\(|\)|\s+)/g, '');
         match = value.match(this.regex);
         if (match) {
-          value = interpolate("%s-%s-%s", match.slice(1));
+          value = utils.interpolate("%s-%s-%s", match.slice(1));
           this.setValue(value);
         } else {
           this.errors.push(this.errorMessages['invalid']);
@@ -114,7 +114,7 @@
         if (area === '666' || (area === '987' && group === '65' && 4320 <= int(serial) && int(serial) <= 4329) || value === '078-05-1120' || value === '219-09-9999') {
           this.errors.push(invalidEM);
         }
-        value = interpolate('%s-%s-%s', [area, group, serial]);
+        value = utils.interpolate('%s-%s-%s', [area, group, serial]);
         this.setValue(value);
         return value;
       };
@@ -200,7 +200,7 @@
 
       USAddressField.prototype.streetField = {
         name: "street",
-        field: "fields.CharField",
+        field: "CharField",
         maxLength: 200,
         widget: {
           label: "Street",
@@ -210,7 +210,7 @@
 
       USAddressField.prototype.cityField = {
         name: "city",
-        field: "fields.CharField",
+        field: "CharField",
         maxLength: 50,
         widget: {
           label: "City",
@@ -231,7 +231,7 @@
 
       function USAddressField(opts) {
         var i, label, street, _i, _ref, _ref1;
-        this.schema = [];
+        opts.schema = [];
         for (i = _i = 1, _ref = this.streetLines; 1 <= _ref ? _i <= _ref : _i >= _ref; i = 1 <= _ref ? ++_i : --_i) {
           street = utils.clone(this.streetField);
           street.name = street.name + i;
@@ -239,10 +239,10 @@
             i: ""
           };
           street.widget.label = street.widget.label + label;
-          this.schema.push(street);
+          opts.schema.push(street);
         }
-        this.schema.push(this.cityField);
-        this.schema.push({
+        opts.schema.push(this.cityField);
+        opts.schema.push({
           name: "state",
           field: this.statePrefix + this.stateFieldType,
           widgetAttrs: {
@@ -250,7 +250,7 @@
             size: 1
           }
         });
-        this.schema.push(this.zipField);
+        opts.schema.push(this.zipField);
         USAddressField.__super__.constructor.call(this, opts);
       }
 

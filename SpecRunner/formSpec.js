@@ -104,9 +104,7 @@ describe("widgets.Form", function() {
       value: this.listVal
     });
     expect(this.form.getValue()).toEqual(this.listVal);
-    this.form.setValue("new widget", {
-      path: "2"
-    });
+    this.form.getField("").addField("new widget");
     expect(this.form.fields.getFields().length).toBe(3);
     return expect(this.form.getWidget("2").getValue()).toBe("new widget");
   });

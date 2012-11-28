@@ -47,7 +47,6 @@
 
       function BaseContainerField(opts) {
         BaseContainerField.__super__.constructor.call(this, opts);
-        this._invalidFields = {};
         this.value = this.opts.value;
         this.setSchema(this.opts.schema);
       }
@@ -58,9 +57,7 @@
       };
 
       BaseContainerField.prototype.subfieldChanged = function(inSender, inEvent) {
-        if (inSender === inEvent.originator) {
-          this._hasChanged = true;
-        }
+        this._hasChanged = true;
         return false;
       };
 
@@ -121,11 +118,11 @@
 
       BaseContainerField.prototype.getField = function(path) {
         var subfield;
+        if (!path || path.length === 0) {
+          return this;
+        }
         if (typeof path === "string") {
           path = path.split(".");
-        }
-        if (path.length === 0) {
-          return this;
         }
         subfield = this._getField(path.shift());
         if (!(subfield != null)) {
@@ -350,14 +347,8 @@
       };
 
       ListField.prototype.setValue = function(values, opts) {
-        var path, value, _i, _len, _ref;
+        var value, _i, _len, _ref;
         if (opts != null ? (_ref = opts.path) != null ? _ref.length : void 0 : void 0) {
-          if (typeof path === "string") {
-            path = path.split(".");
-          }
-          if (opts.path.length === 1 && this.getFields().length === parseInt(opts.path[0])) {
-            return this._addField(this.schema, values);
-          }
           return this._applyToSubfield("setValue", opts, values);
         }
         if (!values || !this.schema || utils.isEqual(values, this.getValue())) {
@@ -378,8 +369,21 @@
         return this.value = void 0;
       };
 
-      ListField.prototype.addField = function(value) {
-        return this._addField(this.schema, value);
+      ListField.prototype.addField = function(value, index, silent) {
+        if ((index != null) && index !== this._fields.length) {
+          return;
+        }
+        return this._addField(this.schema, value, silent);
+      };
+
+      ListField.prototype._addField = function(definition, value, silent) {
+        if (!silent) {
+          this.emit("onAddListSubfield", {
+            value: value,
+            index: this._fields.length
+          });
+        }
+        return ListField.__super__._addField.call(this, definition, value);
       };
 
       ListField.prototype.removeField = function(index) {

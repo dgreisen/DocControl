@@ -22,6 +22,7 @@ enyo.kind({
   onRegistration: function(inSender, inEvent) {
     if (inSender == this) return;
     this._widgets.push(inEvent.originator);
+    return true;
   },
   inputKind: { name: "widgets", tag: "div" },
   labelKind: { style: "padding-top:15px;", components: [{ name: "label", classes: "widget-label" }] },
@@ -54,6 +55,7 @@ enyo.kind({
     this.$.widgets.createComponents(widgets);
   },
   valueChanged: function() {
+
     if (!this._widgets) return;
     var values = this.value || {};
     enyo.forEach(this._widgets, function(x) {x.setValue(values[x.fieldName]);});
@@ -80,6 +82,9 @@ enyo.kind({
 enyo.kind({
   name: "widgets.BaseListWidget",
   kind: "widgets.BaseContainerWidget",
+  events: {
+    onAddListSubWidget: ""
+  },
   schemaChanged: function(index) {
     this.$.widgets.destroyComponents();
     this._widgets = [];
@@ -93,20 +98,21 @@ enyo.kind({
     enyo.forEach(this.value, function(x) {that.addWidget(x);});
   },
   //* @protected
-  addWidget: function(value) {
+  addWidget: function(value, index, silent) {
+    if (typeof(index) == "number" && index != this._widgets.length) return;
+    if (!silent) this.doAddListSubWidget({value: value, index: this._widgets.length});
     var kind = enyo.clone(this.schema);
     // if value is a component, then we are actually seeing inSender
-    kind.value = value;
+    if (value !== undefined) kind.value = value;
     this.$.widgets.createComponent(kind);
     this.render();
   },
+  // this function is here to be set as a handler on widget chrome in this.containerControl
+  handleAdd: function(inSender, inEvent) {
+    this.addWidget();
+  },
   _getWidget: function(index) {
     return this._widgets[index];
-  },
-  getWidget: function(path) {
-    // if the index is off by one, then create a new subwidget and return that
-    if (path.length == 1 && path[0] == this._widgets.length) this.addWidget();
-    return this.inherited(arguments);
   },
   getPath: function (subwidget) {
     var end = [];
@@ -133,7 +139,7 @@ enyo.kind({
     { name: "_content", kind: "enyo.Control", fit: true },
     { kind: "enyo.Button", content: "Delete", ontap: "handleDelete" }
   ],
-  // this function is here to be set as a handler on widget chrome in this.containerControl
+  // this function is here to be set as a handler on widget chrome in ListItem
   handleDelete: function() {
     this.doDelete({widget: this.$._content.children[0]});
   }
@@ -154,12 +160,14 @@ enyo.kind({
     this.containerControlKind = enyo.clone(this.containerControlKind);
     this.itemKind = enyo.clone(this.itemKind);
   },
-  addWidget: function(value) {
+  addWidget: function(value, index, silent) {
+    if (typeof(index) == "number" && index != this._widgets.length) return;
+    if (!silent) this.doAddListSubWidget({value: value, index: this._widgets.length});
     var kind = enyo.clone(this.itemKind);
     var item = this.$.widgets.createComponent(kind);
 
     kind = enyo.clone(this.schema);
-    kind.value = value;
+    if (value !== undefined) kind.value = value;
     item.$._content.createComponent(kind);
     this.render();
   },
@@ -169,5 +177,5 @@ enyo.kind({
   //* control named "_content".
   itemKind: { kind: "widgets.ListItem" },
   //* kind definition for list controls. defaults to an add button
-  containerControlKind: { kind: "enyo.Button", ontap: "addWidget", content: "Add" }
+  containerControlKind: { kind: "enyo.Button", ontap: "handleAdd", content: "Add" }
 });

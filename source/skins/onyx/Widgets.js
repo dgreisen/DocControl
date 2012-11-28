@@ -86,12 +86,12 @@ enyo.kind({
       components: []
     }
   ]},
-  valueChanged: function() {
+  valueChanged: function(silent) {
     val = this.getValue();
     val = (val === null || val === undefined) ? this.nullValue : val;
     if (this.choicesIndex && this.choicesIndex[val]) {
       this.$.input.setSelected(this.choicesIndex[val]);
-      this.doValueChanged({value:this.getValue()});
+      if (!silent) this.doValueChanged({value:this.getValue()});
     }
   },
   setChoices: function(val) {
@@ -164,12 +164,12 @@ enyo.kind({
     val.forEach(iterChoices);
     this.choicesIndex = choices;
   },
-  valueChanged: function() {
+  valueChanged: function(silent) {
     val = this.getValue();
     val = (val === null || val === undefined) ? this.nullValue : val;
     if (this.choicesIndex && this.choicesIndex[val]) {
       this.choicesIndex[val].setActive();
-      this.doValueChanged({value:this.getValue()});
+      if (!silent) this.doValueChanged({value:this.getValue()});
     }
   },
   defaultSkin: function() {
@@ -192,7 +192,7 @@ enyo.kind({
   name: "widgets.onyx.ListWidget",
   kind: "widgets.ListWidget",
   //* @protected
-  containerControlKind: { kind: "onyx.IconButton", src:"assets/plus.png", ontap: "addWidget", style:"margin-top:17px"},
+  containerControlKind: { kind: "onyx.IconButton", src:"assets/plus.png", ontap: "handleAdd", style:"margin-top:17px"},
   itemKind: { kind: "widgets.onyx.ListItem" }
 });
 

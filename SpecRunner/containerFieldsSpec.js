@@ -58,10 +58,16 @@ describe("ListField", function() {
   it("should be able to get immediate child by index", function() {
     return expect(this.field._getField(0).getValue()).toBe("hello");
   });
-  it("should create a new child with the given value when setValue is called with a path one greater than the number of subfields", function() {
-    this.field.setValue("three", {
-      path: "2"
-    });
+  it("should create a new child with the given value when addField is called", function() {
+    this.field.addField("three");
+    return expect(this.field.getValue()).toEqual(["hello", "world", "three"]);
+  });
+  it("should only create a new child with the given value when addField is called with an index that is exactly equal to the current number of fields", function() {
+    this.field.addField("three", 1);
+    expect(this.field.getValue()).toEqual(["hello", "world"]);
+    this.field.addField("three", 3);
+    expect(this.field.getValue()).toEqual(["hello", "world"]);
+    this.field.addField("three", 2);
     return expect(this.field.getValue()).toEqual(["hello", "world", "three"]);
   });
   return it("should getValue of listField when path is empty", function() {
@@ -251,6 +257,10 @@ describe("field traversal", function() {
         }
       ]
     });
+  });
+  it("should return itself if no path given, or path is null/undefined", function() {
+    expect(this.field.getField()).toBe(this.field);
+    return expect(this.field.getField("")).toBe(this.field);
   });
   it("should return a subfield given a string path", function() {
     return expect(this.field.getField("firstList.0.secondList.1").getValue()).toBe("moon");

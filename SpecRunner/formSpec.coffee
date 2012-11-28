@@ -81,7 +81,7 @@ describe "widgets.Form", ->
 
     @form = new widgets.Form(schema: @listSchema, value: @listVal)
     expect(@form.getValue()).toEqual(@listVal)
-    @form.setValue("new widget", path: "2")
+    @form.getField("").addField("new widget")
     expect(@form.fields.getFields().length).toBe(3)
     expect(@form.getWidget("2").getValue()).toBe("new widget")
 

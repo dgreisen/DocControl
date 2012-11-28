@@ -40,8 +40,16 @@ describe "ListField", ->
   it "should be able to get immediate child by index", ->
     expect(@field._getField(0).getValue()).toBe("hello")
 
-  it "should create a new child with the given value when setValue is called with a path one greater than the number of subfields", ->
-    @field.setValue("three", path: "2");
+  it "should create a new child with the given value when addField is called", ->
+    @field.addField("three");
+    expect(@field.getValue()).toEqual(["hello", "world", "three"])
+
+  it "should only create a new child with the given value when addField is called with an index that is exactly equal to the current number of fields", ->
+    @field.addField("three", 1);
+    expect(@field.getValue()).toEqual(["hello", "world"])
+    @field.addField("three", 3);
+    expect(@field.getValue()).toEqual(["hello", "world"])
+    @field.addField("three", 2);
     expect(@field.getValue()).toEqual(["hello", "world", "three"])
 
   it "should getValue of listField when path is empty", ->
@@ -153,6 +161,10 @@ describe "field traversal", ->
 
   it "should recursively input values and create subfield", ->
     expect(@field.getValue()).toEqual({ firstList : [ { secondList : [ 'hello', 'moon' ] } ] })
+
+  it "should return itself if no path given, or path is null/undefined", ->
+    expect(@field.getField()).toBe(@field)
+    expect(@field.getField("")).toBe(@field)
 
   it "should return a subfield given a string path", ->
     expect(@field.getField("firstList.0.secondList.1").getValue()).toBe("moon")

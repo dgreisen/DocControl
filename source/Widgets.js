@@ -66,12 +66,14 @@ enyo.kind({
   //* listeners for field events
   listeners: {
     onValueChanged: "onFieldValueChanged",
-    onValidChanged: "onFieldValidChanged"
+    onValidChanged: "onFieldValidChanged",
+    onAddListSubfield: "onAddListSubfield"
   },
   // * handlers for widget events
   handlers: {
     onValueChanged: "onWidgetValueChanged",
-    onDelete: "onWidgetListDelete"
+    onDelete: "onWidgetListDelete",
+    onAddListSubWidget: "onAddListSubWidget"
   },
   onFieldValueChanged: function(inSender, inEvent) {
     var path = inEvent.originator.getPath();
@@ -92,6 +94,10 @@ enyo.kind({
     delete inEvent.originator;
     this.doValidChanged(inEvent);
   },
+  onAddListSubfield: function(inSender, inEvent) {
+    var path = inEvent.originator.getPath();
+    this.widgets.getWidget(path).addWidget(undefined, inEvent.index, true);
+  },
   onWidgetValueChanged: function(inSender, inEvent) {
     if (!this.fields || inEvent.originator == this) return;
     this.setValue(inEvent.value, {path: inEvent.originator.getPath()});
@@ -100,6 +106,11 @@ enyo.kind({
     var path = inEvent.widget.getPath();
     var index = path.pop();
     this.fields.getField(path).removeField(index);
+  },
+  onAddListSubWidget: function(inSender, inEvent) {
+    if (!this.fields || inEvent.originator == this) return;
+    var path = inEvent.originator.getPath();
+    this.fields.getField(path).addField(undefined, inEvent.index, true);
   },
   schemaChanged: function() {
     var widget = _genWidgetDef(this.schema, {parent: this, skin: this.skin, widgetSet: this.widgetSet});
@@ -219,7 +230,7 @@ enyo.kind({
     this.generateComponents(); // generate the widget components
     this.labelChanged();
     this.requiredChanged();
-    this.setValue(this.value);
+    this.valueChanged(undefined, true);
     this.writeHelpText();
     this.fieldNameChanged();
   },
@@ -266,7 +277,7 @@ enyo.kind({
     this.writeHelpText();
   },
   getValid: function() {
-    return Boolean(this.errors.length);
+    return !this.errors.length;
   },
   fieldNameChanged: function() {
     this.$.input.setAttribute("name", this.fieldName);
@@ -276,10 +287,10 @@ enyo.kind({
   //* @public
   //* useful for subclassing.
   //* you must ensure doValueChanged is always called when value changes
-  valueChanged: function() {
+  valueChanged: function(old, silent) {
     var val = (this.value === null || this.value === undefined) ? this.nullValue : this.value;
     this.$.input.setValue(val);
-    this.doValueChanged({value:this.value});
+    if (!silent) this.doValueChanged({value:this.value});
   },
   errorClass: "error",
   errorsChanged: function() {
@@ -362,12 +373,12 @@ enyo.kind({
     this.valueChanged();
   },
   inputKind: { name: "input", kind: "enyo.Select" },
-  valueChanged: function() {
+  valueChanged: function(old, silent) {
     val = this.getValue();
     val = (val === null || val === undefined) ? this.nullValue : val;
     if (this.choicesIndex && this.choicesIndex[val]) {
       this.$.input.setValue(val); // setSelected(this.choicesIndex[val]);
-      this.doValueChanged({value:this.getValue()});
+      if (!silent) this.doValueChanged({value:this.getValue()});
     }
   },
   labelChanged: function() {
