@@ -86,12 +86,12 @@ enyo.kind({
       components: []
     }
   ]},
-  valueChanged: function(silent) {
+  valueChanged: function() {
     val = this.getValue();
     val = (val === null || val === undefined) ? this.nullValue : val;
     if (this.choicesIndex && this.choicesIndex[val]) {
       this.$.input.setSelected(this.choicesIndex[val]);
-      if (!silent) this.doValueChanged({value:this.getValue()});
+      this.doValueChanged({value:this.getValue()});
     }
   },
   setChoices: function(val) {
@@ -164,12 +164,12 @@ enyo.kind({
     val.forEach(iterChoices);
     this.choicesIndex = choices;
   },
-  valueChanged: function(silent) {
+  valueChanged: function() {
     val = this.getValue();
     val = (val === null || val === undefined) ? this.nullValue : val;
     if (this.choicesIndex && this.choicesIndex[val]) {
       this.choicesIndex[val].setActive();
-      if (!silent) this.doValueChanged({value:this.getValue()});
+      this.doValueChanged({value:this.getValue()});
     }
   },
   defaultSkin: function() {
