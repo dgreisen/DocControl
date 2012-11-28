@@ -68,7 +68,32 @@ describe "events", ->
     @field.emit "onTestEvent", a:1, b:2
     expect(@parent._bubble).toHaveBeenCalledWith("onTestEvent", @field, originator: @field, a:1, b:2)
 
+  it "should call any handler defined on each superclass, oldest superclass first", ->
+    out = []
+    class subcls extends fields.Field
+      listeners: onTestEvent: "onTestEvent"
+      onTestEvent: () ->  out.push(0)
 
+    class subcls2 extends subcls
+      listeners: 
+        onTestEvent: () -> out.push(1)
+        "*": () -> out.push("error")
+
+    class subcls3 extends subcls2
+      listeners: 
+        "*": () -> out.push(2)
+
+    field = new subcls3()
+    out = []
+    field.emit "onTestEvent"
+    expect(out).toEqual([0,1,2])
+
+    out = []
+    field.listeners = 
+      onTestEvent: () -> 
+        out.push(3)
+    field.emit "onTestEvent"
+    expect(out).toEqual([0,1,2,3])
 
 
 describe "class inheritence", ->

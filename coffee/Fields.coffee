@@ -44,7 +44,7 @@ class Field
     if @parent?._fields? then @parent._fields.push(this)
     # compile inherited attributes
     @errorMessages = @_walkProto("errorMessages")
-    @listeners = @_walkProto("listeners")
+    @listeners = {}
     # all fields were sharing the same validators list
     @validators = utils.cloneArray(@validators)
     # announce that a new field has been created
@@ -169,14 +169,34 @@ class Field
     inEvent.originator = this
     @_bubble(eventName, null, inEvent)
 
-  # handle the bubbling
+  # handle bubbling to parent
   _bubble: (eventName, inSender, inEvent) ->
-    handler = @listeners[eventName] or @listeners["*"]
-    handler = if handler instanceof Function then handler else this[handler]
-    if (not handler or not handler.apply(this, [inSender, inEvent])) and @parent
+    for listener in @_getProtoListeners(eventName, true)
+      if listener.apply(this, [inSender, inEvent]) == true then return
+    if @parent
       @parent._bubble(eventName, this, inEvent)
 
+  # handle bubbling up the prototype chain
+  _getProtoListeners: (eventName, start) ->
+    sup = if start then @constructor.prototype else @constructor.__super__
+    listener = @listeners[eventName] or @listeners["*"]
+    listener = if listener instanceof Function then listener else this[listener]
+    listener = if listener? then [listener] else []
+    if sup?
+      return sup._getProtoListeners(eventName).concat(listener)
+    else
+      return listener
 
+  _protoBubble: (eventName, inSender, inEvent, start) ->
+    sup = if start then @constructor.prototype else @constructor.__super__
+    if sup?
+      if sup._protoBubble(eventName, inSender, inEvent) then return true
+
+    handler = @listeners[eventName] or @listeners["*"]
+    handler = if handler instanceof Function then handler else this[handler]
+    if handler
+      return handler.apply(this, [inSender, inEvent]) == true
+    return false
 
 
 

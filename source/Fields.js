@@ -49,7 +49,7 @@
         this.parent._fields.push(this);
       }
       this.errorMessages = this._walkProto("errorMessages");
-      this.listeners = this._walkProto("listeners");
+      this.listeners = {};
       this.validators = utils.cloneArray(this.validators);
       this.emit("onFieldAdd", {
         schema: opts
@@ -209,12 +209,46 @@
     };
 
     Field.prototype._bubble = function(eventName, inSender, inEvent) {
-      var handler;
-      handler = this.listeners[eventName] || this.listeners["*"];
-      handler = handler instanceof Function ? handler : this[handler];
-      if ((!handler || !handler.apply(this, [inSender, inEvent])) && this.parent) {
+      var listener, _i, _len, _ref;
+      _ref = this._getProtoListeners(eventName, true);
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        listener = _ref[_i];
+        if (listener.apply(this, [inSender, inEvent]) === true) {
+          return;
+        }
+      }
+      if (this.parent) {
         return this.parent._bubble(eventName, this, inEvent);
       }
+    };
+
+    Field.prototype._getProtoListeners = function(eventName, start) {
+      var listener, sup;
+      sup = start ? this.constructor.prototype : this.constructor.__super__;
+      listener = this.listeners[eventName] || this.listeners["*"];
+      listener = listener instanceof Function ? listener : this[listener];
+      listener = listener != null ? [listener] : [];
+      if (sup != null) {
+        return sup._getProtoListeners(eventName).concat(listener);
+      } else {
+        return listener;
+      }
+    };
+
+    Field.prototype._protoBubble = function(eventName, inSender, inEvent, start) {
+      var handler, sup;
+      sup = start ? this.constructor.prototype : this.constructor.__super__;
+      if (sup != null) {
+        if (sup._protoBubble(eventName, inSender, inEvent)) {
+          return true;
+        }
+      }
+      handler = this.listeners[eventName] || this.listeners["*"];
+      handler = handler instanceof Function ? handler : this[handler];
+      if (handler) {
+        return handler.apply(this, [inSender, inEvent]) === true;
+      }
+      return false;
     };
 
     return Field;
