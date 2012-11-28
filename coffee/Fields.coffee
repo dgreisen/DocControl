@@ -186,18 +186,7 @@ class Field
       return sup._getProtoListeners(eventName).concat(listener)
     else
       return listener
-
-  _protoBubble: (eventName, inSender, inEvent, start) ->
-    sup = if start then @constructor.prototype else @constructor.__super__
-    if sup?
-      if sup._protoBubble(eventName, inSender, inEvent) then return true
-
-    handler = @listeners[eventName] or @listeners["*"]
-    handler = if handler instanceof Function then handler else this[handler]
-    if handler
-      return handler.apply(this, [inSender, inEvent]) == true
-    return false
-
+      
 
 
 class CharField extends Field
