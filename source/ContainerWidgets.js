@@ -44,7 +44,12 @@ enyo.kind({
   destroyWidgets: function() {
     this._widgets = [];
     this.$.widgets.destroyComponents();
+  },
+  instantUpdateChanged:function() {
+    var that = this;
+    enyo.forEach(this._widgets, function(x) {x.setInstantUpdate(that.instantUpdate);});
   }
+
 });
 
 

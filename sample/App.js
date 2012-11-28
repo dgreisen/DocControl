@@ -153,12 +153,11 @@ enyo.kind({
     this.$.contactsForm.setNoWidget(!inSender.value);
   },
   selectValidationStrategy: function(inSender, inEvent) {
-    console.log('x');
-    this.$.contactsForm.setWidgetAttrs({validationStrategy: inEvent.content.toLowerCase()});
+    this.$.contactsForm.setValidationStrategy(inEvent.content.toLowerCase);
   },
   toggleInstant: function(inSender, inEvent) {
     if (this.startup-- > 0) return;
-    this.$.contactsForm.setWidgetAttrs({validationInstant: inSender.value});
+    this.$.contactsForm.setInstantUpdate(inSender.value);
   },
   onValidation: function(inSender, inEvent) {
     if (inEvent.valid) {

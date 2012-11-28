@@ -47,10 +47,13 @@ enyo.kind({
     //* <ul><li>`"default"` strategy does not validate on value change until field's getClean() called.</li>
     //* <li>`"always"` strategy begins validating on widget creation.</li></ul>
     validationStrategy: undefined,
+    //* whether to update the corresponding field every time the widget changes or only when the user finishes editing the field (onchange)
+    instantUpdate: undefined,
     //* a string designating a widget style. e.g. "onyx"
     widgetSet: "",
     //* the widgetSet skin to apply to the widget
     skin: "default"
+
   },
   create: function() {
     this.inherited(arguments);
@@ -142,7 +145,9 @@ enyo.kind({
     this.destroyComponents();
     this.fields = fields.genField(this.schema, this, this.value);
   },
-  //* proxy field functions
+  //* proxy field methods
+  instantUpdateChanged:function() { this.widgets.setInstantUpdate(this.instantUpdate); },
+  //* proxy field methods
   getField: function(path) { return this.fields.getField(path); },
   getValue: function(opts) { return this.fields.getValue(opts); },
   setValue: function(val, opts) { return this.fields.setValue(val, opts); },
