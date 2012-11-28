@@ -150,7 +150,7 @@ describe("ListField Validation", function() {
       name: "sub",
       minLength: 5
     };
-    this.vals = ["hello", "worl"];
+    this.vals = ["hello", "moon"];
     return this.field = new fields.ListField({
       name: "test",
       schema: this.subSchema,
@@ -175,12 +175,18 @@ describe("ListField Validation", function() {
     this.field.isValid();
     return expect(this.field.validate).toHaveBeenCalled();
   });
-  return it("should be valid only if children are valid", function() {
+  it("should be valid only if children are valid", function() {
     expect(this.field.isValid()).toBe(false);
     this.field.getFields()[1].setValue('world');
     expect(this.field.isValid()).toBe(true);
     this.field.getFields()[1].setValue('worl');
     return expect(this.field.isValid()).toBe(false);
+  });
+  return it("should validate every subfield", function() {
+    this.field.setValue("hi", "0");
+    this.field.isValid();
+    expect(this.field.getField('0').errors.length).toBe(1);
+    return expect(this.field.getField('1').errors.length).toBe(1);
   });
 });
 
@@ -302,9 +308,13 @@ describe("field traversal", function() {
       path: "firstList.0.secondList"
     })).toEqual(["hello", "world"]);
   });
-  return it("should get errors for specific field if passed opts.path", function() {
+  it("should get errors for specific field if passed opts.path", function() {
     return expect(this.field.getErrors({
       path: "firstList.0.secondList.1"
     })).toEqual(['Ensure this value has at least 5 characters (it has 4).']);
+  });
+  return it("should convert opts arguments that are strings to an opts object with a path equal to the string", function() {
+    this.field.setValue("world", "firstList.0.secondList.1");
+    return expect(this.field.getValue("firstList.0.secondList")).toEqual(["hello", "world"]);
   });
 });

@@ -64,7 +64,8 @@
       };
 
       BaseContainerField.prototype.isValid = function(opts) {
-        var oldErrors, valid, value, _ref;
+        var oldErrors, valid, value, _ref,
+          _this = this;
         if (opts != null ? (_ref = opts.path) != null ? _ref.length : void 0 : void 0) {
           return this._applyToSubfield("isValid", opts);
         }
@@ -74,24 +75,26 @@
         oldErrors = this.errors;
         this.errors = [];
         value = void 0;
-        try {
-          value = this._querySubfields("getClean");
-        } catch (e) {
-          this.errors = [this.errorMessages.invalid];
-        }
-        if (!this.errors.length) {
-          this.validate(value);
-        }
-        if (!this.errors.length && this._hasChanged) {
-          try {
-            value = this._querySubfields("getClean");
-          } catch (e) {
-            this.errors.push(this.errorMessages.invalid);
+        utils.forEach(this.getFields(), function(x) {
+          if (!x.isValid()) {
+            return _this.errors = [_this.errorMessages.invalid];
           }
+        });
+        if (!this.errors.length) {
+          value = this._querySubfields("getClean");
+          value = this.validate(value);
         }
+        utils.forEach(this.getFields(), function(x) {
+          if (!x.isValid()) {
+            return _this.errors = [_this.errorMessages.invalid];
+          }
+        });
         valid = !this.errors.length;
+        if (valid) {
+          value = this._querySubfields("getClean");
+        }
         this.clean = valid ? value : void 0;
-        if (valid !== this._valid || !valid && !utils.isEqual(oldErrors, this.errors)) {
+        if (valid !== this._valid || (!valid && !utils.isEqual(oldErrors, this.errors))) {
           this.emit("onValidChanged", {
             valid: valid,
             errors: this.errors
@@ -149,6 +152,7 @@
 
       BaseContainerField.prototype.getValue = function(opts) {
         var _ref;
+        opts = this._procOpts(opts);
         if (opts != null ? (_ref = opts.path) != null ? _ref.length : void 0 : void 0) {
           return this._applyToSubfield("getValue", opts);
         }
@@ -157,6 +161,7 @@
 
       BaseContainerField.prototype.getClean = function(opts) {
         var _ref;
+        opts = this._procOpts(opts);
         if (opts != null ? (_ref = opts.path) != null ? _ref.length : void 0 : void 0) {
           return this._applyToSubfield("getClean", opts);
         }
@@ -166,6 +171,7 @@
 
       BaseContainerField.prototype.toJSON = function(opts) {
         var _ref;
+        opts = this._procOpts(opts);
         if (opts != null ? (_ref = opts.path) != null ? _ref.length : void 0 : void 0) {
           return this._applyToSubfield("toJSON", opts);
         }
@@ -175,6 +181,7 @@
 
       BaseContainerField.prototype.getErrors = function(opts) {
         var _ref;
+        opts = this._procOpts(opts);
         if (opts != null ? (_ref = opts.path) != null ? _ref.length : void 0 : void 0) {
           return this._applyToSubfield("getErrors", opts);
         }
@@ -208,6 +215,18 @@
         return subfield[fn].apply(subfield, args);
       };
 
+      BaseContainerField.prototype._procOpts = function(opts) {
+        if (opts == null) {
+          opts = {};
+        }
+        if (typeof opts === "string") {
+          opts = {
+            path: opts
+          };
+        }
+        return opts;
+      };
+
       return BaseContainerField;
 
     })(fields.Field);
@@ -234,6 +253,7 @@
 
       ContainerField.prototype.setValue = function(values, opts) {
         var field, origValue, _i, _len, _ref;
+        opts = this._procOpts(opts);
         if (opts != null ? (_ref = opts.path) != null ? _ref.length : void 0 : void 0) {
           return this._applyToSubfield("setValue", opts, values);
         }
@@ -351,6 +371,7 @@
 
       ListField.prototype.setValue = function(values, opts) {
         var value, _i, _len, _ref;
+        opts = this._procOpts(opts);
         if (opts != null ? (_ref = opts.path) != null ? _ref.length : void 0 : void 0) {
           return this._applyToSubfield("setValue", opts, values);
         }

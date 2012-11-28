@@ -98,7 +98,7 @@ describe "ContainerField", ->
 describe "ListField Validation", ->
   beforeEach ->
     @subSchema = {field: "CharField", name: "sub", minLength: 5}
-    @vals = ["hello", "worl"]
+    @vals = ["hello", "moon"]
     @field = new fields.ListField(name:"test", schema: @subSchema, value: @vals)
 
   it "should perform revalidation if subfield value has changed", ->
@@ -124,6 +124,11 @@ describe "ListField Validation", ->
     @field.getFields()[1].setValue('worl')
     expect(@field.isValid()).toBe(false)
 
+  it "should validate every subfield", ->
+    @field.setValue("hi", "0")
+    @field.isValid()
+    expect(@field.getField('0').errors.length).toBe(1)
+    expect(@field.getField('1').errors.length).toBe(1)
 
 describe "ContainerField Validation", ->
   beforeEach ->
@@ -197,3 +202,6 @@ describe "field traversal", ->
   it "should get errors for specific field if passed opts.path", ->
     expect(@field.getErrors(path: "firstList.0.secondList.1")).toEqual(['Ensure this value has at least 5 characters (it has 4).'])
 
+  it "should convert opts arguments that are strings to an opts object with a path equal to the string", ->
+    @field.setValue("world", "firstList.0.secondList.1")
+    expect(@field.getValue("firstList.0.secondList")).toEqual(["hello", "world"])

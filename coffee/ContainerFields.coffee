@@ -53,21 +53,19 @@ addFields = (fields) ->
       oldErrors = @errors
       @errors = []
       value = undefined
-      try
+      utils.forEach @getFields(), (x) =>
+        unless x.isValid() then @errors = [@errorMessages.invalid]
+      if not @errors.length
         value = @_querySubfields("getClean")
-      catch e
-        @errors = [@errorMessages.invalid]
-      # run custom validation on the cleaned data
-      if not @errors.length then @validate(value)
+        # run custom validation on the cleaned data
+        value = @validate(value)
       # try again to get cleaned data if @validate modified subfields
-      if not @errors.length and @_hasChanged
-        try
-          value = @_querySubfields("getClean")
-        catch e
-          @errors.push(@errorMessages.invalid)
+      utils.forEach @getFields(), (x) =>
+        unless x.isValid() then @errors = [@errorMessages.invalid]
       valid = not @errors.length
+      if valid then value = @_querySubfields("getClean")
       @clean = if valid then value else undefined
-      if valid != @_valid or not valid and not utils.isEqual(oldErrors, @errors)
+      if valid != @_valid or (not valid and not utils.isEqual(oldErrors, @errors))
         @emit("onValidChanged", valid: valid, errors: @errors)
         @_valid = valid
       @_hasChanged = false
@@ -94,17 +92,21 @@ addFields = (fields) ->
     throwValidationError: () ->
       if not @isValid() then throw @errors
     getValue: (opts) ->
+      opts = @_procOpts(opts)
       if opts?.path?.length then return @_applyToSubfield("getValue", opts)
       return @_querySubfields("getValue")
     getClean: (opts) ->
+      opts = @_procOpts(opts)
       if opts?.path?.length then return @_applyToSubfield("getClean", opts)
       @throwValidationError()
       return @clean
     toJSON: (opts) ->
+      opts = @_procOpts(opts)
       if opts?.path?.length then return @_applyToSubfield("toJSON", opts)
       @throwValidationError()
       return @_querySubfields("toJSON")
     getErrors: (opts) ->
+      opts = @_procOpts(opts)
       if opts?.path?.length then return @_applyToSubfield("getErrors", opts)
       @isValid()
       if not @errors.length then return null
@@ -122,6 +124,11 @@ addFields = (fields) ->
       delete opts.path
       args.push(opts)
       return subfield[fn].apply(subfield, args)
+    _procOpts: (opts) ->
+      opts ?= {}
+      if typeof(opts) == "string" then opts = {path: opts}
+      return opts
+
 
 
   ###
@@ -137,6 +144,7 @@ addFields = (fields) ->
   class ContainerField extends BaseContainerField
     widget: "widgets.ContainerWidget"
     setValue: (values, opts) ->
+      opts = @_procOpts(opts)
       if opts?.path?.length then return @_applyToSubfield("setValue", opts, values)
       origValue = @getValue()
       if not values or utils.isEqual(values, origValue) or not @_fields then return
@@ -198,6 +206,7 @@ addFields = (fields) ->
     # accepts an array, where each element in the array is the value for a subfield.
     # if the optional value `reset` is truthy, then validation state will be reset.
     setValue: (values, opts) ->
+      opts = @_procOpts(opts)
       if opts?.path?.length then return @_applyToSubfield("setValue", opts, values)
       if not values or not @schema or utils.isEqual(values, @getValue()) then return
       if values not instanceof Array then throw "values must be an array"
