@@ -35,6 +35,7 @@ addFields = (fields) ->
       super(opts)
       # we have to specifically set the value so because setValue before didn't work without having the schema set
       @value = @opts.value
+      delete @schema
       @setSchema(@opts.schema)
     listeners:
       onValueChanged: "subfieldChanged"
@@ -86,6 +87,7 @@ addFields = (fields) ->
       return subfield.getField(path)
     resetFields: () ->
       # if there are already fields, store their values for later reconstruction
+      @emit("onSubfieldsReset")
       if @_fields && @_fields.length then @value = @getValue()
       @_fields = []
     throwValidationError: () ->

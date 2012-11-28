@@ -1,28 +1,21 @@
 describe "widgets.ContainerWidget", ->
   beforeEach ->
-    @subschema = [{field: "CharField", name: "sub1", minLength: 5}, {field: "CharField", name: "sub2", minLength: 5}]
+    @subschema = {field: "CharField", name: "sub1", value: "hello", minLength: 5}
+    @subschema2 = {field: "CharField", name: "sub2", minLength: 5}
     @vals = { sub1: "hello", sub2: "moon" }
     @schema = {
       field: "ContainerField",
       name: "container",
-      schema: @subschema,
       value: @vals
     }
     _genWidgetDef = widgets.Form.prototype._genWidgetDef
     @widget = new widgets.ContainerWidget(_genWidgetDef(@schema))
     # @form = new widgets.Form(schema: @schema)
 
-  it "should create child widgets, add to _widgets, and set value and parentWidget", ->
-    expect(@widget._widgets.length).toBe(2)
+  it "should create child widget, add to _widgets, and set value and parentWidget, when addWidget", ->
+    @widget.addWidget(@subschema)
+    expect(@widget._widgets.length).toBe(1)
     expect(@widget._widgets[0].parentWidget).toBe(@widget)
-    expect(@widget._widgets[1].getValue()).toBe("moon")
-
-  it "should set value with setValue", ->
-    val = enyo.clone(@vals)
-    val.sub2 = "world"
-    @widget.setValue(val)
-    expect(@widget._widgets[0].getValue()).toBe("hello")
-    expect(@widget._widgets[1].getValue()).toBe("world")
 
 describe "widgets.ListWidget", ->
   beforeEach ->
@@ -38,15 +31,15 @@ describe "widgets.ListWidget", ->
     _genWidgetDef = widgets.Form.prototype._genWidgetDef
     @widget = new widgets.ListWidget(_genWidgetDef(@schema))
 
-  it "should create child widgets, add to _widgets, and set value and parentWidget", ->
+  it "should create child widgets, add to _widgets, and set value and parentWidget when addWidget called", ->
+    @subschema.value = @vals[0]
+    @widget.addWidget(@subschema)
+    @subschema.value = @vals[1]
+    @widget.addWidget(@subschema)
     expect(@widget._widgets.length).toBe(2)
     expect(@widget._widgets[0].parentWidget).toBe(@widget)
     expect(@widget._widgets[0].value).toBe("hello")
 
-  it "should create a new empty child widget when addWidget called", ->
-    @widget.addWidget()
-    expect(@widget.getWidget([2]).kind).toBe("widgets.Widget")
-    expect(@widget._widgets.length).toBe(3)
 
 
 describe "widget traversal", ->
@@ -74,8 +67,8 @@ describe "widget traversal", ->
         }
       ]
     }
-    _genWidgetDef = widgets.Form.prototype._genWidgetDef
-    @widget = new widgets.ContainerWidget(_genWidgetDef(@schema))
+    @form = new widgets.Form(schema: @schema)
+    @widget = @form.widgets
 
   it "should create nested fields from nested schema", ->
     expect(@widget.getValue()).toEqual(@vals)

@@ -37,7 +37,8 @@ class Field
     @defaults = @_walkProto("defaults")
     @opts ?= {}
     @opts = utils.mixin(utils.clone(@defaults), opts)
-    {@name, @required, @parent} = @opts
+    utils.mixin(this, @opts)
+    delete this.value
     # add this field to its parent's list of subfields (have to do it 
     # here so it can be found when it emits events during construction)
     if @parent?._fields? then @parent._fields.push(this)
@@ -134,6 +135,7 @@ class Field
     if val != @required
       @_hasChanged = true
       @required = val
+      @emit("onRequiredChanged", {required: @required})
   # You should not have to override this in Field subclasses
   setValue: (val, opts) ->
     if val != @value

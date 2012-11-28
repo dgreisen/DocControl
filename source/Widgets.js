@@ -66,15 +66,19 @@ enyo.kind({
   events: {
     onValueChanged: "",
     onValidChanged: "",
+    onRequiredChanged: "",
     onFieldAdd: "",
-    onFieldDelete: ""
+    onFieldDelete: "",
+    onSubfieldsReset: ""
   },
   //* listeners for field events
   listeners: {
     onValueChanged: "onFieldValueChanged",
     onValidChanged: "onFieldValidChanged",
+    onRequiredChanged: "onFieldRequiredChanged",
     onFieldAdd: "onFieldAdded",
-    onFieldDelete: "onFieldDeleted"
+    onFieldDelete: "onFieldDeleted",
+    onSubfieldsReset: "onSubfieldsReseted"
   },
   // * handlers for widget events
   handlers: {
@@ -85,7 +89,7 @@ enyo.kind({
   emit: function(fn, inEvent) {
     inEvent.field = inEvent.originator;
     delete inEvent.originator;
-    fn.call(this, inEvent);
+    this[fn](inEvent);
   },
   onFieldValueChanged: function(inSender, inEvent) {
     var path = inEvent.originator.getPath();
@@ -94,7 +98,7 @@ enyo.kind({
     widget.setValue(inEvent.value);
     inEvent.field = inEvent.originator;
     delete inEvent.originator;
-    this.emit(this.doValueChanged, inEvent);
+    this.emit("doValueChanged", inEvent);
     this._validate();
   },
   onFieldValidChanged: function(inSender, inEvent) {
@@ -102,9 +106,14 @@ enyo.kind({
     var widget = this.getWidget(path);
     if (!widget) return;
     widget.setErrors(inEvent.errors);
-    inEvent.field = inEvent.originator;
-    delete inEvent.originator;
-    this.emit(this.doValidChanged, inEvent);
+    this.emit("doValidChanged", inEvent);
+  },
+  onFieldRequiredChanged: function(inSender, inEvent) {
+    var path = inEvent.originator.getPath();
+    var widget = this.getWidget(path);
+    if (!widget) return;
+    widget.setRequired(inEvent.required);
+    this.emit("doRequiredChanged", inEvent);
   },
   onFieldAdded: function(inSender, inEvent) {
     var path = inEvent.originator.getPath();
@@ -119,14 +128,14 @@ enyo.kind({
       schema = _genWidgetDef(schema, {parent: this});
       this.widgets = this.createComponent(schema);
     }
-    this.emit(this.doFieldAdd, inEvent);
+    this.emit("doFieldAdd", inEvent);
   },
   onFieldDeleted: function(inSender, inEvent) {
-    var path = inEvent.originator.getPath();
-    // get parent of removed field and remove all subwidgets
-    path.pop();
-    this.getWidget(path).destroyWidgets();
-    this.emit(this.doFieldDelete, inEvent);
+    this.emit("doFieldDelete", inEvent);
+  },
+  onSubfieldsReseted: function(inSender, inEvent) {
+    this.getWidget(inEvent.originator.getPath()).destroyWidgets();
+    this.emit("doSubfieldsReset", inEvent);
   },
   onWidgetValueChanged: function(inSender, inEvent) {
     if (!this.fields || inEvent.originator == this) return;

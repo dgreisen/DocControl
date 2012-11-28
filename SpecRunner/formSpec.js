@@ -94,9 +94,8 @@ describe("widgets.Form", function() {
       value: this.listVal
     });
     expect(this.form.getValue()).toEqual(this.listVal);
-    this.form.getWidget("").addWidget();
-    expect(this.form.getWidget("")._widgets.length).toBe(3);
-    return this.form.getWidget("2").setValue("new widget");
+    this.form.getWidget("").handleAdd();
+    return expect(this.form.getWidget("")._widgets.length).toBe(3);
   });
   it("should handle list item addition by field", function() {
     this.form = new widgets.Form({

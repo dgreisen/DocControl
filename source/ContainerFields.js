@@ -48,6 +48,7 @@
       function BaseContainerField(opts) {
         BaseContainerField.__super__.constructor.call(this, opts);
         this.value = this.opts.value;
+        delete this.schema;
         this.setSchema(this.opts.schema);
       }
 
@@ -132,6 +133,7 @@
       };
 
       BaseContainerField.prototype.resetFields = function() {
+        this.emit("onSubfieldsReset");
         if (this._fields && this._fields.length) {
           this.value = this.getValue();
         }

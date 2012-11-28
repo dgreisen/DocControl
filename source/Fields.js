@@ -37,14 +37,15 @@
     };
 
     function Field(opts) {
-      var _ref, _ref1, _ref2;
+      var _ref, _ref1;
       this.defaults = this._walkProto("defaults");
       if ((_ref = this.opts) == null) {
         this.opts = {};
       }
       this.opts = utils.mixin(utils.clone(this.defaults), opts);
-      _ref1 = this.opts, this.name = _ref1.name, this.required = _ref1.required, this.parent = _ref1.parent;
-      if (((_ref2 = this.parent) != null ? _ref2._fields : void 0) != null) {
+      utils.mixin(this, this.opts);
+      delete this.value;
+      if (((_ref1 = this.parent) != null ? _ref1._fields : void 0) != null) {
         this.parent._fields.push(this);
       }
       this.errorMessages = this._walkProto("errorMessages");
@@ -159,7 +160,10 @@
     Field.prototype.setRequired = function(val) {
       if (val !== this.required) {
         this._hasChanged = true;
-        return this.required = val;
+        this.required = val;
+        return this.emit("onRequiredChanged", {
+          required: this.required
+        });
       }
     };
 

@@ -118,7 +118,7 @@ enyo.kind({
     ]},
     { kind: "Scroller", fit: true, components: [
       { classes: "main-content", content: "You can inspect the contacts in the debugger by looking at 'window.contacts', even when there are no widgets"},
-      { name: "contactsForm",
+      { name: "contacts",
         kind: "widgets.Form",
         classes: "main-content form-horizontal",
         schema: contactsSchema,
@@ -137,7 +137,7 @@ enyo.kind({
     onValidation: "onValidation"
   },
   onSubmit: function() {
-    if (this.$.contactsForm.isValid()) {
+    if (this.$.contacts.isValid()) {
       this.$.submitPop.setContent('Successfull Contacts Submission');
     } else {
       this.$.submitPop.setContent('Submission Failure - invalid form');
@@ -145,19 +145,19 @@ enyo.kind({
     this.$.submitPop.show();
   },
   onReset: function() {
-    this.$.contactsForm.setValue(DATA);
+    this.$.contacts.setValue(DATA);
   },
   startup: 2,
   toggleWidgets: function(inSender, inEvent) {
     if (this.startup-- > 0) return;
-    this.$.contactsForm.setNoWidget(!inSender.value);
+    this.$.contacts.setNoWidget(!inSender.value);
   },
   selectValidationStrategy: function(inSender, inEvent) {
-    this.$.contactsForm.setValidationStrategy(inEvent.content.toLowerCase);
+    this.$.contacts.setValidationStrategy(inEvent.content.toLowerCase);
   },
   toggleInstant: function(inSender, inEvent) {
     if (this.startup-- > 0) return;
-    this.$.contactsForm.setInstantUpdate(inSender.value);
+    this.$.contacts.setInstantUpdate(inSender.value);
   },
   onValidation: function(inSender, inEvent) {
     if (inEvent.valid) {

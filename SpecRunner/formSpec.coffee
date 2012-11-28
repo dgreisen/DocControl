@@ -73,12 +73,10 @@ describe "widgets.Form", ->
   it "should handle list item addition by widget", ->
     @form = new widgets.Form(schema: @listSchema, value: @listVal)
     expect(@form.getValue()).toEqual(@listVal)
-    @form.getWidget("").addWidget()
+    @form.getWidget("").handleAdd()
     expect(@form.getWidget("")._widgets.length).toBe(3)
-    @form.getWidget("2").setValue("new widget")
 
   it "should handle list item addition by field", ->
-
     @form = new widgets.Form(schema: @listSchema, value: @listVal)
     expect(@form.getValue()).toEqual(@listVal)
     @form.getField("").addField("new widget")

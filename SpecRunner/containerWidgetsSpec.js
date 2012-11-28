@@ -3,17 +3,17 @@
 describe("widgets.ContainerWidget", function() {
   beforeEach(function() {
     var _genWidgetDef;
-    this.subschema = [
-      {
-        field: "CharField",
-        name: "sub1",
-        minLength: 5
-      }, {
-        field: "CharField",
-        name: "sub2",
-        minLength: 5
-      }
-    ];
+    this.subschema = {
+      field: "CharField",
+      name: "sub1",
+      value: "hello",
+      minLength: 5
+    };
+    this.subschema2 = {
+      field: "CharField",
+      name: "sub2",
+      minLength: 5
+    };
     this.vals = {
       sub1: "hello",
       sub2: "moon"
@@ -21,24 +21,15 @@ describe("widgets.ContainerWidget", function() {
     this.schema = {
       field: "ContainerField",
       name: "container",
-      schema: this.subschema,
       value: this.vals
     };
     _genWidgetDef = widgets.Form.prototype._genWidgetDef;
     return this.widget = new widgets.ContainerWidget(_genWidgetDef(this.schema));
   });
-  it("should create child widgets, add to _widgets, and set value and parentWidget", function() {
-    expect(this.widget._widgets.length).toBe(2);
-    expect(this.widget._widgets[0].parentWidget).toBe(this.widget);
-    return expect(this.widget._widgets[1].getValue()).toBe("moon");
-  });
-  return it("should set value with setValue", function() {
-    var val;
-    val = enyo.clone(this.vals);
-    val.sub2 = "world";
-    this.widget.setValue(val);
-    expect(this.widget._widgets[0].getValue()).toBe("hello");
-    return expect(this.widget._widgets[1].getValue()).toBe("world");
+  return it("should create child widget, add to _widgets, and set value and parentWidget, when addWidget", function() {
+    this.widget.addWidget(this.subschema);
+    expect(this.widget._widgets.length).toBe(1);
+    return expect(this.widget._widgets[0].parentWidget).toBe(this.widget);
   });
 });
 
@@ -59,21 +50,19 @@ describe("widgets.ListWidget", function() {
     _genWidgetDef = widgets.Form.prototype._genWidgetDef;
     return this.widget = new widgets.ListWidget(_genWidgetDef(this.schema));
   });
-  it("should create child widgets, add to _widgets, and set value and parentWidget", function() {
+  return it("should create child widgets, add to _widgets, and set value and parentWidget when addWidget called", function() {
+    this.subschema.value = this.vals[0];
+    this.widget.addWidget(this.subschema);
+    this.subschema.value = this.vals[1];
+    this.widget.addWidget(this.subschema);
     expect(this.widget._widgets.length).toBe(2);
     expect(this.widget._widgets[0].parentWidget).toBe(this.widget);
     return expect(this.widget._widgets[0].value).toBe("hello");
-  });
-  return it("should create a new empty child widget when addWidget called", function() {
-    this.widget.addWidget();
-    expect(this.widget.getWidget([2]).kind).toBe("widgets.Widget");
-    return expect(this.widget._widgets.length).toBe(3);
   });
 });
 
 describe("widget traversal", function() {
   beforeEach(function() {
-    var _genWidgetDef;
     this.vals = {
       firstList: [
         {
@@ -107,8 +96,10 @@ describe("widget traversal", function() {
         }
       ]
     };
-    _genWidgetDef = widgets.Form.prototype._genWidgetDef;
-    return this.widget = new widgets.ContainerWidget(_genWidgetDef(this.schema));
+    this.form = new widgets.Form({
+      schema: this.schema
+    });
+    return this.widget = this.form.widgets;
   });
   it("should create nested fields from nested schema", function() {
     return expect(this.widget.getValue()).toEqual(this.vals);
