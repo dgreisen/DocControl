@@ -50,6 +50,9 @@
       this.errorMessages = this._walkProto("errorMessages");
       this.listeners = this._walkProto("listeners");
       this.validators = utils.cloneArray(this.validators);
+      this.emit("onFieldAdd", {
+        schema: opts
+      });
       this.setValue(this.opts.value);
     }
 

@@ -81,7 +81,7 @@ addFields = (fields) ->
     validate: (value) ->
       value = super(value)
       if @errors.length then return value
-      value = strip(value).toLowerCase()
+      value = utils.strip(value).toLowerCase()
       value = us_states.STATES_NORMALIZED[value]
       if value
         this.setValue(value)
@@ -123,11 +123,11 @@ addFields = (fields) ->
       for i in [1..@streetLines]
         street = utils.clone(this.streetField)
         street.name = street.name+(i)
-        label = (i>1) ? " "+ i : ""
+        label = if i>1 then " "+ i else ""
         street.widget.label = street.widget.label + label
         opts.schema.push(street)
       opts.schema.push(this.cityField)
-      opts.schema.push({ name: "state", field: this.statePrefix + this.stateFieldType,  widgetAttrs: { label: "State", size: 1 } })
+      opts.schema.push({ name: "state", field: this.statePrefix + this.stateFieldType,  widget: { label: "State", size: 1 } })
       opts.schema.push(this.zipField)
       super(opts)
 

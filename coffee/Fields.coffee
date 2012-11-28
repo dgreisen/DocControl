@@ -46,6 +46,8 @@ class Field
     @listeners = @_walkProto("listeners")
     # all fields were sharing the same validators list
     @validators = utils.cloneArray(@validators)
+    # announce that a new field has been created
+    @emit("onFieldAdd", {schema: opts})
     #set initial value
     @setValue(@opts.value)
   # walks the prototype chain collecting all the values off attr and combining them in one.

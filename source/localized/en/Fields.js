@@ -147,7 +147,7 @@
         if (this.errors.length) {
           return value;
         }
-        value = strip(value).toLowerCase();
+        value = utils.strip(value).toLowerCase();
         value = us_states.STATES_NORMALIZED[value];
         if (value) {
           this.setValue(value);
@@ -230,14 +230,12 @@
       USAddressField.prototype.statePrefix = "local.en.";
 
       function USAddressField(opts) {
-        var i, label, street, _i, _ref, _ref1;
+        var i, label, street, _i, _ref;
         opts.schema = [];
         for (i = _i = 1, _ref = this.streetLines; 1 <= _ref ? _i <= _ref : _i >= _ref; i = 1 <= _ref ? ++_i : --_i) {
           street = utils.clone(this.streetField);
           street.name = street.name + i;
-          label = (_ref1 = i > 1) != null ? _ref1 : " " + {
-            i: ""
-          };
+          label = i > 1 ? " " + i : "";
           street.widget.label = street.widget.label + label;
           opts.schema.push(street);
         }
@@ -245,7 +243,7 @@
         opts.schema.push({
           name: "state",
           field: this.statePrefix + this.stateFieldType,
-          widgetAttrs: {
+          widget: {
             label: "State",
             size: 1
           }

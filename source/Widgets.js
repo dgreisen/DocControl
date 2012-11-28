@@ -22,9 +22,9 @@ _genWidgetDef = function(schema, opts) {
     opts.parentWidget = opts.parentWidget || opts.parent;
     delete opts.parent;
     enyo.mixin(widget, opts);
-  if (opts.widgetSet)  {
+  if (widget.widgetSet)  {
       var widgetKind = widget.kind.split('.');
-      widgetKind.splice(1,0, opts.widgetSet);
+      widgetKind.splice(1,0, widget.widgetSet);
       var x = window;
       for (var i=0; x && i < widgetKind.length; i++) {x=x[widgetKind[i]];}
       if (x) widget.kind = widgetKind.join('.');
@@ -55,25 +55,34 @@ enyo.kind({
   create: function() {
     this.inherited(arguments);
     var schema = enyo.clone(this.schema);
+    this._widgets = [];
+    this._fields = [];
     this.schemaChanged();
-    this.fields = fields.genField(this.schema, this, this.value);
     this._validate();
   },
   events: {
     onValueChanged: "",
-    onValidChanged: ""
+    onValidChanged: "",
+    onFieldAdd: "",
+    onFieldDelete: ""
   },
   //* listeners for field events
   listeners: {
     onValueChanged: "onFieldValueChanged",
     onValidChanged: "onFieldValidChanged",
-    onAddListSubfield: "onAddListSubfield"
+    onFieldAdd: "onFieldAdded",
+    onFieldDelete: "onFieldDeleted"
   },
   // * handlers for widget events
   handlers: {
     onValueChanged: "onWidgetValueChanged",
-    onDelete: "onWidgetListDelete",
-    onAddListSubWidget: "onAddListSubWidget"
+    onWidgetDelete: "onWidgetDelete",
+    onWidgetAdd: "onWidgetAdd"
+  },
+  emit: function(fn, inEvent) {
+    inEvent.field = inEvent.originator;
+    delete inEvent.originator;
+    fn.call(this, inEvent);
   },
   onFieldValueChanged: function(inSender, inEvent) {
     var path = inEvent.originator.getPath();
@@ -82,7 +91,7 @@ enyo.kind({
     widget.setValue(inEvent.value);
     inEvent.field = inEvent.originator;
     delete inEvent.originator;
-    this.doValueChanged(inSender, inEvent);
+    this.emit(this.doValueChanged, inEvent);
     this._validate();
   },
   onFieldValidChanged: function(inSender, inEvent) {
@@ -92,43 +101,51 @@ enyo.kind({
     widget.setErrors(inEvent.errors);
     inEvent.field = inEvent.originator;
     delete inEvent.originator;
-    this.doValidChanged(inEvent);
+    this.emit(this.doValidChanged, inEvent);
   },
-  onAddListSubfield: function(inSender, inEvent) {
+  onFieldAdded: function(inSender, inEvent) {
     var path = inEvent.originator.getPath();
-    this.widgets.getWidget(path).addWidget(undefined, inEvent.index, true);
+    var schema = enyo.clone(inEvent.schema);
+    delete schema.parent;
+    enyo.mixin(schema, {skin: this.skin, widgetSet: this.widgetSet});
+    if (this.widgets) {
+      // get parent of added field and add subwidgets
+      path.pop();
+      this.widgets.getWidget(path).addWidget(schema);
+    } else {
+      schema = _genWidgetDef(schema, {parent: this});
+      this.widgets = this.createComponent(schema);
+    }
+    this.emit(this.doFieldAdd, inEvent);
+  },
+  onFieldDeleted: function(inSender, inEvent) {
+    var path = inEvent.originator.getPath();
+    // get parent of removed field and remove all subwidgets
+    path.pop();
+    this.getWidget(path).destroyWidgets();
+    this.emit(this.doFieldDelete, inEvent);
   },
   onWidgetValueChanged: function(inSender, inEvent) {
     if (!this.fields || inEvent.originator == this) return;
     this.setValue(inEvent.value, {path: inEvent.originator.getPath()});
   },
-  onWidgetListDelete: function(inSender, inEvent) {
+  onWidgetDelete: function(inSender, inEvent) {
     var path = inEvent.widget.getPath();
     var index = path.pop();
     this.fields.getField(path).removeField(index);
   },
-  onAddListSubWidget: function(inSender, inEvent) {
-    if (!this.fields || inEvent.originator == this) return;
+  onWidgetAdd: function(inSender, inEvent) {
     var path = inEvent.originator.getPath();
-    this.fields.getField(path).addField(undefined, inEvent.index, true);
+    this.fields.getField(path).addField();
   },
   schemaChanged: function() {
-    var widget = _genWidgetDef(this.schema, {parent: this, skin: this.skin, widgetSet: this.widgetSet});
-    widget.name = "widget";
     this.destroyComponents();
-    this.createComponent(widget);
-    this.widgets = this.$.widget;
+    this.fields = fields.genField(this.schema, this, this.value);
   },
   //* proxy field functions
-  getField: function(path) {
-    return this.fields.getField(path);
-  },
-  getValue: function(opts) {
-    return this.fields.getValue(opts);
-  },
-  setValue: function(val, opts) {
-    return this.fields.setValue(val, opts);
-  },
+  getField: function(path) { return this.fields.getField(path); },
+  getValue: function(opts) { return this.fields.getValue(opts); },
+  setValue: function(val, opts) { return this.fields.setValue(val, opts); },
   getClean: function(opts) {
     this._validatedOnce = true;
     return this.fields.getClean(opts);
@@ -226,7 +243,7 @@ enyo.kind({
   },
   create: function() {
     this.inherited(arguments);
-    this.doRegistration();
+    if (this.parentWidget) this.parentWidget._widgets.push(this);
     this.generateComponents(); // generate the widget components
     this.labelChanged();
     this.requiredChanged();
@@ -287,10 +304,10 @@ enyo.kind({
   //* @public
   //* useful for subclassing.
   //* you must ensure doValueChanged is always called when value changes
-  valueChanged: function(old, silent) {
+  valueChanged: function() {
     var val = (this.value === null || this.value === undefined) ? this.nullValue : this.value;
     this.$.input.setValue(val);
-    if (!silent) this.doValueChanged({value:this.value});
+    this.doValueChanged({value:this.value});
   },
   errorClass: "error",
   errorsChanged: function() {
@@ -373,12 +390,12 @@ enyo.kind({
     this.valueChanged();
   },
   inputKind: { name: "input", kind: "enyo.Select" },
-  valueChanged: function(old, silent) {
+  valueChanged: function() {
     val = this.getValue();
     val = (val === null || val === undefined) ? this.nullValue : val;
     if (this.choicesIndex && this.choicesIndex[val]) {
-      this.$.input.setValue(val); // setSelected(this.choicesIndex[val]);
-      if (!silent) this.doValueChanged({value:this.getValue()});
+      this.$.input.setSelected(this.choicesIndex[val]);
+      this.doValueChanged({value:this.getValue()});
     }
   },
   labelChanged: function() {

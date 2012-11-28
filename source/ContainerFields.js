@@ -376,19 +376,9 @@
         return this._addField(this.schema, value, silent);
       };
 
-      ListField.prototype._addField = function(definition, value, silent) {
-        if (!silent) {
-          this.emit("onAddListSubfield", {
-            value: value,
-            index: this._fields.length
-          });
-        }
-        return ListField.__super__._addField.call(this, definition, value);
-      };
-
       ListField.prototype.removeField = function(index) {
         var value;
-        this._getField(index).emit("onDelete");
+        this._getField(index).emit("onFieldDelete");
         value = this.getValue();
         value.splice(index, 1);
         this.setValue(value);

@@ -206,12 +206,9 @@ addFields = (fields) ->
     addField: (value, index, silent) ->
       if index? and index != @_fields.length then return
       @_addField(@schema, value, silent)
-    _addField: (definition, value, silent) ->
-      if not silent then @emit("onAddListSubfield", value: value, index: @_fields.length)
-      super(definition, value)
     # remove the field at `index`.
     removeField: (index) ->
-      @_getField(index).emit("onDelete")
+      @_getField(index).emit("onFieldDelete")
       value = @getValue()
       value.splice(index, 1)
       @setValue(value)
