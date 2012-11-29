@@ -97,8 +97,6 @@ enyo.kind({
     var widget = this.getWidget(path);
     if (!widget) return;
     widget.setValue(inEvent.value);
-    inEvent.field = inEvent.originator;
-    delete inEvent.originator;
     this.emit("doValueChanged", inEvent);
     this._validate();
   },
