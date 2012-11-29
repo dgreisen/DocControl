@@ -119,7 +119,7 @@ enyo.kind({
     var path = inEvent.originator.getPath();
     var schema = enyo.clone(inEvent.schema);
     delete schema.parent;
-    enyo.mixin(schema, {skin: this.skin, widgetSet: this.widgetSet});
+    enyo.mixin(schema, {skin: this.skin, widgetSet: this.widgetSet, instantUpdate: this.instantUpdate});
     if (this.widgets) {
       // get parent of added field and add subwidgets
       path.pop();
