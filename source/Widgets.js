@@ -87,9 +87,10 @@ enyo.kind({
     onWidgetAdd: "onWidgetAdd"
   },
   emit: function(fn, inEvent) {
-    inEvent.field = inEvent.originator;
-    delete inEvent.originator;
-    this[fn](inEvent);
+    evnt = enyo.clone(inEvent);
+    evnt.field = evnt.originator;
+    delete evnt.originator;
+    this[fn](evnt);
   },
   onFieldValueChanged: function(inSender, inEvent) {
     var path = inEvent.originator.getPath();
