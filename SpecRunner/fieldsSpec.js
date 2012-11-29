@@ -133,7 +133,7 @@ describe("events", function() {
       b: 2
     });
   });
-  return it("should call any handler defined on each superclass, oldest superclass first", function() {
+  it("should call any handler defined on each superclass, oldest superclass first", function() {
     var field, out, subcls, subcls2, subcls3;
     out = [];
     subcls = (function(_super) {
@@ -204,6 +204,16 @@ describe("events", function() {
     };
     field.emit("onTestEvent");
     return expect(out).toEqual([0, 1, 2, 3]);
+  });
+  return it("should let its listeners be updated through the schema", function() {
+    var field, schema;
+    schema = {
+      listeners: {
+        onTestEvent: "onTestEvent"
+      }
+    };
+    field = new fields.Field(schema);
+    return expect(field.listeners.onTestEvent).toEqual("onTestEvent");
   });
 });
 

@@ -43,13 +43,13 @@
         this.opts = {};
       }
       this.opts = utils.mixin(utils.clone(this.defaults), opts);
+      this.listeners = {};
       utils.mixin(this, this.opts);
       delete this.value;
       if (((_ref1 = this.parent) != null ? _ref1._fields : void 0) != null) {
         this.parent._fields.push(this);
       }
       this.errorMessages = this._walkProto("errorMessages");
-      this.listeners = {};
       this.validators = utils.cloneArray(this.validators);
       this.emit("onFieldAdd", {
         schema: opts
@@ -233,22 +233,6 @@
       } else {
         return listener;
       }
-    };
-
-    Field.prototype._protoBubble = function(eventName, inSender, inEvent, start) {
-      var handler, sup;
-      sup = start ? this.constructor.prototype : this.constructor.__super__;
-      if (sup != null) {
-        if (sup._protoBubble(eventName, inSender, inEvent)) {
-          return true;
-        }
-      }
-      handler = this.listeners[eventName] || this.listeners["*"];
-      handler = handler instanceof Function ? handler : this[handler];
-      if (handler) {
-        return handler.apply(this, [inSender, inEvent]) === true;
-      }
-      return false;
     };
 
     return Field;

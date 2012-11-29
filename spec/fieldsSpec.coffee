@@ -95,6 +95,12 @@ describe "events", ->
     field.emit "onTestEvent"
     expect(out).toEqual([0,1,2,3])
 
+  it "should let its listeners be updated through the schema", ->
+    schema = 
+      listeners: onTestEvent: "onTestEvent"
+    field = new fields.Field(schema)
+    expect(field.listeners.onTestEvent).toEqual("onTestEvent")
+
 
 describe "class inheritence", ->
   it "should preserve errorMessages of superclass when none are added", ->

@@ -37,6 +37,7 @@ class Field
     @defaults = @_walkProto("defaults")
     @opts ?= {}
     @opts = utils.mixin(utils.clone(@defaults), opts)
+    @listeners = {}
     utils.mixin(this, @opts)
     delete this.value
     # add this field to its parent's list of subfields (have to do it 
@@ -44,7 +45,6 @@ class Field
     if @parent?._fields? then @parent._fields.push(this)
     # compile inherited attributes
     @errorMessages = @_walkProto("errorMessages")
-    @listeners = {}
     # all fields were sharing the same validators list
     @validators = utils.cloneArray(@validators)
     # announce that a new field has been created
