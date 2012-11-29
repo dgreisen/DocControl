@@ -396,8 +396,41 @@ describe("field", function() {
     });
     return this.field.setValue(6);
   });
-  return it("should return list of all errors", function() {
+  it("should return list of all errors", function() {
     this.field.setValue(-4);
     return expect(this.field.getErrors()).toEqual(['Ensure this value is greater than or equal to 0.']);
+  });
+  it("should allow passing in error messages through the schema", function() {
+    var field;
+    field = new fields.IntegerField({
+      name: "test",
+      errorMessages: {
+        invalid: "Invalid"
+      },
+      minValue: 0
+    });
+    return expect(field.errorMessages).toEqual({
+      required: 'This field is required.',
+      invalid: "Invalid"
+    });
+  });
+  return it("should, on creation, put passed initial and/or value in @initial and @value", function() {
+    expect(this.field.initial).toBe(5);
+    expect(this.field.value).toBe(5);
+    this.field = new fields.IntegerField({
+      name: "test",
+      initial: 5,
+      minValue: 0
+    });
+    expect(this.field.initial).toBe(5);
+    expect(this.field.value).toBe(5);
+    this.field = new fields.IntegerField({
+      name: "test",
+      value: 10,
+      initial: 5,
+      minValue: 0
+    });
+    expect(this.field.initial).toBe(5);
+    return expect(this.field.value).toBe(10);
   });
 });

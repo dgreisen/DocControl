@@ -30,31 +30,42 @@
 
     Field.prototype.widget = "widgets.Widget";
 
-    Field.prototype.defaults = {
-      name: void 0,
-      required: true,
-      value: void 0
-    };
+    Field.prototype.name = void 0;
+
+    Field.prototype.required = true;
+
+    Field.prototype.value = void 0;
+
+    Field.prototype.initial = void 0;
 
     function Field(opts) {
-      var _ref, _ref1;
-      this.defaults = this._walkProto("defaults");
-      if ((_ref = this.opts) == null) {
-        this.opts = {};
+      var _ref, _ref1, _ref2;
+      if (opts == null) {
+        opts = {};
       }
-      this.opts = utils.mixin(utils.clone(this.defaults), opts);
+      this.opts = utils.clone(opts);
+      this.errorMessages = this._walkProto("errorMessages");
+      if (opts.errorMessages) {
+        utils.mixin(this.errorMessages, opts.errorMessages);
+        delete opts.errorMessages;
+      }
       this.listeners = {};
-      utils.mixin(this, this.opts);
+      if ((_ref = opts.value) == null) {
+        opts.value = opts.initial;
+      }
+      if ((_ref1 = opts.initial) == null) {
+        opts.initial = opts.value;
+      }
+      utils.mixin(this, opts);
       delete this.value;
-      if (((_ref1 = this.parent) != null ? _ref1._fields : void 0) != null) {
+      if (((_ref2 = this.parent) != null ? _ref2._fields : void 0) != null) {
         this.parent._fields.push(this);
       }
-      this.errorMessages = this._walkProto("errorMessages");
       this.validators = utils.cloneArray(this.validators);
       this.emit("onFieldAdd", {
-        schema: opts
+        schema: this.opts
       });
-      this.setValue(this.opts.value);
+      this.setValue(opts.value);
     }
 
     Field.prototype._walkProto = function(attr) {
@@ -248,9 +259,7 @@
     CharField.prototype.minLength = void 0;
 
     function CharField(opts) {
-      var _ref;
       CharField.__super__.constructor.call(this, opts);
-      _ref = this.opts, this.maxLength = _ref.maxLength, this.minLength = _ref.minLength;
       if (this.maxLength != null) {
         this.validators.push(new validators.MaxLengthValidator(this.maxLength));
       }
@@ -281,9 +290,7 @@
     };
 
     function IntegerField(opts) {
-      var _ref;
       IntegerField.__super__.constructor.call(this, opts);
-      _ref = this.opts, this.maxValue = _ref.maxValue, this.minValue = _ref.minValue;
       if (this.maxValue != null) {
         this.validators.push(new validators.MaxValueValidator(this.maxValue));
       }
@@ -327,9 +334,7 @@
     };
 
     function FloatField(opts) {
-      var _ref;
       FloatField.__super__.constructor.call(this, opts);
-      _ref = this.opts, this.maxDecimals = _ref.maxDecimals, this.minDecimals = _ref.minDecimals, this.maxDigits = _ref.maxDigits;
       if (this.maxDecimals != null) {
         this.validators.push(new validators.MaxDecimalPlacesValidator(this.maxDecimals));
       }
@@ -452,7 +457,6 @@
 
     function ChoiceField(opts) {
       ChoiceField.__super__.constructor.call(this, opts);
-      this.choices = this.opts.choices;
       this.setChoices(utils.cloneArray(this.choices));
     }
 

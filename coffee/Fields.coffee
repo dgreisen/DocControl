@@ -25,32 +25,38 @@ class Field
   parent: undefined
   # kind definition for widget to display (eg { kind: "widget.Widget"}, or simply the string name of the widget kind)
   widget: "widgets.Widget",
-  # default values for attributes
-  defaults:
-    # the name/identifier for this field
-    name: undefined
-    # whether the current field is required
-    required: true
-    # the current value of the field
-    value: undefined,
+  # the name/identifier for this field
+  name: undefined
+  # whether the current field is required
+  required: true
+  # the current value of the field
+  value: undefined
+  # the initial value of the field (for validation)
+  initial: undefined
   constructor: (opts) ->
-    @defaults = @_walkProto("defaults")
-    @opts ?= {}
-    @opts = utils.mixin(utils.clone(@defaults), opts)
+    # save an unadulterated copy of opts in @opts
+    opts ?= {}
+    @opts = utils.clone(opts)
+    # compile inherited attributes
+    @errorMessages = @_walkProto("errorMessages")
+    if opts.errorMessages 
+      utils.mixin(@errorMessages, opts.errorMessages)
+      delete opts.errorMessages    
     @listeners = {}
-    utils.mixin(this, @opts)
+    # set initial values; 
+    opts.value ?= opts.initial
+    opts.initial ?= opts.value
+    utils.mixin(this, opts)
     delete this.value
     # add this field to its parent's list of subfields (have to do it 
     # here so it can be found when it emits events during construction)
     if @parent?._fields? then @parent._fields.push(this)
-    # compile inherited attributes
-    @errorMessages = @_walkProto("errorMessages")
     # all fields were sharing the same validators list
     @validators = utils.cloneArray(@validators)
     # announce that a new field has been created
-    @emit("onFieldAdd", {schema: opts})
+    @emit("onFieldAdd", {schema: @opts})
     #set initial value
-    @setValue(@opts.value)
+    @setValue(opts.value)
   # walks the prototype chain collecting all the values off attr and combining them in one.
   _walkProto: (attr) ->
     sup = @constructor.__super__
@@ -141,7 +147,7 @@ class Field
     if val != @value
       @_hasChanged = true
       origValue = @value
-      @value = val;      
+      @value = val;
       @emit("onValueChanged", value: @getValue(), original: origValue)
   # You should not have to override this in Field subclasses
   getValue: () ->
@@ -196,7 +202,6 @@ class CharField extends Field
   minLength: undefined
   constructor: (opts) ->
     super(opts)
-    {@maxLength, @minLength} = @opts
     if @maxLength?
       @validators.push(new validators.MaxLengthValidator(@maxLength))
     if @minLength?
@@ -218,7 +223,6 @@ class IntegerField extends Field
   },
   constructor: (opts) ->
     super(opts)
-    {@maxValue, @minValue} = @opts
     if @maxValue?
       @validators.push(new validators.MaxValueValidator(@maxValue))
     if @minValue?
@@ -247,7 +251,6 @@ class FloatField extends IntegerField
     invalid: utils._i('Enter a number.')
   constructor: (opts) ->
     super(opts)
-    {@maxDecimals, @minDecimals, @maxDigits} = @opts
     if @maxDecimals?
       @validators.push(new validators.MaxDecimalPlacesValidator(@maxDecimals))
     if @minDecimals?
@@ -309,7 +312,6 @@ class ChoiceField extends Field
     invalidChoice: utils._i('Select a valid choice. %(value)s is not one of the available choices.')
   constructor: (opts) ->
     super(opts)
-    {@choices} = @opts
     @setChoices(utils.cloneArray(@choices))
 
   setChoices: (val) ->

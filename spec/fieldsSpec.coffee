@@ -208,6 +208,7 @@ describe "genField() - field creation", ->
 describe "field", ->
   beforeEach ->
     @field = new fields.IntegerField(name:"test", value: 5, minValue: 0)
+
   it "should emit onValueChanged only when its value changes", ->
     @field.listeners.onValueChanged = (inSender, inEvent) ->
     spyOn @field.listeners, "onValueChanged"
@@ -225,4 +226,18 @@ describe "field", ->
   it "should return list of all errors", ->
     @field.setValue(-4)
     expect(@field.getErrors()).toEqual(['Ensure this value is greater than or equal to 0.'])
+
+  it "should allow passing in error messages through the schema", ->
+    field = new fields.IntegerField(name:"test", errorMessages: {invalid: "Invalid"}, minValue: 0)
+    expect(field.errorMessages).toEqual(required: 'This field is required.', invalid: "Invalid")
+
+  it "should, on creation, put passed initial and/or value in @initial and @value", ->
+    expect(@field.initial).toBe(5)
+    expect(@field.value).toBe(5)
+    @field = new fields.IntegerField(name:"test", initial: 5, minValue: 0)
+    expect(@field.initial).toBe(5)
+    expect(@field.value).toBe(5)
+    @field = new fields.IntegerField(name:"test", value: 10, initial: 5, minValue: 0)
+    expect(@field.initial).toBe(5)
+    expect(@field.value).toBe(10)
     
