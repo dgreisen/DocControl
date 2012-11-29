@@ -306,6 +306,7 @@ enyo.kind({
   },
   helpTextChanged: function() {
     this.writeHelpText();
+    this.render();
   },
   getValid: function() {
     return !this.errors.length;
