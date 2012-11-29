@@ -287,7 +287,7 @@
       };
 
       ContainerField.prototype.setSchema = function(schema, opts) {
-        var definition, value, _i, _len, _ref;
+        var definition, origValue, value, _i, _len, _ref;
         if (opts != null ? (_ref = opts.path) != null ? _ref.length : void 0 : void 0) {
           return this._applyToSubfield("setSchema", opts, schema);
         }
@@ -295,13 +295,18 @@
           return;
         }
         this.schema = schema;
+        origValue = this.getValue();
         this.resetFields();
         for (_i = 0, _len = schema.length; _i < _len; _i++) {
           definition = schema[_i];
           value = this.value != null ? this.value[definition.name] : void 0;
           this._addField(definition, value);
         }
-        return this.value = void 0;
+        this.value = void 0;
+        return this.emit("onValueChanged", {
+          value: this.getValue(),
+          original: origValue
+        });
       };
 
       ContainerField.prototype.validate = function(value) {
@@ -355,9 +360,10 @@
 
       ListField.prototype.widget = "widgets.ListWidget";
 
-      ListField.prototype.setSchema = function(schema) {
+      ListField.prototype.setSchema = function(schema, opts) {
         var _ref;
-        if (typeof opts !== "undefined" && opts !== null ? (_ref = opts.path) != null ? _ref.length : void 0 : void 0) {
+        opts = this._procOpts(opts);
+        if (opts != null ? (_ref = opts.path) != null ? _ref.length : void 0 : void 0) {
           return this._applyToSubfield("setSchema", opts, schema);
         }
         if (!(schema != null) || schema === this.schema) {
@@ -393,11 +399,11 @@
         return this.value = void 0;
       };
 
-      ListField.prototype.addField = function(value, index, silent) {
+      ListField.prototype.addField = function(value, index) {
         if ((index != null) && index !== this._fields.length) {
           return;
         }
-        return this._addField(this.schema, value, silent);
+        return this._addField(this.schema, value);
       };
 
       ListField.prototype.removeField = function(index) {
