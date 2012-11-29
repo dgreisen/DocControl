@@ -161,11 +161,13 @@ addFields = (fields) ->
       if opts?.path?.length then return @_applyToSubfield("setSchema", opts, schema)
       if not schema? or schema == @schema then return
       @schema = schema
+      origValue = @getValue()
       @resetFields()
       for definition in schema
         value = if @value? then @value[definition.name]
         @_addField(definition, value)
       @value = undefined
+      @emit("onValueChanged", value: @getValue(), original: origValue)
     validate: (value) ->
       return value
     _querySubfields: (fn, args...) ->
@@ -196,7 +198,8 @@ addFields = (fields) ->
   ###
   class ListField extends BaseContainerField
     widget: "widgets.ListWidget",
-    setSchema: (schema) ->
+    setSchema: (schema, opts) ->
+      opts = @_procOpts(opts)
       if opts?.path?.length then return @_applyToSubfield("setSchema", opts, schema)
       if not schema? or schema == @schema then return
       @schema = schema
@@ -215,9 +218,9 @@ addFields = (fields) ->
         @_addField(@schema, value)
       @emit("onValueChanged", value: @getValue(), original: @value)
       @value = undefined
-    addField: (value, index, silent) ->
+    addField: (value, index) ->
       if index? and index != @_fields.length then return
-      @_addField(@schema, value, silent)
+      @_addField(@schema, value)
     # remove the field at `index`.
     removeField: (index) ->
       @_getField(index).emit("onFieldDelete")
