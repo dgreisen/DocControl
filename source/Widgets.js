@@ -265,6 +265,10 @@ enyo.kind({
     this.writeHelpText();
     this.fieldNameChanged();
   },
+  render: function() {
+    this.inherited(arguments);
+    this.valueChanged();
+  },
   //* @public
   //* useful for subclassing. The value to be stored when a null/undefined value is written to the field.
   nullValue: "",
