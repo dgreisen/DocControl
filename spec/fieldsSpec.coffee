@@ -209,6 +209,15 @@ describe "field", ->
   beforeEach ->
     @field = new fields.IntegerField(name:"test", value: 5, minValue: 0)
 
+  it "should emit onFieldAdd with value, then onValueChanged when created", ->
+    parent = 
+      _bubble: () ->
+    spyOn parent, "_bubble"
+    @field = new fields.IntegerField(name:"test", value: 5, minValue: 0, parent: parent)
+    expect(parent._bubble.calls[0].args[0]).toBe("onFieldAdd")
+    expect(parent._bubble.calls[0].args[2].value).toBe(5)
+    expect(parent._bubble.calls[1].args[0]).toBe("onValueChanged")
+
   it "should emit onValueChanged only when its value changes", ->
     @field.listeners.onValueChanged = (inSender, inEvent) ->
     spyOn @field.listeners, "onValueChanged"
@@ -217,6 +226,7 @@ describe "field", ->
     @field.setValue(6)
     expect(@field.listeners.onValueChanged).toHaveBeenCalledWith(null, originator: @field, value: 6, original: 5)
     @field.setValue()
+
   it "should emit onValueChanged if it is created with a value", ->
     parent = _bubble: ->
     spyOn parent, "_bubble"

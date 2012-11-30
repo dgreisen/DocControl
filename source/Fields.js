@@ -39,7 +39,7 @@
     Field.prototype.initial = void 0;
 
     function Field(opts) {
-      var _ref, _ref1, _ref2;
+      var schema, _ref, _ref1, _ref2;
       if (opts == null) {
         opts = {};
       }
@@ -63,8 +63,16 @@
       }
       this.validators = utils.cloneArray(this.validators);
       this.emit("onFieldAdd", {
-        schema: this.opts
+        schema: this.opts,
+        value: opts.value
       });
+      if (this.setSchema) {
+        schema = utils.clone(this.schema);
+        delete this.schema;
+        this.setSchema(schema, {
+          value: opts.value
+        });
+      }
       this.setValue(opts.value);
     }
 

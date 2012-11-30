@@ -370,6 +370,22 @@ describe("field", function() {
       minValue: 0
     });
   });
+  it("should emit onFieldAdd with value, then onValueChanged when created", function() {
+    var parent;
+    parent = {
+      _bubble: function() {}
+    };
+    spyOn(parent, "_bubble");
+    this.field = new fields.IntegerField({
+      name: "test",
+      value: 5,
+      minValue: 0,
+      parent: parent
+    });
+    expect(parent._bubble.calls[0].args[0]).toBe("onFieldAdd");
+    expect(parent._bubble.calls[0].args[2].value).toBe(5);
+    return expect(parent._bubble.calls[1].args[0]).toBe("onValueChanged");
+  });
   it("should emit onValueChanged only when its value changes", function() {
     this.field.listeners.onValueChanged = function(inSender, inEvent) {};
     spyOn(this.field.listeners, "onValueChanged");

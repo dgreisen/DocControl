@@ -31,12 +31,6 @@ addFields = (fields) ->
     errorMessages:
       required: utils._i('There must be at least one %s.')
       invalid: utils._i('Please fix the errors indicated below.')
-    constructor: (opts) ->
-      super(opts)
-      # we have to specifically set the value so because setValue before didn't work without having the schema set
-      @value = @opts.value
-      delete @schema
-      @setSchema(@opts.schema)
     listeners:
       onValueChanged: "subfieldChanged"
       onValidChanged: "subfieldChanged"
@@ -94,6 +88,7 @@ addFields = (fields) ->
     getValue: (opts) ->
       opts = @_procOpts(opts)
       if opts?.path?.length then return @_applyToSubfield("getValue", opts)
+      if @value != undefined then return @value
       return @_querySubfields("getValue")
     getClean: (opts) ->
       opts = @_procOpts(opts)
@@ -149,9 +144,11 @@ addFields = (fields) ->
       origValue = @getValue()
       if not values or utils.isEqual(values, origValue) or not @_fields then return
       if values not instanceof Object or values instanceof Array then throw "values must be a hash"
-      fields = @getFields()
-      for field in fields
+      @value = values
+      _fields = @getFields()
+      for field in _fields
         field.setValue(values[field.name])
+      @value = undefined
       @emit("onValueChanged", value: @getValue(), original: origValue)
     # get an immediate subfield by name
     _getField: (name) ->
@@ -163,6 +160,7 @@ addFields = (fields) ->
       @schema = schema
       origValue = @getValue()
       @resetFields()
+      if opts?.value? then @value = opts.value;
       for definition in schema
         value = if @value? then @value[definition.name]
         @_addField(definition, value)
@@ -214,10 +212,11 @@ addFields = (fields) ->
       if not values or not @schema or utils.isEqual(values, @getValue()) then return
       if values not instanceof Array then throw "values must be an array"
       @resetFields()
+      @value = values
       for value in values
         @_addField(@schema, value)
-      @emit("onValueChanged", value: @getValue(), original: @value)
       @value = undefined
+      @emit("onValueChanged", value: @getValue(), original: @value)
     addField: (value, index) ->
       if index? and index != @_fields.length then return
       @_addField(@schema, value)
@@ -227,7 +226,7 @@ addFields = (fields) ->
       value = @getValue()
       value.splice(index, 1)
       @setValue(value)
-      @emit("onValueChanged", value: @getValue(), original: value)
+      @emit("onValueChanged", value: @getValue(), original: value, op: "remove")
     # get an immediate subfield by index
     _getField: (index) ->
       return @getFields()[index]

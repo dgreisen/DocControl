@@ -36,6 +36,10 @@
 
       __extends(BaseContainerField, _super);
 
+      function BaseContainerField() {
+        return BaseContainerField.__super__.constructor.apply(this, arguments);
+      }
+
       BaseContainerField.prototype.schema = void 0;
 
       BaseContainerField.prototype._fields = void 0;
@@ -44,13 +48,6 @@
         required: utils._i('There must be at least one %s.'),
         invalid: utils._i('Please fix the errors indicated below.')
       };
-
-      function BaseContainerField(opts) {
-        BaseContainerField.__super__.constructor.call(this, opts);
-        this.value = this.opts.value;
-        delete this.schema;
-        this.setSchema(this.opts.schema);
-      }
 
       BaseContainerField.prototype.listeners = {
         onValueChanged: "subfieldChanged",
@@ -156,6 +153,9 @@
         if (opts != null ? (_ref = opts.path) != null ? _ref.length : void 0 : void 0) {
           return this._applyToSubfield("getValue", opts);
         }
+        if (this.value !== void 0) {
+          return this.value;
+        }
         return this._querySubfields("getValue");
       };
 
@@ -252,7 +252,7 @@
       ContainerField.prototype.widget = "widgets.ContainerWidget";
 
       ContainerField.prototype.setValue = function(values, opts) {
-        var field, origValue, _i, _len, _ref;
+        var field, origValue, _fields, _i, _len, _ref;
         opts = this._procOpts(opts);
         if (opts != null ? (_ref = opts.path) != null ? _ref.length : void 0 : void 0) {
           return this._applyToSubfield("setValue", opts, values);
@@ -264,11 +264,13 @@
         if (!(values instanceof Object) || values instanceof Array) {
           throw "values must be a hash";
         }
-        fields = this.getFields();
-        for (_i = 0, _len = fields.length; _i < _len; _i++) {
-          field = fields[_i];
+        this.value = values;
+        _fields = this.getFields();
+        for (_i = 0, _len = _fields.length; _i < _len; _i++) {
+          field = _fields[_i];
           field.setValue(values[field.name]);
         }
+        this.value = void 0;
         return this.emit("onValueChanged", {
           value: this.getValue(),
           original: origValue
@@ -297,6 +299,9 @@
         this.schema = schema;
         origValue = this.getValue();
         this.resetFields();
+        if ((opts != null ? opts.value : void 0) != null) {
+          this.value = opts.value;
+        }
         for (_i = 0, _len = schema.length; _i < _len; _i++) {
           definition = schema[_i];
           value = this.value != null ? this.value[definition.name] : void 0;
@@ -388,15 +393,16 @@
           throw "values must be an array";
         }
         this.resetFields();
+        this.value = values;
         for (_i = 0, _len = values.length; _i < _len; _i++) {
           value = values[_i];
           this._addField(this.schema, value);
         }
-        this.emit("onValueChanged", {
+        this.value = void 0;
+        return this.emit("onValueChanged", {
           value: this.getValue(),
           original: this.value
         });
-        return this.value = void 0;
       };
 
       ListField.prototype.addField = function(value, index) {
@@ -414,7 +420,8 @@
         this.setValue(value);
         return this.emit("onValueChanged", {
           value: this.getValue(),
-          original: value
+          original: value,
+          op: "remove"
         });
       };
 

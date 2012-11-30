@@ -56,7 +56,11 @@ describe "ListField", ->
     expect(@field.getValue(path: "")).toEqual(@field.getValue())
     expect(@field.getValue(path: [])).toEqual(@field.getValue())
 
-
+  it "should return the proper value when getValue() called, even when it hasn't finished creating all subfields", ->
+    @field = new fields.ListField(name:"test", schema: @subSchema)
+    @field.listeners.onFieldAdd = (inSender, inEvent) =>
+      if inSender then expect(inEvent.originator.parent.getValue()).toEqual(@vals)
+    @field.setValue(@vals)
 
 
 

@@ -47,14 +47,18 @@ class Field
     opts.value ?= opts.initial
     opts.initial ?= opts.value
     utils.mixin(this, opts)
-    delete this.value
+    delete @value
     # add this field to its parent's list of subfields (have to do it 
     # here so it can be found when it emits events during construction)
     if @parent?._fields? then @parent._fields.push(this)
     # all fields were sharing the same validators list
     @validators = utils.cloneArray(@validators)
     # announce that a new field has been created
-    @emit("onFieldAdd", {schema: @opts})
+    @emit("onFieldAdd", {schema: @opts, value: opts.value})
+    if @setSchema
+      schema = utils.clone(@schema)
+      delete @schema
+      @setSchema(schema, {value: opts.value})
     #set initial value
     @setValue(opts.value)
   # walks the prototype chain collecting all the values off attr and combining them in one.

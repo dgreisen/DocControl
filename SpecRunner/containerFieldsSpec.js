@@ -70,13 +70,26 @@ describe("ListField", function() {
     this.field.addField("three", 2);
     return expect(this.field.getValue()).toEqual(["hello", "world", "three"]);
   });
-  return it("should getValue of listField when path is empty", function() {
+  it("should getValue of listField when path is empty", function() {
     expect(this.field.getValue({
       path: ""
     })).toEqual(this.field.getValue());
     return expect(this.field.getValue({
       path: []
     })).toEqual(this.field.getValue());
+  });
+  return it("should return the proper value when getValue() called, even when it hasn't finished creating all subfields", function() {
+    var _this = this;
+    this.field = new fields.ListField({
+      name: "test",
+      schema: this.subSchema
+    });
+    this.field.listeners.onFieldAdd = function(inSender, inEvent) {
+      if (inSender) {
+        return expect(inEvent.originator.parent.getValue()).toEqual(_this.vals);
+      }
+    };
+    return this.field.setValue(this.vals);
   });
 });
 
