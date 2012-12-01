@@ -5,14 +5,13 @@
   "keywords": [],
   "homepage": "",
   "author": "David Greisen <dgreisen@gmail.com>",
-  "main": "index.js",
+  "main": "source/index.js",
   "bin": {},
   "dependencies": {
     "underscore": ">=1.4"
   },
   "devDependencies": {
-    "jasmine-node": "1.0.26",
-    "jsdom": ">=0.2.19"
+    "jasmine-node": "1.0.26"
   },
   "engine": "node >= 0.6",
   "scripts": {
