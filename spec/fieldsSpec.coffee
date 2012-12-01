@@ -20,7 +20,6 @@ describe "events", ->
     expect(@field._bubble).toHaveBeenCalledWith("onTestEvent", null, originator: @field, a:1, b:2)
 
   it "should call event handler specific to event if it exists", ->
-
     @field.listeners =
       onTestEvent: (inSender, inEvent) ->
       "*": (inSender, inEvent) ->

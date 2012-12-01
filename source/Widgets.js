@@ -265,10 +265,6 @@ enyo.kind({
     this.writeHelpText();
     this.fieldNameChanged();
   },
-  render: function() {
-    this.inherited(arguments);
-    this.valueChanged();
-  },
   //* @public
   //* useful for subclassing. The value to be stored when a null/undefined value is written to the field.
   nullValue: "",
@@ -310,7 +306,6 @@ enyo.kind({
   },
   helpTextChanged: function() {
     this.writeHelpText();
-    this.render();
   },
   getValid: function() {
     return !this.errors.length;
@@ -318,7 +313,6 @@ enyo.kind({
   fieldNameChanged: function() {
     this.$.input.setAttribute("name", this.fieldName);
     if (this.$.label) this.$.label.setAttribute("for", this.fieldName);
-    this.render();
   },
   //* @public
   //* useful for subclassing.
@@ -409,7 +403,7 @@ enyo.kind({
     this.valueChanged();
   },
   inputKind: { name: "input", kind: "enyo.Select" },
-  valueChanged: function() {
+  valueChanged: function(oldVal) {
     val = this.getValue();
     val = (val === null || val === undefined) ? this.nullValue : val;
     if (this.choicesIndex && this.choicesIndex[val]) {

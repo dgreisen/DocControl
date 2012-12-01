@@ -46,6 +46,12 @@ describe "widgets", ->
     @widget.setValue(null)
     expect(@widget.$.input.getValue()).toBe("")
 
+  it "should not reset its value when render is called", ->
+    @widget.setValue("hello world")
+    @widget.render()
+    expect(@widget.getValue()).toBe("hello world")
+
+
 describe "widgets.ChoiceWidget", ->
   beforeEach ->
     @schema = {

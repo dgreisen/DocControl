@@ -50,9 +50,14 @@ describe("widgets", function() {
     this.widget.setValue("hello world");
     return expect(this.widget.$.input.getValue()).toBe("hello world");
   });
-  return it("should set input value to this.nullValue if null or undefined", function() {
+  it("should set input value to this.nullValue if null or undefined", function() {
     this.widget.setValue(null);
     return expect(this.widget.$.input.getValue()).toBe("");
+  });
+  return it("should not reset its value when render is called", function() {
+    this.widget.setValue("hello world");
+    this.widget.render();
+    return expect(this.widget.getValue()).toBe("hello world");
   });
 });
 

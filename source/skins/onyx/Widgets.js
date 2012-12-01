@@ -168,9 +168,12 @@ enyo.kind({
     val = this.getValue();
     val = (val === null || val === undefined) ? this.nullValue : val;
     if (this.choicesIndex && this.choicesIndex[val]) {
-      this.choicesIndex[val].setActive();
+      this.choicesIndex[val].setChecked(true);
       this.doValueChanged({value:this.getValue()});
     }
+  },
+  itemSelected: function(inSender, inEvent) {
+    if (inEvent.originator.getChecked()) this.setValue(inEvent.originator.value);
   },
   defaultSkin: function() {
     widgets.Widget.prototype.defaultSkin.call(this);
