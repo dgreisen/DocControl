@@ -155,13 +155,21 @@ enyo.kind({
     this.fields = undefined;
     this.destroyComponents();
     this.fields = fields.genField(this.schema, this, this.value);
+    delete this.value;
   },
   //* proxy field methods
   instantUpdateChanged:function() { this.widgets.setInstantUpdate(this.instantUpdate); },
   //* proxy field methods
   getField: function(path) { return this.fields.getField(path); },
   getValue: function(opts) { return this.fields.getValue(opts); },
-  setValue: function(val, opts) { return this.fields.setValue(val, opts); },
+  setValue: function(val, opts) { 
+    if (opts && opts.forceReset && (!opts.path || !opts.path.length)) {
+      this.value = val;
+      this.schemaChanged();
+    } else {
+      return this.fields.setValue(val, opts);
+    }
+  },
   getClean: function(opts) {
     this._validatedOnce = true;
     return this.fields.getClean(opts);

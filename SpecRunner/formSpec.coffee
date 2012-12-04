@@ -13,6 +13,7 @@ describe "widgets.Form", ->
     }
     @val = "hello world"
     @listVal = ["hello", "world"]
+    @listVal2 = ["goodnight", "moon"]
     @form = new widgets.Form(schema: @schema)
 
   it "should create a widget and a field given a schema", ->
@@ -103,3 +104,10 @@ describe "widgets.Form", ->
     expect(@form._fields[0] instanceof fields.ListField).toBe(true)
     expect(@form._widgets.length).toBe(1)
     expect(@form._widgets[0] instanceof widgets.ListWidget).toBe(true)
+
+  it "should completely reset the fields and widgets if setValue called with forceReset==true and no path", ->
+    @form = new widgets.Form(schema: @listSchema, value: @listVal)
+    spyOn(@form, "onFieldAdded").andCallThrough()
+    @form.setValue(@listVal2, forceReset: true)
+    expect(@form.onFieldAdded).toHaveBeenCalled()
+    expect(@form.getValue()).toEqual(@listVal2)

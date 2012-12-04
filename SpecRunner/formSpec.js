@@ -17,6 +17,7 @@ describe("widgets.Form", function() {
     };
     this.val = "hello world";
     this.listVal = ["hello", "world"];
+    this.listVal2 = ["goodnight", "moon"];
     return this.form = new widgets.Form({
       schema: this.schema
     });
@@ -124,11 +125,23 @@ describe("widgets.Form", function() {
     expect(this.form.getValue()).toEqual(["the", "brown", "fox"]);
     return expect(this.form.getWidget("2").getValue()).toEqual("fox");
   });
-  return it("should properly reset the schema when setSchema called with new schema", function() {
+  it("should properly reset the schema when setSchema called with new schema", function() {
     this.form.setSchema(this.listSchema);
     expect(this.form._fields.length).toBe(1);
     expect(this.form._fields[0] instanceof fields.ListField).toBe(true);
     expect(this.form._widgets.length).toBe(1);
     return expect(this.form._widgets[0] instanceof widgets.ListWidget).toBe(true);
+  });
+  return it("should completely reset the fields and widgets if setValue called with forceReset==true and no path", function() {
+    this.form = new widgets.Form({
+      schema: this.listSchema,
+      value: this.listVal
+    });
+    spyOn(this.form, "onFieldAdded").andCallThrough();
+    this.form.setValue(this.listVal2, {
+      forceReset: true
+    });
+    expect(this.form.onFieldAdded).toHaveBeenCalled();
+    return expect(this.form.getValue()).toEqual(this.listVal2);
   });
 });
