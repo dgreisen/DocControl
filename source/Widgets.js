@@ -58,8 +58,6 @@ enyo.kind({
   create: function() {
     this.inherited(arguments);
     var schema = enyo.clone(this.schema);
-    this._widgets = [];
-    this._fields = [];
     this.schemaChanged();
     this._validate();
   },
@@ -151,6 +149,10 @@ enyo.kind({
     this.fields.getField(path).addField();
   },
   schemaChanged: function() {
+    this._widgets = [];
+    this._fields = [];
+    this.widgets = undefined;
+    this.fields = undefined;
     this.destroyComponents();
     this.fields = fields.genField(this.schema, this, this.value);
   },

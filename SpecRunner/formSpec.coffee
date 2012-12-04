@@ -96,3 +96,10 @@ describe "widgets.Form", ->
     @form.getWidget().$.widgets.children[1].handleDelete()
     expect(@form.getValue()).toEqual(["the", "brown", "fox"])
     expect(@form.getWidget("2").getValue()).toEqual("fox")
+
+  it "should properly reset the schema when setSchema called with new schema", ->
+    @form.setSchema(@listSchema)
+    expect(@form._fields.length).toBe(1)
+    expect(@form._fields[0] instanceof fields.ListField).toBe(true)
+    expect(@form._widgets.length).toBe(1)
+    expect(@form._widgets[0] instanceof widgets.ListWidget).toBe(true)
