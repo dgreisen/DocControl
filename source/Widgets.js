@@ -122,7 +122,7 @@ enyo.kind({
       // get parent of added field and add subwidget
       path.pop();
       var widget = this.widgets.getWidget(path);
-      if (widget) widget.addWidget(schema);
+      if (widget && widget.addWidget) widget.addWidget(schema);
     } else {
       schema = _genWidgetDef(schema, {parent: this});
       this.widgets = this.createComponent(schema);
@@ -135,7 +135,7 @@ enyo.kind({
   },
   onSubfieldsReseted: function(inSender, inEvent) {
     var widget = this.getWidget(inEvent.originator.getPath());
-    if (widget) widget.destroyWidgets();
+    if (widget && widget.destroyWidgets) widget.destroyWidgets();
     this.emit("doSubfieldsReset", inEvent);
   },
   onWidgetValueChanged: function(inSender, inEvent) {

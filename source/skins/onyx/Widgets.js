@@ -12,7 +12,7 @@ widgets.Widget.prototype.onyx_defaultSkin = function() {
     components: components
   };
   this.createComponents([comp]);
-  this.$.input.addStyles("width:"+(this.size*70-10)+"px;");
+  if (this.size) this.$.input.addStyles("width:"+(this.size*70-10)+"px;");
 };
 
 widgets.BaseContainerWidget.prototype.onyx_defaultSkin = function() {
