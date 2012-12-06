@@ -33,6 +33,8 @@ class Field
   value: undefined
   # the initial value of the field (for validation)
   initial: undefined
+  # the default value of the field. if the set value is undefined, the value will changed to the default value
+  default: undefined
   constructor: (opts) ->
     # save an unadulterated copy of opts in @opts
     opts ?= {}
@@ -148,6 +150,7 @@ class Field
       @emit("onRequiredChanged", {required: @required})
   # You should not have to override this in Field subclasses
   setValue: (val, opts) ->
+    if val == undefined then val = @default
     if val != @value
       @_hasChanged = true
       origValue = @value
@@ -315,8 +318,9 @@ class ChoiceField extends Field
   errorMessages:
     invalidChoice: utils._i('Select a valid choice. %(value)s is not one of the available choices.')
   constructor: (opts) ->
-    super(opts)
+    if opts.choices then this.choices = opts.choices
     @setChoices(utils.cloneArray(@choices))
+    super(opts)
 
   setChoices: (val) ->
     choices = {};
@@ -332,7 +336,7 @@ class ChoiceField extends Field
     value = super(value)
     if value and not @validValue(value)
       message = @errorMessages.invalidChoice
-      @errors = [ interpolate(message, [value]) ]
+      @errors = [ utils.interpolate(message, [value]) ]
     return value
   validValue: (val) ->
     return val of @choicesIndex

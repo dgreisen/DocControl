@@ -251,26 +251,29 @@
 
       ContainerField.prototype.widget = "widgets.ContainerWidget";
 
-      ContainerField.prototype.setValue = function(values, opts) {
+      ContainerField.prototype.setValue = function(val, opts) {
         var field, origValue, _fields, _i, _len, _ref;
         opts = this._procOpts(opts);
         if (opts != null ? (_ref = opts.path) != null ? _ref.length : void 0 : void 0) {
-          return this._applyToSubfield("setValue", opts, values);
+          return this._applyToSubfield("setValue", opts, val);
         }
         origValue = this.getValue();
-        if (!values || utils.isEqual(values, origValue) || !this._fields) {
+        if (val === void 0) {
+          val = utils.clone(this["default"]) || {};
+        }
+        if (!val || utils.isEqual(val, origValue) || !this._fields) {
           return;
         }
-        if (!(values instanceof Object) || values instanceof Array) {
+        if (!(val instanceof Object) || val instanceof Array) {
           throw "values must be a hash";
         }
-        this.value = values;
+        this.value = val;
         _fields = this.getFields();
         for (_i = 0, _len = _fields.length; _i < _len; _i++) {
           field = _fields[_i];
-          field.setValue(values[field.name]);
+          field.setValue(val[field.name]);
         }
-        this.value = void 0;
+        this.value = this.value !== null ? void 0 : void 0;
         return this.emit("onValueChanged", {
           value: this.getValue(),
           original: origValue
@@ -307,7 +310,7 @@
           value = this.value != null ? this.value[definition.name] : void 0;
           this._addField(definition, value);
         }
-        this.value = void 0;
+        this.value = this.value !== null ? void 0 : void 0;
         return this.emit("onValueChanged", {
           value: this.getValue(),
           original: origValue
@@ -377,28 +380,31 @@
         this.schema = schema;
         this.resetFields();
         this.setValue(this.value);
-        return this.value = void 0;
+        return this.value = this.value !== null ? void 0 : void 0;
       };
 
-      ListField.prototype.setValue = function(values, opts) {
+      ListField.prototype.setValue = function(val, opts) {
         var value, _i, _len, _ref;
         opts = this._procOpts(opts);
         if (opts != null ? (_ref = opts.path) != null ? _ref.length : void 0 : void 0) {
-          return this._applyToSubfield("setValue", opts, values);
+          return this._applyToSubfield("setValue", opts, val);
         }
-        if (!values || !this.schema || utils.isEqual(values, this.getValue())) {
+        if (val === void 0) {
+          val = utils.clone(this["default"]) || [];
+        }
+        if (!val || !this.schema || utils.isEqual(val, this.getValue())) {
           return;
         }
-        if (!(values instanceof Array)) {
+        if (!(val instanceof Array)) {
           throw "values must be an array";
         }
         this.resetFields();
-        this.value = values;
-        for (_i = 0, _len = values.length; _i < _len; _i++) {
-          value = values[_i];
+        this.value = val;
+        for (_i = 0, _len = val.length; _i < _len; _i++) {
+          value = val[_i];
           this._addField(this.schema, value);
         }
-        this.value = void 0;
+        this.value = this.value !== null ? void 0 : void 0;
         return this.emit("onValueChanged", {
           value: this.getValue(),
           original: this.value
@@ -433,7 +439,7 @@
         var message;
         if (!value.length && this.required) {
           message = this.errorMessages.required;
-          this.errors = [interpolate(message, [this.schema.name || (typeof this.schema.field === "string" && this.schema.field.slice(0, -5)) || "item"])];
+          this.errors = [utils.interpolate(message, [this.schema.name || (typeof this.schema.field === "string" && this.schema.field.slice(0, -5)) || "item"])];
           return value;
         }
       };

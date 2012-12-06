@@ -111,3 +111,7 @@ describe "widgets.Form", ->
     @form.setValue(@listVal2, forceReset: true)
     expect(@form.onFieldAdded).toHaveBeenCalled()
     expect(@form.getValue()).toEqual(@listVal2)
+
+  it "should be fine if a field doesn't have a corresponding widget", ->
+    @schema.widget = null
+    @form = new widgets.Form(schema: @listSchema, value: @listVal)

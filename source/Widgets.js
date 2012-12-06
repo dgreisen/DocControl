@@ -119,20 +119,23 @@ enyo.kind({
     delete schema.parent;
     enyo.mixin(schema, {skin: this.skin, widgetSet: this.widgetSet, instantUpdate: this.instantUpdate});
     if (this.widgets) {
-      // get parent of added field and add subwidgets
+      // get parent of added field and add subwidget
       path.pop();
-      this.widgets.getWidget(path).addWidget(schema);
+      var widget = this.widgets.getWidget(path);
+      if (widget) widget.addWidget(schema);
     } else {
       schema = _genWidgetDef(schema, {parent: this});
       this.widgets = this.createComponent(schema);
     }
+    if (!this.fields) this.fields = this._fields[0];
     this.emit("doFieldAdd", inEvent);
   },
   onFieldDeleted: function(inSender, inEvent) {
     this.emit("doFieldDelete", inEvent);
   },
   onSubfieldsReseted: function(inSender, inEvent) {
-    this.getWidget(inEvent.originator.getPath()).destroyWidgets();
+    var widget = this.getWidget(inEvent.originator.getPath());
+    if (widget) widget.destroyWidgets();
     this.emit("doSubfieldsReset", inEvent);
   },
   onWidgetValueChanged: function(inSender, inEvent) {

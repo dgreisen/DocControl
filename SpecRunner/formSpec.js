@@ -132,7 +132,7 @@ describe("widgets.Form", function() {
     expect(this.form._widgets.length).toBe(1);
     return expect(this.form._widgets[0] instanceof widgets.ListWidget).toBe(true);
   });
-  return it("should completely reset the fields and widgets if setValue called with forceReset==true and no path", function() {
+  it("should completely reset the fields and widgets if setValue called with forceReset==true and no path", function() {
     this.form = new widgets.Form({
       schema: this.listSchema,
       value: this.listVal
@@ -143,5 +143,12 @@ describe("widgets.Form", function() {
     });
     expect(this.form.onFieldAdded).toHaveBeenCalled();
     return expect(this.form.getValue()).toEqual(this.listVal2);
+  });
+  return it("should be fine if a field doesn't have a corresponding widget", function() {
+    this.schema.widget = null;
+    return this.form = new widgets.Form({
+      schema: this.listSchema,
+      value: this.listVal
+    });
   });
 });

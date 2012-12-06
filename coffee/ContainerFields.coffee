@@ -138,17 +138,18 @@ addFields = (fields) ->
   ###
   class ContainerField extends BaseContainerField
     widget: "widgets.ContainerWidget"
-    setValue: (values, opts) ->
+    setValue: (val, opts) ->
       opts = @_procOpts(opts)
-      if opts?.path?.length then return @_applyToSubfield("setValue", opts, values)
+      if opts?.path?.length then return @_applyToSubfield("setValue", opts, val)
       origValue = @getValue()
-      if not values or utils.isEqual(values, origValue) or not @_fields then return
-      if values not instanceof Object or values instanceof Array then throw "values must be a hash"
-      @value = values
+      if val == undefined then val = utils.clone(@default) || {}
+      if not val or utils.isEqual(val, origValue) or not @_fields then return
+      if val not instanceof Object or val instanceof Array then throw "values must be a hash"
+      @value = val
       _fields = @getFields()
       for field in _fields
-        field.setValue(values[field.name])
-      @value = undefined
+        field.setValue(val[field.name])
+      @value = if @value != null then undefined
       @emit("onValueChanged", value: @getValue(), original: origValue)
     # get an immediate subfield by name
     _getField: (name) ->
@@ -164,7 +165,7 @@ addFields = (fields) ->
       for definition in schema
         value = if @value? then @value[definition.name]
         @_addField(definition, value)
-      @value = undefined
+      @value = if @value != null then undefined
       @emit("onValueChanged", value: @getValue(), original: origValue)
     validate: (value) ->
       return value
@@ -203,19 +204,20 @@ addFields = (fields) ->
       @schema = schema
       @resetFields()
       @setValue(@value)
-      @value = undefined
+      @value = if @value != null then undefined
     # accepts an array, where each element in the array is the value for a subfield.
     # if the optional value `reset` is truthy, then validation state will be reset.
-    setValue: (values, opts) ->
+    setValue: (val, opts) ->
       opts = @_procOpts(opts)
-      if opts?.path?.length then return @_applyToSubfield("setValue", opts, values)
-      if not values or not @schema or utils.isEqual(values, @getValue()) then return
-      if values not instanceof Array then throw "values must be an array"
+      if opts?.path?.length then return @_applyToSubfield("setValue", opts, val)
+      if val == undefined then val = utils.clone(@default) || []
+      if not val or not @schema or utils.isEqual(val, @getValue()) then return
+      if val not instanceof Array then throw "values must be an array"
       @resetFields()
-      @value = values
-      for value in values
+      @value = val
+      for value in val
         @_addField(@schema, value)
-      @value = undefined
+      @value = if @value != null then undefined
       @emit("onValueChanged", value: @getValue(), original: @value)
     addField: (value, index) ->
       if index? and index != @_fields.length then return
@@ -233,7 +235,7 @@ addFields = (fields) ->
     validate: (value) ->
       if not value.length && @required
         message = @errorMessages.required
-        @errors = [interpolate(message, [@schema.name || (typeof(@schema.field) == "string" && @schema.field.slice(0,-5)) || "item"])]
+        @errors = [utils.interpolate(message, [@schema.name || (typeof(@schema.field) == "string" && @schema.field.slice(0,-5)) || "item"])]
         return value
     getPath: (subfield) ->
       end = []

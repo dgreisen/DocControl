@@ -62,6 +62,11 @@ describe "ListField", ->
       if inSender then expect(inEvent.originator.parent.getValue()).toEqual(@vals)
     @field.setValue(@vals)
 
+  xit "should return an empty list if value passed in undefined; it should return null if value passed is null", ->
+    @field = new fields.ListField(name:"test", schema: @subSchema)
+    expect(@field.getValue()).toEqual([])
+    @field = new fields.ListField(name:"test", schema: @subSchema, value: null)
+    expect(@field.getValue()).toEqual(null)
 
 
 describe "ContainerField", ->

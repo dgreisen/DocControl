@@ -41,6 +41,11 @@ describe "widgets.ListWidget", ->
     expect(@widget._widgets[0].value).toBe("hello")
 
 
+  it "shouldn't create subwidget when the subwidget is null", ->
+    @schema.widget = null
+    _genWidgetDef = widgets.Form.prototype._genWidgetDef
+    @widget = new widgets.ListWidget(_genWidgetDef(@schema))
+
 
 describe "widget traversal", ->
   beforeEach -> 

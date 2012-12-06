@@ -21,6 +21,7 @@ enyo.kind({
     if (this.$.label) this.$.label.setContent(this.label);
   },
   addWidget: function(schema) {
+    if (!schema) return; 
     var parentWidget = this;
     if (this.itemKind) {
       var kind = enyo.clone(this.itemKind);

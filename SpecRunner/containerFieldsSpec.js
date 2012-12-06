@@ -78,7 +78,7 @@ describe("ListField", function() {
       path: []
     })).toEqual(this.field.getValue());
   });
-  return it("should return the proper value when getValue() called, even when it hasn't finished creating all subfields", function() {
+  it("should return the proper value when getValue() called, even when it hasn't finished creating all subfields", function() {
     var _this = this;
     this.field = new fields.ListField({
       name: "test",
@@ -90,6 +90,19 @@ describe("ListField", function() {
       }
     };
     return this.field.setValue(this.vals);
+  });
+  return xit("should return an empty list if value passed in undefined; it should return null if value passed is null", function() {
+    this.field = new fields.ListField({
+      name: "test",
+      schema: this.subSchema
+    });
+    expect(this.field.getValue()).toEqual([]);
+    this.field = new fields.ListField({
+      name: "test",
+      schema: this.subSchema,
+      value: null
+    });
+    return expect(this.field.getValue()).toEqual(null);
   });
 });
 

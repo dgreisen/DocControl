@@ -38,6 +38,8 @@
 
     Field.prototype.initial = void 0;
 
+    Field.prototype["default"] = void 0;
+
     function Field(opts) {
       var schema, _ref, _ref1, _ref2;
       if (opts == null) {
@@ -188,6 +190,9 @@
 
     Field.prototype.setValue = function(val, opts) {
       var origValue;
+      if (val === void 0) {
+        val = this["default"];
+      }
       if (val !== this.value) {
         this._hasChanged = true;
         origValue = this.value;
@@ -464,8 +469,11 @@
     };
 
     function ChoiceField(opts) {
-      ChoiceField.__super__.constructor.call(this, opts);
+      if (opts.choices) {
+        this.choices = opts.choices;
+      }
       this.setChoices(utils.cloneArray(this.choices));
+      ChoiceField.__super__.constructor.call(this, opts);
     }
 
     ChoiceField.prototype.setChoices = function(val) {
@@ -492,7 +500,7 @@
       value = ChoiceField.__super__.validate.call(this, value);
       if (value && !this.validValue(value)) {
         message = this.errorMessages.invalidChoice;
-        this.errors = [interpolate(message, [value])];
+        this.errors = [utils.interpolate(message, [value])];
       }
       return value;
     };

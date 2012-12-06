@@ -50,7 +50,7 @@ describe("widgets.ListWidget", function() {
     _genWidgetDef = widgets.Form.prototype._genWidgetDef;
     return this.widget = new widgets.ListWidget(_genWidgetDef(this.schema));
   });
-  return it("should create child widgets, add to _widgets, and set value and parentWidget when addWidget called", function() {
+  it("should create child widgets, add to _widgets, and set value and parentWidget when addWidget called", function() {
     this.subschema.value = this.vals[0];
     this.widget.addWidget(this.subschema);
     this.subschema.value = this.vals[1];
@@ -58,6 +58,12 @@ describe("widgets.ListWidget", function() {
     expect(this.widget._widgets.length).toBe(2);
     expect(this.widget._widgets[0].parentWidget).toBe(this.widget);
     return expect(this.widget._widgets[0].value).toBe("hello");
+  });
+  return it("shouldn't create subwidget when the subwidget is null", function() {
+    var _genWidgetDef;
+    this.schema.widget = null;
+    _genWidgetDef = widgets.Form.prototype._genWidgetDef;
+    return this.widget = new widgets.ListWidget(_genWidgetDef(this.schema));
   });
 });
 
