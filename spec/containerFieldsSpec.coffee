@@ -214,3 +214,7 @@ describe "field traversal", ->
   it "should convert opts arguments that are strings to an opts object with a path equal to the string", ->
     @field.setValue("world", "firstList.0.secondList.1")
     expect(@field.getValue("firstList.0.secondList")).toEqual(["hello", "world"])
+
+  it "should convert opts arguments that are an array to an opts object with a path equal to the array", ->
+    @field.setValue("world", ["firstList",0,"secondList",1])
+    expect(@field.getValue(["firstList",0,"secondList"])).toEqual(["hello", "world"])

@@ -219,7 +219,7 @@
         if (opts == null) {
           opts = {};
         }
-        if (typeof opts === "string") {
+        if (typeof opts === "string" || opts instanceof Array) {
           opts = {
             path: opts
           };

@@ -121,7 +121,7 @@ addFields = (fields) ->
       return subfield[fn].apply(subfield, args)
     _procOpts: (opts) ->
       opts ?= {}
-      if typeof(opts) == "string" then opts = {path: opts}
+      if typeof(opts) == "string" or opts instanceof Array then opts = {path: opts}
       return opts
 
 

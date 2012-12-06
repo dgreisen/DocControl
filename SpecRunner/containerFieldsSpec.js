@@ -339,8 +339,12 @@ describe("field traversal", function() {
       path: "firstList.0.secondList.1"
     })).toEqual(['Ensure this value has at least 5 characters (it has 4).']);
   });
-  return it("should convert opts arguments that are strings to an opts object with a path equal to the string", function() {
+  it("should convert opts arguments that are strings to an opts object with a path equal to the string", function() {
     this.field.setValue("world", "firstList.0.secondList.1");
     return expect(this.field.getValue("firstList.0.secondList")).toEqual(["hello", "world"]);
+  });
+  return it("should convert opts arguments that are an array to an opts object with a path equal to the array", function() {
+    this.field.setValue("world", ["firstList", 0, "secondList", 1]);
+    return expect(this.field.getValue(["firstList", 0, "secondList"])).toEqual(["hello", "world"]);
   });
 });
