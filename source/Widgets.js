@@ -168,6 +168,7 @@ enyo.kind({
   setValue: function(val, opts) { 
     if (opts && opts.forceReset && (!opts.path || !opts.path.length)) {
       this.value = val;
+      this._validatedOnce = false;
       this.schemaChanged();
     } else {
       return this.fields.setValue(val, opts);
