@@ -101,6 +101,10 @@ describe "ContainerField", ->
     expect(@field.getValue(path: "")).toEqual(@field.getValue())
     expect(@field.getValue(path: [])).toEqual(@field.getValue())
 
+  it "should call setValue(undefined) on each subfield when called with setValue(undefined)", ->
+    expect(@field.getValue()).toEqual(sub: "hello world", sub2: 5)
+    @field.setValue()
+    expect(@field.getValue()).toEqual(sub: undefined, sub2: undefined)
 
 
 

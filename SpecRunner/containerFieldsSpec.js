@@ -159,13 +159,24 @@ describe("ContainerField", function() {
       return _this.field.setValue(['hello']);
     }).toThrow();
   });
-  return it("should getValue of Containerfield when path is empty", function() {
+  it("should getValue of Containerfield when path is empty", function() {
     expect(this.field.getValue({
       path: ""
     })).toEqual(this.field.getValue());
     return expect(this.field.getValue({
       path: []
     })).toEqual(this.field.getValue());
+  });
+  return it("should call setValue(undefined) on each subfield when called with setValue(undefined)", function() {
+    expect(this.field.getValue()).toEqual({
+      sub: "hello world",
+      sub2: 5
+    });
+    this.field.setValue();
+    return expect(this.field.getValue()).toEqual({
+      sub: void 0,
+      sub2: void 0
+    });
   });
 });
 
