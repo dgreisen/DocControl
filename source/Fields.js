@@ -539,6 +539,7 @@
     },
     genField: function(schema, parent, value) {
       var field;
+      schema = utils.clone(schema);
       schema.parent = parent;
       if (value != null) {
         schema.value = value;

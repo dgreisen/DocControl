@@ -362,6 +362,7 @@ fields =
     return out
   # generate a field from its schema
   genField: (schema, parent, value) ->
+    schema = utils.clone(schema)
     schema.parent = parent
     if value? then schema.value = value
     field = @getField(schema.field)
