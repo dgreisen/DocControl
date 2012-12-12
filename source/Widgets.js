@@ -52,8 +52,9 @@ enyo.kind({
     //* a string designating a widget style. e.g. "onyx"
     widgetSet: "",
     //* the widgetSet skin to apply to the widget
-    skin: "default"
-
+    skin: "default",
+    // whether to create widgets
+    noWidgets: false
   },
   create: function() {
     this.inherited(arguments);
@@ -93,39 +94,38 @@ enyo.kind({
   onFieldValueChanged: function(inSender, inEvent) {
     var path = inEvent.originator.getPath();
     var widget = this.getWidget(path);
-    if (!widget) return;
-    widget.setValue(inEvent.value);
+    if (widget) widget.setValue(inEvent.value);
     this.emit("doValueChanged", inEvent);
     this._validate();
   },
   onFieldValidChanged: function(inSender, inEvent) {
     var path = inEvent.originator.getPath();
     var widget = this.getWidget(path);
-    if (!widget) return;
-    widget.setErrors(inEvent.errors);
+    if (widget) widget.setErrors(inEvent.errors);
     this.emit("doValidChanged", inEvent);
   },
   onFieldRequiredChanged: function(inSender, inEvent) {
     var path = inEvent.originator.getPath();
     var widget = this.getWidget(path);
-    if (!widget) return;
-    widget.setRequired(inEvent.required);
+    if (widget) widget.setRequired(inEvent.required);
     this._validate();
     this.emit("doRequiredChanged", inEvent);
   },
   onFieldAdded: function(inSender, inEvent) {
-    var path = inEvent.originator.getPath();
-    var schema = enyo.clone(inEvent.schema);
-    delete schema.parent;
-    enyo.mixin(schema, {skin: this.skin, widgetSet: this.widgetSet, instantUpdate: this.instantUpdate});
-    if (this.widgets) {
-      // get parent of added field and add subwidget
-      path.pop();
-      var widget = this.widgets.getWidget(path);
-      if (widget && widget.addWidget) widget.addWidget(schema);
-    } else {
-      schema = _genWidgetDef(schema, {parent: this});
-      this.widgets = this.createComponent(schema);
+    if (!this.noWidgets) {
+      var path = inEvent.originator.getPath();
+      var schema = enyo.clone(inEvent.schema);
+      delete schema.parent;
+      enyo.mixin(schema, {skin: this.skin, widgetSet: this.widgetSet, instantUpdate: this.instantUpdate});
+      if (this.widgets) {
+        // get parent of added field and add subwidget
+        path.pop();
+        var widget = this.widgets.getWidget(path);
+        if (widget && widget.addWidget) widget.addWidget(schema);
+      } else {
+        schema = _genWidgetDef(schema, {parent: this});
+        this.widgets = this.createComponent(schema);
+      }
     }
     if (!this.fields) this.fields = this._fields[0];
     this.emit("doFieldAdd", inEvent);
@@ -156,7 +156,7 @@ enyo.kind({
     this._fields = [];
     this.widgets = undefined;
     this.fields = undefined;
-    this.destroyComponents();
+    if (!this.noWidgets) this.destroyComponents();
     this.fields = fields.genField(this.schema, this, this.value);
     delete this.value;
   },
@@ -165,7 +165,7 @@ enyo.kind({
   //* proxy field methods
   getField: function(path) { return this.fields.getField(path); },
   getValue: function(opts) { return this.fields.getValue(opts); },
-  setValue: function(val, opts) { 
+  setValue: function(val, opts) {
     if (opts && opts.forceReset && (!opts.path || !opts.path.length)) {
       this.value = val;
       this._validatedOnce = false;
@@ -217,6 +217,7 @@ enyo.kind({
     if (handler) handler.apply(this, [inSender, inEvent]);
   },
   getWidget: function(path) {
+    if (this.noWidgets) return;
     if (!path) path = [];
     if (typeof path == "string") path = path.split(".");
     return this.widgets.getWidget(path);
