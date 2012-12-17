@@ -184,16 +184,70 @@ addFields = (fields) ->
         return end
 
 
+  ###
+      A HashField contains an arbitrary number of identical subfields in a hash
+      (javascript object). When data is extracted from it using `toJSON`, or 
+      `getClean`, the returned data is in an object where each value is the value 
+      of the subfield at the corresponding key.
+
+      A HashField's `schema` consists of a single field definition, such as
+      `{ kind: "email" }`.
+
+      This doesn't really seem to have a use case for a widget, just for arbitrary
+      json validation. so no widget is provided
+  ###
+
+  class HashField extends ContainerField
+    widget: null
+    setSchema: (schema, opts) ->
+      opts = @_procOpts(opts)
+      if opts?.path?.length then return @_applyToSubfield("setSchema", opts, schema)
+      if not schema? or schema == @schema then return
+      @schema = schema
+      @resetFields()
+      @setValue(@value)
+      @value = if @value != null then undefined
+    setValue: (val, opts) ->
+      opts = @_procOpts(opts)
+      if opts?.path?.length then return @_applyToSubfield("setValue", opts, val)
+      if val == undefined then val = utils.clone(@default) || []
+      if not val or not @schema or utils.isEqual(val, @getValue()) then return
+      if val not instanceof Object or val instanceof Array then throw "values must be a hash"
+      @resetFields()
+      @value = val
+      for key, value of val
+        schema = utils.clone(@schema)
+        schema.name = key
+        @_addField(schema, value)
+      @value = if @value != null then undefined
+      @emit("onValueChanged", value: @getValue(), original: @value)
+    validate: (value) ->
+      if utils.isEmpty(value) && @required
+        message = @errorMessages.required
+        @errors = [utils.interpolate(message, [@schema.name || (typeof(@schema.field) == "string" && @schema.field.slice(0,-5)) || "item"])]
+        return value
+    # add the field at key with value
+    addField: (key, value) ->
+      schema = utils.clone(@schema)
+      schema.name = key
+      @_addField(schema, value)
+    # remove the field at `index`.
+    removeField: (index) ->
+      @_getField(index).emit("onFieldDelete")
+      value = @getValue()
+      value.splice(index, 1)
+      @setValue(value)
+      @emit("onValueChanged", value: @getValue(), original: value, op: "remove")
+
 
   ###
-      A ListField contains an arbitrary number of identical
-      subfields. When data is extracted from it using `toJSON`, or `getClean`, the
+      A ListField contains an arbitrary number of identical subfields in a
+      list. When data is extracted from it using `toJSON`, or `getClean`, the
       returned data is in a list where each value is the value of the subfield at
       the corresponding index.
 
       A ListField's `schema` consists of a single field definition, such as
-      `{ kind: "email" }`. The ListField's `fields` attribute will then contain
-      an array of subfields of that kind.
+      `{ kind: "email" }`.
   ###
   class ListField extends BaseContainerField
     widget: "widgets.ListWidget",
@@ -253,6 +307,7 @@ addFields = (fields) ->
 
   fields.BaseContainerField = BaseContainerField
   fields.ContainerField = ContainerField
+  fields.HashField = HashField
   fields.ListField = ListField
 
 if window?

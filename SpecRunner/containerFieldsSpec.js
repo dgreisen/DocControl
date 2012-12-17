@@ -91,7 +91,7 @@ describe("ListField", function() {
     };
     return this.field.setValue(this.vals);
   });
-  return xit("should return an empty list if value passed in undefined; it should return null if value passed is null", function() {
+  return xit("should return an empty list if value passed is undefined; it should return null if value passed is null", function() {
     this.field = new fields.ListField({
       name: "test",
       schema: this.subSchema
@@ -177,6 +177,103 @@ describe("ContainerField", function() {
       sub: void 0,
       sub2: void 0
     });
+  });
+});
+
+describe("HashField", function() {
+  beforeEach(function() {
+    this.subSchema = {
+      field: "CharField",
+      name: "sub",
+      minLength: 5
+    };
+    this.vals = {
+      hello: "world",
+      goodnight: "moon"
+    };
+    return this.field = new fields.HashField({
+      name: "test",
+      schema: this.subSchema,
+      value: this.vals
+    });
+  });
+  it("should store its schema in @schema", function() {
+    return expect(this.field.schema).toEqual(this.subSchema);
+  });
+  it("should create as many subfields as there are vals in the values object; subfield should have proper value and parent should be HashField", function() {
+    expect(this.field.getFields()[0].getValue()).toEqual("world");
+    expect(this.field.getFields()[1].getValue()).toEqual("moon");
+    return expect(this.field.getFields()[0].parent).toBe(this.field);
+  });
+  it("should generate path for subfield from key", function() {
+    expect(this.field.getFields()[0].getPath()).toEqual(["hello"]);
+    return expect(this.field.getFields()[1].getPath()).toEqual(["goodnight"]);
+  });
+  it("should return getValue() as a hash of subfield values", function() {
+    return expect(this.field.getValue()).toEqual({
+      hello: "world",
+      goodnight: "moon"
+    });
+  });
+  it("should set values (and emit valueChanged event if changed) when setValue called", function() {
+    var vals2;
+    this.field.listeners.onValueChanged = function(inSender, inEvent) {};
+    spyOn(this.field.listeners, "onValueChanged");
+    this.field.setValue(this.vals);
+    vals2 = {
+      the: "cat",
+      "in": "the hat"
+    };
+    this.field.setValue(vals2);
+    expect(this.field.getFields().length).toBe(2);
+    expect(this.field.getValue()).toEqual(vals2);
+    return expect(this.field.listeners.onValueChanged.calls.length).toBe(3);
+  });
+  it("should throw an error if setValue called with anything other than a hash of values", function() {
+    var _this = this;
+    expect(function() {
+      return _this.field.setValue('hello');
+    }).toThrow();
+    return expect(function() {
+      return _this.field.setValue(['hello']);
+    }).toThrow();
+  });
+  it("should be able to get immediate child by index", function() {
+    return expect(this.field._getField("hello").getValue()).toBe("world");
+  });
+  it("should create a new child with the given value at the specified key when addField is called", function() {
+    this.field.addField("four", "score");
+    return expect(this.field.getValue()).toEqual({
+      hello: "world",
+      goodnight: "moon",
+      four: "score"
+    });
+  });
+  it("should return the proper value when getValue() called, even when it hasn't finished creating all subfields", function() {
+    var _this = this;
+    this.field = new fields.HashField({
+      name: "test",
+      schema: this.subSchema
+    });
+    this.field.listeners.onFieldAdd = function(inSender, inEvent) {
+      if (inSender) {
+        return expect(inEvent.originator.parent.getValue()).toEqual(_this.vals);
+      }
+    };
+    return this.field.setValue(this.vals);
+  });
+  return xit("should return an empty list if value passed is undefined; it should return null if value passed is null", function() {
+    this.field = new fields.HashField({
+      name: "test",
+      schema: this.subSchema
+    });
+    expect(this.field.getValue()).toEqual({});
+    this.field = new fields.HashField({
+      name: "test",
+      schema: this.subSchema,
+      value: null
+    });
+    return expect(this.field.getValue()).toEqual(null);
   });
 });
 

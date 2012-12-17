@@ -6,7 +6,7 @@
     __slice = [].slice;
 
   addFields = function(fields) {
-    var BaseContainerField, ContainerField, ListField, utils;
+    var BaseContainerField, ContainerField, HashField, ListField, utils;
     if (typeof exports !== "undefined" && exports !== null) {
       utils = require("./utils");
     } else if (typeof window !== "undefined" && window !== null) {
@@ -348,14 +348,113 @@
 
     })(BaseContainerField);
     /*
-          A ListField contains an arbitrary number of identical
-          subfields. When data is extracted from it using `toJSON`, or `getClean`, the
+          A HashField contains an arbitrary number of identical subfields in a hash
+          (javascript object). When data is extracted from it using `toJSON`, or 
+          `getClean`, the returned data is in an object where each value is the value 
+          of the subfield at the corresponding key.
+    
+          A HashField's `schema` consists of a single field definition, such as
+          `{ kind: "email" }`.
+    
+          This doesn't really seem to have a use case for a widget, just for arbitrary
+          json validation. so no widget is provided
+    */
+
+    HashField = (function(_super) {
+
+      __extends(HashField, _super);
+
+      function HashField() {
+        return HashField.__super__.constructor.apply(this, arguments);
+      }
+
+      HashField.prototype.widget = null;
+
+      HashField.prototype.setSchema = function(schema, opts) {
+        var _ref;
+        opts = this._procOpts(opts);
+        if (opts != null ? (_ref = opts.path) != null ? _ref.length : void 0 : void 0) {
+          return this._applyToSubfield("setSchema", opts, schema);
+        }
+        if (!(schema != null) || schema === this.schema) {
+          return;
+        }
+        this.schema = schema;
+        this.resetFields();
+        this.setValue(this.value);
+        return this.value = this.value !== null ? void 0 : void 0;
+      };
+
+      HashField.prototype.setValue = function(val, opts) {
+        var key, schema, value, _ref;
+        opts = this._procOpts(opts);
+        if (opts != null ? (_ref = opts.path) != null ? _ref.length : void 0 : void 0) {
+          return this._applyToSubfield("setValue", opts, val);
+        }
+        if (val === void 0) {
+          val = utils.clone(this["default"]) || [];
+        }
+        if (!val || !this.schema || utils.isEqual(val, this.getValue())) {
+          return;
+        }
+        if (!(val instanceof Object) || val instanceof Array) {
+          throw "values must be a hash";
+        }
+        this.resetFields();
+        this.value = val;
+        for (key in val) {
+          value = val[key];
+          schema = utils.clone(this.schema);
+          schema.name = key;
+          this._addField(schema, value);
+        }
+        this.value = this.value !== null ? void 0 : void 0;
+        return this.emit("onValueChanged", {
+          value: this.getValue(),
+          original: this.value
+        });
+      };
+
+      HashField.prototype.validate = function(value) {
+        var message;
+        if (utils.isEmpty(value) && this.required) {
+          message = this.errorMessages.required;
+          this.errors = [utils.interpolate(message, [this.schema.name || (typeof this.schema.field === "string" && this.schema.field.slice(0, -5)) || "item"])];
+          return value;
+        }
+      };
+
+      HashField.prototype.addField = function(key, value) {
+        var schema;
+        schema = utils.clone(this.schema);
+        schema.name = key;
+        return this._addField(schema, value);
+      };
+
+      HashField.prototype.removeField = function(index) {
+        var value;
+        this._getField(index).emit("onFieldDelete");
+        value = this.getValue();
+        value.splice(index, 1);
+        this.setValue(value);
+        return this.emit("onValueChanged", {
+          value: this.getValue(),
+          original: value,
+          op: "remove"
+        });
+      };
+
+      return HashField;
+
+    })(ContainerField);
+    /*
+          A ListField contains an arbitrary number of identical subfields in a
+          list. When data is extracted from it using `toJSON`, or `getClean`, the
           returned data is in a list where each value is the value of the subfield at
           the corresponding index.
     
           A ListField's `schema` consists of a single field definition, such as
-          `{ kind: "email" }`. The ListField's `fields` attribute will then contain
-          an array of subfields of that kind.
+          `{ kind: "email" }`.
     */
 
     ListField = (function(_super) {
@@ -462,6 +561,7 @@
     })(BaseContainerField);
     fields.BaseContainerField = BaseContainerField;
     fields.ContainerField = ContainerField;
+    fields.HashField = HashField;
     return fields.ListField = ListField;
   };
 

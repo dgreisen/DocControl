@@ -62,7 +62,7 @@ describe "ListField", ->
       if inSender then expect(inEvent.originator.parent.getValue()).toEqual(@vals)
     @field.setValue(@vals)
 
-  xit "should return an empty list if value passed in undefined; it should return null if value passed is null", ->
+  xit "should return an empty list if value passed is undefined; it should return null if value passed is null", ->
     @field = new fields.ListField(name:"test", schema: @subSchema)
     expect(@field.getValue()).toEqual([])
     @field = new fields.ListField(name:"test", schema: @subSchema, value: null)
@@ -106,6 +106,60 @@ describe "ContainerField", ->
     @field.setValue()
     expect(@field.getValue()).toEqual(sub: undefined, sub2: undefined)
 
+describe "HashField", ->
+  beforeEach ->
+    @subSchema = {field: "CharField", name: "sub", minLength: 5}
+    @vals = hello: "world", goodnight: "moon"
+    @field = new fields.HashField(name:"test", schema: @subSchema, value: @vals)
+
+  it "should store its schema in @schema", ->
+    expect(@field.schema).toEqual(@subSchema)
+
+  it "should create as many subfields as there are vals in the values object; subfield should have proper value and parent should be HashField", ->
+    expect(@field.getFields()[0].getValue()).toEqual("world")
+    expect(@field.getFields()[1].getValue()).toEqual("moon")    
+    expect(@field.getFields()[0].parent).toBe(@field)
+
+  it "should generate path for subfield from key", ->
+    expect(@field.getFields()[0].getPath()).toEqual(["hello"])
+    expect(@field.getFields()[1].getPath()).toEqual(["goodnight"])
+
+  it "should return getValue() as a hash of subfield values", ->
+    expect(@field.getValue()).toEqual({hello: "world", goodnight: "moon"})
+
+  it "should set values (and emit valueChanged event if changed) when setValue called", ->
+    @field.listeners.onValueChanged = (inSender, inEvent) ->
+    spyOn @field.listeners, "onValueChanged"
+    @field.setValue(@vals)
+    vals2 = {the: "cat", in: "the hat"}
+    @field.setValue(vals2)
+    expect(@field.getFields().length).toBe(2)
+    expect(@field.getValue()).toEqual(vals2)
+    # 4 subfields and one field valueChanged events from the second setValue call
+    expect(@field.listeners.onValueChanged.calls.length).toBe(3)
+
+  it "should throw an error if setValue called with anything other than a hash of values", ->
+    expect(=> @field.setValue('hello')).toThrow()
+    expect(=> @field.setValue(['hello'])).toThrow()
+
+  it "should be able to get immediate child by index", ->
+    expect(@field._getField("hello").getValue()).toBe("world")
+
+  it "should create a new child with the given value at the specified key when addField is called", ->
+    @field.addField("four", "score");
+    expect(@field.getValue()).toEqual(hello: "world", goodnight: "moon", four: "score")
+
+  it "should return the proper value when getValue() called, even when it hasn't finished creating all subfields", ->
+    @field = new fields.HashField(name:"test", schema: @subSchema)
+    @field.listeners.onFieldAdd = (inSender, inEvent) =>
+      if inSender then expect(inEvent.originator.parent.getValue()).toEqual(@vals)
+    @field.setValue(@vals)
+
+  xit "should return an empty list if value passed is undefined; it should return null if value passed is null", ->
+    @field = new fields.HashField(name:"test", schema: @subSchema)
+    expect(@field.getValue()).toEqual({})
+    @field = new fields.HashField(name:"test", schema: @subSchema, value: null)
+    expect(@field.getValue()).toEqual(null)
 
 
 describe "ListField Validation", ->
