@@ -23,12 +23,18 @@ describe("genWidgetDef", function() {
     kind = _genWidgetDef(this.schema);
     return expect(kind).toEqual(this.output);
   });
-  return it("should override the defualt field widget when the widget kind is defined", function() {
+  it("should override the defualt field widget when the widget kind is defined", function() {
     var kind;
     this.schema.widget.kind = "widgets.PasswordWidget";
     this.output.kind = "widgets.PasswordWidget";
     kind = _genWidgetDef(this.schema);
     return expect(kind).toEqual(this.output);
+  });
+  return it("should return undefined if no widget should be created", function() {
+    var kind;
+    this.schema.widget = null;
+    kind = _genWidgetDef(this.schema);
+    return expect(kind).toEqual(void 0);
   });
 });
 

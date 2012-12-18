@@ -21,7 +21,7 @@ enyo.kind({
     if (this.$.label) this.$.label.setContent(this.label);
   },
   addWidget: function(schema) {
-    if (!schema) return; 
+    if (!schema) return;
     var parentWidget = this;
     if (this.itemKind) {
       var kind = enyo.clone(this.itemKind);
@@ -29,7 +29,7 @@ enyo.kind({
       parentWidget = parentWidget.$._content;
     }
     widget = this._genWidgetDef(schema, {parent: this});
-    parentWidget.createComponent(widget);
+    if (widget) parentWidget.createComponent(widget);
     this.render();
   },
   errorClass: "containererror",

@@ -5,11 +5,15 @@ _getKindHash = function(kind) {
 };
 // generate a widget definition from a schema
 _genWidgetDef = function(schema, opts) {
+  // if widget set to null, then a widget should not be created
+  if (schema.widget === null) return;
   if (!opts) opts = {};
   var widget = enyo.clone(schema);
   // if our schema doesn't define a kind, get it from the field
   if (!schema.widget || !(typeof(schema.widget) == "string" || schema.widget.kind)) {
     var kind = window.fields.getField(schema.field).prototype.widget;
+    // if prototype.widget is null then a widget should not be created
+    if (kind === null) return;
     enyo.mixin(widget, _getKindHash(kind));
   }
   // update with widget attrs
@@ -58,7 +62,6 @@ enyo.kind({
   },
   create: function() {
     this.inherited(arguments);
-    var schema = enyo.clone(this.schema);
     this.schemaChanged();
     this._validate();
   },
@@ -117,14 +120,15 @@ enyo.kind({
       var schema = enyo.clone(inEvent.schema);
       delete schema.parent;
       enyo.mixin(schema, {skin: this.skin, widgetSet: this.widgetSet, instantUpdate: this.instantUpdate});
-      if (this.widgets) {
+      // if this is the root widget, add it to the form, otherwise add to parent widget
+      if (!path.length) {
+        schema = _genWidgetDef(schema, {parent: this});
+        if (schema) this.widgets = this.createComponent(schema);
+      } else {
         // get parent of added field and add subwidget
         path.pop();
-        var widget = this.widgets.getWidget(path);
+        var widget = this.getWidget(path);
         if (widget && widget.addWidget) widget.addWidget(schema);
-      } else {
-        schema = _genWidgetDef(schema, {parent: this});
-        this.widgets = this.createComponent(schema);
       }
     }
     if (!this.fields) this.fields = this._fields[0];
@@ -152,6 +156,7 @@ enyo.kind({
     this.fields.getField(path).addField();
   },
   schemaChanged: function() {
+    this.schema = enyo.clone(this.schema);
     this._widgets = [];
     this._fields = [];
     this.widgets = undefined;
@@ -217,7 +222,7 @@ enyo.kind({
     if (handler) handler.apply(this, [inSender, inEvent]);
   },
   getWidget: function(path) {
-    if (this.noWidgets) return;
+    if (!this.widgets) return;
     if (!path) path = [];
     if (typeof path == "string") path = path.split(".");
     return this.widgets.getWidget(path);

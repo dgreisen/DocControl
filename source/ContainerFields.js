@@ -265,7 +265,7 @@
           return;
         }
         if (!(val instanceof Object) || val instanceof Array) {
-          throw "values must be a hash";
+          throw JSON.stringify(val) + " must be a hash";
         }
         this.value = val;
         _fields = this.getFields();
@@ -398,7 +398,7 @@
           return;
         }
         if (!(val instanceof Object) || val instanceof Array) {
-          throw "values must be a hash";
+          throw JSON.stringify(val) + " must be a hash";
         }
         this.resetFields();
         this.value = val;
@@ -495,7 +495,7 @@
           return;
         }
         if (!(val instanceof Array)) {
-          throw "values must be an array";
+          throw JSON.stringify(val) + " must be an array";
         }
         this.resetFields();
         this.value = val;

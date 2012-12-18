@@ -112,6 +112,12 @@ describe "widgets.Form", ->
     expect(@form.onFieldAdded).toHaveBeenCalled()
     expect(@form.getValue()).toEqual(@listVal2)
 
-  it "should be fine if a field doesn't have a corresponding widget", ->
+  it "shouldn't create a widget if widget=null", ->
     @schema.widget = null
+    @form = new widgets.Form(schema: @schema, value: @val)
+    expect(@form.widgets).toBeUndefined();
+    
+  it "shouldn't create a widget if the parent widget doesn't exist", ->
+    @listSchema.widget = null
     @form = new widgets.Form(schema: @listSchema, value: @listVal)
+    # expect(@form.widgets).not.toBeDefined()

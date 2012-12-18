@@ -24,8 +24,10 @@ describe "genWidgetDef", ->
     kind = _genWidgetDef(@schema)
     expect(kind).toEqual(@output)
 
-
-
+  it "should return undefined if no widget should be created", ->
+    @schema.widget = null
+    kind = _genWidgetDef(@schema)
+    expect(kind).toEqual(undefined)
 
 describe "widgets", ->
   beforeEach ->

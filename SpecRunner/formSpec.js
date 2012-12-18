@@ -144,8 +144,16 @@ describe("widgets.Form", function() {
     expect(this.form.onFieldAdded).toHaveBeenCalled();
     return expect(this.form.getValue()).toEqual(this.listVal2);
   });
-  return it("should be fine if a field doesn't have a corresponding widget", function() {
+  it("shouldn't create a widget if widget=null", function() {
     this.schema.widget = null;
+    this.form = new widgets.Form({
+      schema: this.schema,
+      value: this.val
+    });
+    return expect(this.form.widgets).toBeUndefined();
+  });
+  return it("shouldn't create a widget if the parent widget doesn't exist", function() {
+    this.listSchema.widget = null;
     return this.form = new widgets.Form({
       schema: this.listSchema,
       value: this.listVal

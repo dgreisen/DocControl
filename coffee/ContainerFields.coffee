@@ -144,7 +144,7 @@ addFields = (fields) ->
       origValue = @getValue()
       if val == undefined then val = utils.clone(@default) || {}
       if not val or utils.isEqual(val, origValue) or not @_fields then return
-      if val not instanceof Object or val instanceof Array then throw "values must be a hash"
+      if val not instanceof Object or val instanceof Array then throw JSON.stringify(val) + " must be a hash"
       @value = val
       _fields = @getFields()
       for field in _fields
@@ -212,7 +212,7 @@ addFields = (fields) ->
       if opts?.path?.length then return @_applyToSubfield("setValue", opts, val)
       if val == undefined then val = utils.clone(@default) || []
       if not val or not @schema or utils.isEqual(val, @getValue()) then return
-      if val not instanceof Object or val instanceof Array then throw "values must be a hash"
+      if val not instanceof Object or val instanceof Array then throw JSON.stringify(val) + " must be a hash"
       @resetFields()
       @value = val
       for key, value of val
@@ -266,7 +266,7 @@ addFields = (fields) ->
       if opts?.path?.length then return @_applyToSubfield("setValue", opts, val)
       if val == undefined then val = utils.clone(@default) || []
       if not val or not @schema or utils.isEqual(val, @getValue()) then return
-      if val not instanceof Array then throw "values must be an array"
+      if val not instanceof Array then throw JSON.stringify(val) + " must be an array"
       @resetFields()
       @value = val
       for value in val
