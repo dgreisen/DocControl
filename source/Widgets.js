@@ -458,14 +458,14 @@ enyo.kind({
     iterChoices = function(x) {
       if (x[1] instanceof Array) {
         parent = parent.createComponent({ tag: "optgroup", attributes: {label: x[0]} });
-        x[1].forEach(iterChoices);
+        enyo.forEach(x[1], iterChoices);
         parent = parent.parent;
       } else {
         parent.createComponent({ kind: "enyo.Option", content: x[1], value: x[0] });
         choices[x[0]] = i++;
       }
     };
-    val.forEach(iterChoices);
+    enyo.forEach(val, iterChoices);
     this.choicesIndex = choices;
   },
   handlers: { onchange: "itemSelected" },

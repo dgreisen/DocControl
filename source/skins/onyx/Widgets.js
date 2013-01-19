@@ -107,12 +107,12 @@ enyo.kind({
     var that = this;
     var choices = {};
     iterChoices = function(x) {
-      if (x[1] instanceof Array) x[1].forEach(iterChoices);
+      if (x[1] instanceof Array) enyo.forEach(x[1], iterChoices);
       else {
         choices[x[0]] = that.$.input.createComponent({ content: x[1], value: x[0], active: that.value===x[0]});
       }
     };
-    val.forEach(iterChoices);
+    enyo.forEach(val, iterChoices);
     this.choicesIndex = choices;
   },
   handlers: { onSelect: "itemSelected" },
@@ -151,7 +151,7 @@ enyo.kind({
     var that = this;
     var choices = {};
     iterChoices = function(x, i) {
-      if (x[1] instanceof Array) x[1].forEach(iterChoices);
+      if (x[1] instanceof Array) enyo.forEach(x[1], iterChoices);
       else {
         var comp = enyo.clone(that.itemKind);
         comp.components[0].components[0].value = x[0];
@@ -161,7 +161,7 @@ enyo.kind({
         choices[x[0]] = that.$.input.createComponent(comp).children[0].children[0];
       }
     };
-    val.forEach(iterChoices);
+    enyo.forEach(val, iterChoices);
     this.choicesIndex = choices;
   },
   valueChanged: function() {
