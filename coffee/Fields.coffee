@@ -290,7 +290,7 @@ class BooleanField extends Field
   widget: "widgets.CheckboxWidget"
   # @protected
   toJavascript: (value) ->
-    if typeof(value) == "string" and includes(["false", "0"], value.toLowerCase())
+    if typeof(value) == "string" and utils.includes(["false", "0"], value.toLowerCase())
       value = false
     else
       value = Boolean(value)
@@ -300,9 +300,9 @@ class BooleanField extends Field
 
 class NullBooleanField extends BooleanField
   toJavascript: (value) ->
-    if includes([true, "True", "1"], value)
+    if utils.includes([true, "True", "1"], value)
       value =  true
-    else if includes([false, "False", "0"], value)
+    else if utils.includes([false, "False", "0"], value)
       value = false
     else 
       value = null

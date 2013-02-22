@@ -414,7 +414,7 @@
     BooleanField.prototype.widget = "widgets.CheckboxWidget";
 
     BooleanField.prototype.toJavascript = function(value) {
-      if (typeof value === "string" && includes(["false", "0"], value.toLowerCase())) {
+      if (typeof value === "string" && utils.includes(["false", "0"], value.toLowerCase())) {
         value = false;
       } else {
         value = Boolean(value);
@@ -438,9 +438,9 @@
     }
 
     NullBooleanField.prototype.toJavascript = function(value) {
-      if (includes([true, "True", "1"], value)) {
+      if (utils.includes([true, "True", "1"], value)) {
         value = true;
-      } else if (includes([false, "False", "0"], value)) {
+      } else if (utils.includes([false, "False", "0"], value)) {
         value = false;
       } else {
         value = null;
