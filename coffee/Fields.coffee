@@ -5,6 +5,8 @@ else if window?
   utils = window.utils
   validators = window.validators
 
+ValidationError = utils.ValidationError
+
 class Field
   # the cleaned value accessed via `getClean()`; raises error if invalid; this will be a javascript datatype and should be used for any calculations, etc. Use the toJSON() method to get a version appropriate for serialization.
   clean: undefined,
@@ -93,22 +95,14 @@ class Field
   # default action is to check if the field is required
   validate: (value) ->
     if (validators.isEmpty(value) && @required)
-      @errors.push(@errorMessages.required)
+      throw ValidationError(@errorMessages.required, "required")
     return value
   # Third function called in validation process.<br />
   # You should not have to override this function
   runValidators: (value) ->
     if (validators.isEmpty(value)) then return
     for v in @validators
-      try
-        v.validate(value)
-      catch e
-        if (e.code and e.code of @errorMessages)
-          message = @errorMessages[e.code]
-          if (e.params) then utils.interpolate(message, e.params)
-          @errors.push(message)
-        else
-          @errors.push(e.message)
+      @_catchErrors(v, value)
     return value;
   # primary validation function<br />
   # calls all other validation subfunctions and passes validation info up to parent fields and down to widget, if it exists.<br />
@@ -122,16 +116,29 @@ class Field
     @errors = []
     # call the various validators
     value = @getValue()
-    value = @toJavascript(value)
-    if (!Boolean(@errors.length)) then value = @validate(value)
-    if (!Boolean(@errors.length)) then value = @runValidators(value)
-    valid = !Boolean(@errors.length)
+    value = @_catchErrors(@toJavascript, value)
+    value = @_catchErrors(@validate, value) if (!@errors.length)
+    value = @runValidators(value) if (!@errors.length)
+    valid = !@errors.length
     @clean = if valid then value else undefined
     if valid != @_valid or not valid and not utils.isEqual(oldErrors, @errors)
       @emit("onValidChanged", valid: valid, errors: @errors)
       @_valid = valid
     @_hasChanged = false
     return valid
+  # helper function for running an arbitrary function, capturing errors and placing in error array
+  _catchErrors: (fn, value) ->
+    try
+      if fn instanceof Function
+        value = fn.call(this, value)
+      else
+        value = fn.validate(value)
+    catch e
+      message = if @errorMessages[e.code]? then @errorMessages[e.code] else e.message
+      message = utils.interpolate(message, e.params) if e.params?
+      @errors.push(message)
+    return value
+
   # return the fild's cleaned data if there are no errors. throws an error if there are validation errors.
   # you will likely have to override this in Field subclasses
   getClean: (opts) ->
@@ -238,11 +245,10 @@ class IntegerField extends Field
   regex: /^-?\d*$/
   toJavascript: (value) ->
     if typeof(value) == "string" and not value.match(@regex)
-      @errors.push(@errorMessages['invalid'])
-      return
+      throw ValidationError(@errorMessages.invalid, "invalid")
     value = if validators.isEmpty(value) then undefined else @parseFn(value, 10)
     if value? and isNaN(value)
-      @errors.push(@errorMessages['invalid'])
+      throw ValidationError(@errorMessages.invalid, "invalid")
     return value
 
 
@@ -295,7 +301,7 @@ class BooleanField extends Field
     else
       value = Boolean(value)
     if not value and @required
-      @errors.push(@errorMessages.required)
+      throw ValidationError(@errorMessages.required, "required")
     return value
 
 class NullBooleanField extends BooleanField
@@ -335,8 +341,7 @@ class ChoiceField extends Field
   validate: (value) ->
     value = super(value)
     if value and not @validValue(value)
-      message = @errorMessages.invalidChoice
-      @errors = [ utils.interpolate(message, [value]) ]
+      throw ValidationError(@errorMessages.invalidChoice, "invalidChoice", value)
     return value
   validValue: (val) ->
     return val of @choicesIndex

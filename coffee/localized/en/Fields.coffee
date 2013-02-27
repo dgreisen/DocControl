@@ -1,3 +1,5 @@
+ValidationError = utils.ValidationError
+
 addFields = (fields) ->
   if exports?
     utils = require "./utils"
@@ -18,14 +20,13 @@ addFields = (fields) ->
     regex: /^(?:1-?)?(\d{3})[-\.]?(\d{3})[-\.]?(\d{4})$/
     validate: (value) ->
       value = super(value)
-      if @errors.length then return value
       value = value.replace(/(\(|\)|\s+)/g, '')
       match = value.match(this.regex)
       if match
         value = utils.interpolate("%s-%s-%s", match.slice(1))
         this.setValue(value)
       else
-        this.errors.push(this.errorMessages['invalid'])
+        throw ValidationError(@errorMessages.invalid, "invalid")
       return value
 
   # @public
@@ -49,20 +50,19 @@ addFields = (fields) ->
     regex: /^(\d{3})[-\ ]?(\d{2})[-\ ]?(\d{4})$/
     validate: (value) ->
       value = super(value)
-      if @errors.length then return value
       match = value.match(this.regex)
       invalidEM = this.errorMessages['invalid']
-      if not match then this.errors.push(invalidEM)
+      if not match then throw ValidationError(@errorMessages.invalid, "invalid")
       area = match[1]
       group = match[2]
       serial = match[3]
       # no blocks of all zeroes
-      if area == '000' or group == '00' or serial =='0000' then this.errors.push(invalidEM)
+      if area == '000' or group == '00' or serial =='0000' then throw ValidationError(@errorMessages.invalid, "invalid")
       # no promotional or otherwise permanently invalid numbers.
       if area == '666' or
           (area == '987' and group == '65' and 4320 <= int(serial) and int(serial) <= 4329) or
           value == '078-05-1120' or
-          value == '219-09-9999' then this.errors.push(invalidEM)
+          value == '219-09-9999' then throw ValidationError(@errorMessages.invalid, "invalid")
       value = utils.interpolate('%s-%s-%s', [area, group, serial])
       this.setValue(value)
       return value
@@ -86,7 +86,7 @@ addFields = (fields) ->
       if value
         this.setValue(value)
       else
-        this.errors.push(this.errorMessages.invalid)
+        throw ValidationError(@errorMessages.invalid, "invalid")
       return value
 
   # @public
