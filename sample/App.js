@@ -103,20 +103,28 @@ enyo.kind({
   components: [
     { name: "topTB", kind: "onyx.Toolbar", components: [
       {content: "Widgets:"},
-      {kind: "onyx.PickerDecorator", onSelect: "selectValidationStrategy", components: [
+      {kind: "onyx.PickerDecorator", onSelect: "selectWidgetSet", components: [
         {},
         {kind: "onyx.Picker", components: [
-          {content: "Onyx", active: true},
-          {content: "Enyo"},
-          {content: "None"}
+          {content: "onyx", active: true},
+          {content: "enyo"},
+          {content: "none"}
+        ]}
+      ]},
+      {content: "Spins:"},
+      {kind: "onyx.PickerDecorator", onSelect: "selectSkin", components: [
+        {},
+        {kind: "onyx.Picker", components: [
+          {content: "default", active: true},
+          {content: "horizontal"}
         ]}
       ]},
       {content: "Validation Strategy:"},
       {kind: "onyx.PickerDecorator", onSelect: "selectValidationStrategy", components: [
         {},
         {kind: "onyx.Picker", components: [
-          {content: "Default", active: true},
-          {content: "Always"}
+          {content: "default", active: true},
+          {content: "always"}
         ]}
       ]},
       {content: "Instant Validation:"},
@@ -127,9 +135,10 @@ enyo.kind({
       { classes: "main-content", content: "You can inspect the contacts in the debugger by looking at 'window.contacts', even when there are no widgets"},
       { name: "contacts",
         kind: "widgets.Form",
-        classes: "main-content form-horizontal",
+        classes: "main-content",
         schema: contactsSchema,
-        value: DATA
+        value: DATA,
+        widgetSet: "onyx"
       }
     ]},
     { kind: "onyx.Toolbar", components: [
@@ -158,8 +167,14 @@ enyo.kind({
     if (this.startup-- > 0) return;
     this.$.contacts.setNoWidget(!inSender.value);
   },
+  selectWidgetSet: function(inSender, inEvent) {
+    this.$.contacts.setWidgetSet(inEvent.content);
+  },
+  selectSkin: function(inSender, inEvent) {
+    this.$.contacts.setSkin(inEvent.content);
+  },
   selectValidationStrategy: function(inSender, inEvent) {
-    this.$.contacts.setValidationStrategy(inEvent.content.toLowerCase);
+    this.$.contacts.setValidationStrategy(inEvent.content);
   },
   toggleInstant: function(inSender, inEvent) {
     if (this.startup-- > 0) return;

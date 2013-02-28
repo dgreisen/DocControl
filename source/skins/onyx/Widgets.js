@@ -1,3 +1,4 @@
+/*
 widgets.Widget.prototype.onyx_defaultSkin = function() {
   var components = [this.inputKind, this.requiredKind];
   if (!this.noHelpText) {
@@ -27,6 +28,7 @@ widgets.BaseContainerWidget.prototype.onyx_defaultSkin = function() {
   };
   this.createComponents([comp]);
 };
+*/
 
 enyo.kind({
   name: "widgets.onyx.Widget",
@@ -66,8 +68,8 @@ enyo.kind({
     this.inherited(arguments);
   },
   onyx_defaultSkin: function() {
-    this.inherited(arguments);
-	if (this.$.label) this.$.label.addClass("checkbox");
+    widgets.Widget.prototype.defaultSkin.call(this);
+    if (this.$.label) this.$.label.addClass("checkbox");
     if (this.$.helpText) this.$.helpText.addClass("checkbox");
     this.$.input.addStyles("width:");
   }
@@ -79,7 +81,7 @@ enyo.kind({
   name: "widgets.onyx.ChoiceWidget",
   kind: "widgets.ChoiceWidget",
   //* @protected
-  inputKind: {kind: "onyx.PickerDecorator", components: [
+  inputKind: {kind: "onyx.PickerDecorator", style:"display:inline-block", components: [
     {},
     { name: "input",
       kind: "onyx.Picker",
@@ -195,9 +197,15 @@ enyo.kind({
   name: "widgets.onyx.ListWidget",
   kind: "widgets.ListWidget",
   //* @protected
-  containerControlKind: { kind: "onyx.IconButton", src:"assets/plus.png", ontap: "handleAdd", style:"margin-top:17px"},
+  containerControlKind: {
+    components: [
+      { tag: "hr", style: "margin-left:30px;" },
+      { kind: "onyx.IconButton", src:"assets/plus.png", ontap: "handleAdd", style:"float:right;margin-top:15px;" },
+      { content: "&nbsp;", allowHtml: true, style: "margin-top:15px;line-height: 38px;" }
+  ]},
   itemKind: { kind: "widgets.onyx.ListItem" }
 });
+
 
 //* @public
 //* wrapper for subfields of a _widgets.ListWidget_. You can subclass and specify it in `ListWidget.itemKind`.
@@ -205,8 +213,11 @@ enyo.kind({
   name: "widgets.onyx.ListItem",
   kind: "widgets.ListItem",
   components: [
-    { name: "_content", kind: "enyo.Control", fit: true },
-    { components: [{ kind: "onyx.IconButton", src:"assets/cross.png", ontap: "handleDelete", style:"margin-top:15px;"}] }
+    { tag: "hr", style: "margin-left:30px;" },
+    { kind: "enyo.FittableColumns", components: [
+      { name: "_content", kind: "enyo.Control", fit: true, style: "margin-left:30px;"},
+      { components: [{ kind: "onyx.IconButton", src:"assets/cross.png", ontap: "handleDelete", style:"margin-top:15px;"}] }
+    ]}
   ]
 });
 
