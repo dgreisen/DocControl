@@ -308,7 +308,7 @@ enyo.kind({
 
     // skin will actually generate the components
     var widgetSet = this.widgetSet || "";
-    var skin = this[widgetSet+"_"+this.skin+"Skin"] || this[widgetSet+"_defaultSkin"] || this.defaultSkin;
+    var skin = this[widgetSet+"_"+this.skin+"Skin"] || this[this.skin+"Skin"];
     skin.call(this);
   },
   // handler called by input kind when it has changed, and the user has finished inputing - for example on an `onchange` or `onblur`
@@ -386,7 +386,25 @@ enyo.kind({
     if (this.helpKind) comps.push(this.helpKind);
     if (this.labelKind) comps.unshift(this.labelKind);
     this.createComponents(comps);
+  },
+  horizontalSkin: function() {
+    var comps = [this.inputKind];
+    if (this.requiredKind) comps.push(this.requiredKind);
+    if (this.helpKind) {
+      var helpKind = enyo.clone(this.helpKind);
+      helpKind.fit = true;
+      comps.push(helpKind);
+    }
+    if (this.labelKind) comps.unshift(this.labelKind);
+
+    var comp = {
+      kind: "FittableColumns",
+      components: comps
+    };
+    this.createComponents([comp]);
+//    if (this.size) this.$.input.addStyles("width:"+(this.size*70-10)+"px;");
   }
+
 });
 
 

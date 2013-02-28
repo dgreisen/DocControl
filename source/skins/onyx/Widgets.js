@@ -199,8 +199,8 @@ enyo.kind({
   //* @protected
   containerControlKind: {
     components: [
-      { tag: "hr", style: "margin-left:30px;" },
-      { kind: "onyx.IconButton", src:"assets/plus.png", ontap: "handleAdd", style:"float:right;margin-top:15px;" },
+      { tag: "hr" },
+      { kind: "onyx.IconButton", src:"assets/plus.png", ontap: "handleAdd", style:"float:right;" },
       { content: "&nbsp;", allowHtml: true, style: "margin-top:15px;line-height: 38px;" }
   ]},
   itemKind: { kind: "widgets.onyx.ListItem" }
@@ -213,9 +213,9 @@ enyo.kind({
   name: "widgets.onyx.ListItem",
   kind: "widgets.ListItem",
   components: [
-    { tag: "hr", style: "margin-left:30px;" },
+    { tag: "hr" },
     { kind: "enyo.FittableColumns", components: [
-      { name: "_content", kind: "enyo.Control", fit: true, style: "margin-left:30px;"},
+      { name: "_content", kind: "enyo.Control", fit: true },
       { components: [{ kind: "onyx.IconButton", src:"assets/cross.png", ontap: "handleDelete", style:"margin-top:15px;"}] }
     ]}
   ]

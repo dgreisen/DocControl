@@ -1,56 +1,24 @@
-.skin-horizontal .widget-label {
-	width: 160px;
-	text-align: right;
-	margin-right: 20px;
-	padding-top: 9px;
-}
 
-.skin-horizontal .widget-required {
-	display: inline-block;
-}
-
-.skin-horizontal .widget {
-	margin-top: 15px;
-}
-
-.skin-horizontal .error {
-	border-color: #B94A48;
-	color: #B94A48;
-}
-
-.skin-horizontal .error .onyx-input-decorator {
+.onyx .error .onyx-input-decorator {
 	border-color: #B94A48;
 }
 
-.skin-horizontal .widget-help {
-	margin-left: 10px;
+.skin-horizontal.widgetset-onyx .widget-help {
 	padding-top: 9px;
-	color: #595959;
 }
 
-.skin-horizontal .widget-required {
+.skin-horizontal.widgetset-onyx .widget-required {
 	font-weight: bold;
 	padding: 6px;
 }
 
-.skin-horizontal .widget-help em {
-	font-weight: normal;
-	font-style: normal;
-	color: black;
-}
-
-.skin-horizontal .widget-help.checkbox, .skin-horizontal .widget-label.checkbox {
+.skin-horizontal.widgetset-onyx .widget-help.checkbox, .skin-horizontal.widgetset-onyx .widget-label.checkbox {
 	padding-top: 6px;
 }
 
-.skin-horizontal .widget-help.picker, .skin-horizontal .widget-label.picker {
+.skin-horizontal.widgetset-onyx .widget-help.picker, .skin-horizontal.widgetset-onyx .widget-label.picker {
 	padding-top: 11px;
 }
-
-.skin-horizontal .error .widget-help {
-	color: #B94A48;	
-}
-
-.skin-horizontal .widget-help.none {
-	display:none;
+.skin-horizontal.widgetset-onyx .widget-label {
+	padding-top: 9px;
 }

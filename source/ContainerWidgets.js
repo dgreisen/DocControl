@@ -26,7 +26,7 @@ enyo.kind({
   },
   addWidget: function(schema) {
     if (!schema) return;
-    var parentWidget = this;
+    var parentWidget = this.$.widgets;
     if (this.itemKind) {
       var kind = enyo.clone(this.itemKind);
       parentWidget = this.$.widgets.createComponent(kind);
@@ -56,14 +56,34 @@ enyo.kind({
   },
   //* skin: default skin with no css
   defaultSkin: function() {
-    var comps = [this.inputKind];
-    if (this.helpKind) comps.unshift(this.helpKind);
-    if (this.label && !this.compact) {
+
+    var comps = [{name: "contents", classes: "contents"}];
+    if (this.labelKind && !this.compact) {
       if (this.requiredKind) comps.unshift(this.requiredKind);
       comps.unshift(this.labelKind);
     }
-    if (this.containerControlKind) comps.push(this.containerControlKind);
     this.createComponents(comps);
+    comps = [this.inputKind];
+    if (this.helpKind) comps.unshift(this.helpKind);
+    if (this.containerControlKind) comps.push(this.containerControlKind);
+    this.$.contents.createComponents(comps, {owner: this});
+  },
+  horizontalSkin: function() {
+    var comps = [{name: "contents", classes: "contents", fit: true }];
+    if (this.labelKind && !this.compact) {
+      if (this.requiredKind) comps.unshift(this.requiredKind);
+      comps.unshift(this.labelKind);
+    }
+    var parent = this.createComponent({
+      kind: "FittableColumns",
+      classes: "fucker",
+      components: comps
+    });
+    comps = [this.inputKind];
+    if (this.helpKind) comps.unshift(this.helpKind);
+    if (this.containerControlKind) comps.push(this.containerControlKind);
+    this.$.contents.createComponents(comps, {owner: this});
+//    if (this.size) this.$.input.addStyles("width:"+(this.size*70-10)+"px;");
   }
 });
 
