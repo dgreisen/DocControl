@@ -2,6 +2,7 @@
 enyo.kind({
   name: "widgets.BaseContainerWidget",
   kind: "widgets.Widget",
+  classes: "widget-container",
   //* @protected
   create: function() {
     this._widgets = [];
@@ -10,13 +11,16 @@ enyo.kind({
     this.inherited(arguments);
   },
   inputKind: { name: "widgets", tag: "div" },
-  labelKind: { style: "padding-top:15px;", components: [{ name: "label", classes: "widget-label" }] },
+  labelKind: { name: "label", classes: "widget-label" },
+  // labelKind: { style: "padding-top:15px;", components: [{ name: "label", classes: "widget-label" }] },
   //* kind definition for the itemKind wrapper around each subwidget. Defaults to a
   //* _widgets.ListItem_, but can be any kind. the subwidget will created created within the
   //* control named "_content".
-  itemKind: undefined,
+  itemKind: null,
+  // default to no required indicator for containers because it doesn't really make sense.
+  requiredKind: null,
   //* kind definition for list controls. defaults to an add button
-  containerControlKind: undefined,
+  containerControlKind: null,
   labelChanged: function() {
     if (this.$.label) this.$.label.setContent(this.label);
   },
@@ -49,8 +53,18 @@ enyo.kind({
   instantUpdateChanged:function() {
     var that = this;
     enyo.forEach(this._widgets, function(x) {x.setInstantUpdate(that.instantUpdate);});
+  },
+  //* skin: default skin with no css
+  defaultSkin: function() {
+    var comps = [this.inputKind];
+    if (this.helpKind) comps.unshift(this.helpKind);
+    if (this.label && !this.compact) {
+      if (this.requiredKind) comps.unshift(this.requiredKind);
+      comps.unshift(this.labelKind);
+    }
+    if (this.containerControlKind) comps.push(this.containerControlKind);
+    this.createComponents(comps);
   }
-
 });
 
 
@@ -111,13 +125,15 @@ enyo.kind({
 //* wrapper for subwidgets of a _widgets.ListWidget_. You can subclass and specify it in `ListWidget.itemKind`.
 enyo.kind({
   name: "widgets.ListItem",
-  kind: "enyo.FittableColumns",
   events: {
     onWidgetDelete: ""
   },
   components: [
-    { name: "_content", kind: "enyo.Control", fit: true },
-    { kind: "enyo.Button", content: "Delete", ontap: "handleDelete" }
+    { tag: "hr"},
+    { kind: "enyo.FittableColumns", components: [
+      { name: "_content", kind: "enyo.Control", fit: true },
+      { kind: "enyo.Button", content: "Delete", ontap: "handleDelete" }
+    ]}
   ],
   // this function is here to be set as a handler on widget chrome in ListItem
   handleDelete: function() {
@@ -136,5 +152,9 @@ enyo.kind({
   kind: "widgets.BaseListWidget",
   //* @private
   itemKind: { kind: "widgets.ListItem" },
-  containerControlKind: { kind: "enyo.Button", ontap: "handleAdd", content: "Add" }
+  containerControlKind: {
+    components: [
+      { tag: "hr" },
+      { kind: "enyo.Button", ontap: "handleAdd", content: "Add" }
+  ]}
 });

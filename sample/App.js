@@ -6,7 +6,7 @@
 phoneSchema = {
   name: "phoneField",
   field: "ContainerField",
-  widget: { noLabel: true, noHelpText: true },
+  widget: { noLabel: true, helpKind: null },
   schema: [
     { name: "label",
       field: "ChoiceField",
@@ -26,7 +26,7 @@ phoneSchema = {
 contactSchema = {
   name: "ContactField",
   field: "ContainerField",
-  widget: { skin: "horizontal", noLabel: true, noHelpText: true },
+  widget: { skin: "horizontal", noLabel: true, helpKind: null },
   schema: [
     { name: "name",
       field: "CharField",
@@ -36,7 +36,7 @@ contactSchema = {
     { name: "phones",
       field: "ListField",
       schema: phoneSchema,
-      widget: { label: "Phone Numbers", noHelpText: true }
+      widget: { label: "Phone Numbers", helpKind: null }
     },
     { name: "address",
       field: "local.en.USAddressField",
@@ -73,7 +73,7 @@ contactsSchema = {
   name: "contacts",
   field: "ListField",
   schema: contactSchema,
-  widget: { kind: "widgets.ListWidget", noLabel: true, noHelpText: true }
+  widget: { kind: "widgets.ListWidget", noLabel: true, helpKind: null }
 };
 
 // INITIAL DATA
@@ -103,7 +103,14 @@ enyo.kind({
   components: [
     { name: "topTB", kind: "onyx.Toolbar", components: [
       {content: "Widgets:"},
-      {kind: "onyx.ToggleButton", value: true, onChange: "toggleWidgets" },
+      {kind: "onyx.PickerDecorator", onSelect: "selectValidationStrategy", components: [
+        {},
+        {kind: "onyx.Picker", components: [
+          {content: "Onyx", active: true},
+          {content: "Enyo"},
+          {content: "None"}
+        ]}
+      ]},
       {content: "Validation Strategy:"},
       {kind: "onyx.PickerDecorator", onSelect: "selectValidationStrategy", components: [
         {},
@@ -122,8 +129,7 @@ enyo.kind({
         kind: "widgets.Form",
         classes: "main-content form-horizontal",
         schema: contactsSchema,
-        value: DATA,
-        widgetSet: "onyx"
+        value: DATA
       }
     ]},
     { kind: "onyx.Toolbar", components: [

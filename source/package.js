@@ -4,5 +4,6 @@ enyo.depends(
 	"Widgets.js",
 	"Fields.js",
 	"ContainerWidgets.js",
-	"ContainerFields.js"
+	"ContainerFields.js",
+	"skins/default/style.css"
 );

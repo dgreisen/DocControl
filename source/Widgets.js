@@ -62,6 +62,8 @@ enyo.kind({
   },
   create: function() {
     this.inherited(arguments);
+    if (this.widgetSet) this.addClass("widgetset-" + this.widgetSet);
+    this.addClass("skin-" + this.skin);
     this.schemaChanged();
     this._validate();
   },
@@ -237,6 +239,7 @@ enyo.kind({
 enyo.kind({
   name: "widgets.Widget",
   kind: "Control",
+  classes: "widget",
   published: {
     //* widget label
     label: "",
@@ -295,11 +298,14 @@ enyo.kind({
   //* useful for subclassing. The kind definition for the help text. `name` must remain 'helpText'.
   helpKind: { name: "helpText", classes: "widget-help", allowHtml: true },
   //* useful for subclassing. override this function to rearrange the order of the various kinds making up a widget.
-  requiredKind: { name: "required", content: "*", allowHtml: true, classes:"widget-required" },
+  requiredKind: { name: "required", content: "*", allowHtml: true, classes: "widget-required" },
   generateComponents: function() {
-    this.labelKind = enyo.clone(this.labelKind);
-    this.inputKind = enyo.clone(this.inputKind);
-    this.helpKind = enyo.clone(this.helpKind);
+    if (this.labelKind) this.labelKind = enyo.clone(this.labelKind);
+    if (this.inputKind) this.inputKind = enyo.clone(this.inputKind);
+    if (this.helpKind) this.helpKind = enyo.clone(this.helpKind);
+    if (this.requiredKind) this.requiredKind = enyo.clone(this.requiredKind);
+    if (this.containerControlKind) this.containerControlKind = enyo.clone(this.containerControlKind);
+
     // skin will actually generate the components
     var widgetSet = this.widgetSet || "";
     var skin = this[widgetSet+"_"+this.skin+"Skin"] || this[widgetSet+"_defaultSkin"] || this.defaultSkin;
@@ -373,10 +379,12 @@ enyo.kind({
     return (this.parentWidget) ? this.parentWidget.getPath(this) : [];
   },
     _genWidgetDef: _genWidgetDef,
-  //* skin: default skin with no css
+  //* skin: default skin
   defaultSkin: function() {
-    var comps = [this.inputKind, this.requiredKind, this.helpKind];
-    if (this.label && !this.compact) comps.unshift(this.labelKind);
+    var comps = [this.inputKind];
+    if (this.requiredKind) comps.push(this.requiredKind);
+    if (this.helpKind) comps.push(this.helpKind);
+    if (this.labelKind) comps.unshift(this.labelKind);
     this.createComponents(comps);
   }
 });
