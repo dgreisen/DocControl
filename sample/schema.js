@@ -6,17 +6,17 @@
 phoneSchema = {
   name: "phoneField",
   field: "ContainerField",
-  widget: { noLabel: true, noHelpText: true },
+  widget: { labelKind: null, helpKind: null },
   schema: [
     { name: "label",
       field: "ChoiceField",
       choices: [['h', 'Home'], ['w', 'Work'], ['m', 'Mobile']],
-      widget: { label: "Label", compact: true, noLabel: true, size:1 },
+      widget: { label: "Label", compact: true, labelKind: null, size:1 },
       inputClasses:"input-medium"
     },
     { name: "phone",
       field: "local.en.USPhoneNumberField",
-      widget: { label: "Number", compact: true, noLabel: true, helpText: "enter 10 digit phone", size:2 }
+      widget: { label: "Number", compact: true, labelKind: null, helpText: "enter 10 digit phone", size:2 }
     }]
 };
 
@@ -26,7 +26,7 @@ phoneSchema = {
 contactSchema = {
   name: "ContactField",
   field: "ContainerField",
-  widget: { skin: "horizontal", noLabel: true, noHelpText: true },
+  widget: { labelKind: null, helpKind: null },
   schema: [
     { name: "name",
       field: "CharField",
@@ -36,11 +36,11 @@ contactSchema = {
     { name: "phones",
       field: "ListField",
       schema: phoneSchema,
-      widget: { label: "Phone Numbers", noHelpText: true }
+      widget: { label: "Phone Numbers", helpKind: null }
     },
     { name: "address",
       field: "local.en.USAddressField",
-      widget: { noLabel: true }
+      widget: { labelKind: null }
     },
     { name: "type",
       field: "ChoiceField",
@@ -54,7 +54,7 @@ contactSchema = {
     },
     { name: "emails",
       field: "ListField",
-      schema: { kind: "fields.EmailField", widget: { label: "Email", compact: true, noLabel: true } },
+      schema: { field: "EmailField", widget: { label: "Email", compact: true, labelKind: null } },
       widget: {
         label: "Emails",
         unnested: true
@@ -68,3 +68,11 @@ contactSchema = {
     }
   ]
 };
+
+contactsSchema = {
+  name: "contacts",
+  field: "ListField",
+  schema: contactSchema,
+  widget: { kind: "widgets.ListWidget", labelKind: null, helpKind: null }
+};
+

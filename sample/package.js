@@ -6,5 +6,6 @@ enyo.depends(
 	"../source/localized/en/us_states.js",
 	"../source/localized/en/Fields.js",
 	"App.css",
+	"schema.js",
 	"App.js"
 );
