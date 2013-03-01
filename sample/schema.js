@@ -3,6 +3,7 @@
 
 // Phone Field
 // -----------
+// schema for a phone entry. it includes a US phone number and a standardized label describing the number.
 phoneSchema = {
   name: "phoneField",
   field: "ContainerField",
@@ -23,6 +24,7 @@ phoneSchema = {
 
 // ContactField
 // ------------
+// schema for a single contact
 contactSchema = {
   name: "ContactField",
   field: "ContainerField",
@@ -69,6 +71,9 @@ contactSchema = {
   ]
 };
 
+// ContactsField
+// ------------
+// schema for a list of contacts
 contactsSchema = {
   name: "contacts",
   field: "ListField",
@@ -76,3 +81,21 @@ contactsSchema = {
   widget: { kind: "widgets.ListWidget", labelKind: null, helpKind: null }
 };
 
+// INITIAL DATA
+// ============
+// the initial data loaded into the form.
+DATA = [
+  { name: "John Doe",
+    "private": true,
+    emails: ["jdoe@example.com"],
+    phones: [{ label: "h", phone: "403-555-9832" }],
+    address: {
+      street1: "1 Mulberry Ln.",
+      city: "Springfield",
+      state: "ND",
+      zip: "00093"
+    },
+    type: 0,
+    children:3
+  }
+];

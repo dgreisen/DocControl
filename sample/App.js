@@ -1,28 +1,17 @@
-// INITIAL DATA
-// ============
-DATA = [
-  { name: "John Doe",
-    "private": true,
-    emails: ["jdoe@example.com"],
-    phones: [{ label: "h", phone: "403-555-9832" }],
-    address: {
-      street1: "1 Mulberry Ln.",
-      city: "Springfield",
-      state: "ND",
-      zip: "00093"
-    },
-    type: 0,
-    children:3
-  }
-];
-
 // APPLICATION
 // ===========
 enyo.kind({
   name: "App",
   classes: "enyo-fit",
   kind: "FittableRows",
+  create: function() {
+    this.inherited(arguments);
+    this.$.getSchema.send();
+    this.$.getHelp.send();
+  },
   components: [
+    // Top Toolbar
+    // -----------
     { name: "topTB", kind: "onyx.Toolbar", components: [
       {content: "Widgets:"},
       {kind: "onyx.PickerDecorator", onSelect: "selectWidgetSet", components: [
@@ -50,26 +39,53 @@ enyo.kind({
         ]}
       ]},
       {content: "Instant Validation:"},
-      {kind: "onyx.ToggleButton", value: false, onChange: "toggleInstant" },
-      {kind: "onyx.Button", content: "help", ontap: "displayHelp"}
+      {kind: "onyx.ToggleButton", value: false, onChange: "toggleInstant" }
     ]},
-    { kind: "Scroller", fit: true, components: [
-      { classes: "main-content", content: "You can inspect the contacts in the debugger by looking at 'window.form', even when there are no widgets"},
-      { name: "contacts",
-        kind: "widgets.Form",
-        classes: "main-content",
-        schema: contactsSchema,
-        value: DATA,
-        skin: "default",
-        widgetSet: "onyx"
-      }
+    // Application Panels
+    { name: "appPanels",
+      kind: "Panels",
+      fit: true,
+      arrangerKind: "CardArranger",
+      draggable: false,
+      wrap: false,
+      components: [
+        // Main sample panel
+        // ------------------
+        { name: "samplePanel", kind: "Scroller", components: [
+          { classes: "main-content", content: "You can inspect the contacts in the debugger by looking at 'window.form', even when there are no widgets"},
+          { name: "contacts",
+            kind: "widgets.Form",
+            classes: "main-content",
+            schema: contactsSchema,
+            value: DATA,
+            skin: "default",
+            widgetSet: "onyx"
+          }
+        ]},
+        // Help panel
+        { name: "helpPanel", kind: "Scroller", components: [
+            { name: "help", allowHtml: true, content: "Please serve from a server such as Nginx or Apache to view help and source", classes: "main-content" }
+        ]},
+        // Source panel
+        { name: "sourcePanel", kind: "Scroller", components: [
+            { name: "source", tag: "pre", allowHtml: true, content: "Please serve from a server such as Nginx or Apache to view help and source" }
+        ]}
     ]},
+    // Bottom Toolbar
+    // --------------
     { kind: "onyx.Toolbar", components: [
-      { kind: "onyx.Button", ontap: "onSubmit", content: "Submit"},
-      { kind: "onyx.Button", ontap: "onReset", content: "Reset"},
-      { name: "errors" }
+      {kind: "Group", onActivate:"onPanelSelect", style:"float:right;", defaultKind: "onyx.Button", highlander: true, components: [
+        {content: "Sample", val: 0, active: true},
+        {content: "Help", val: 1 },
+        {content: "Schema", val: 2 }
+      ]},
+      { name: "submitBtn", kind: "onyx.Button", ontap: "onSubmit", content: "Submit"},
+      { name: "resetBtn", kind: "onyx.Button", ontap: "onReset", content: "Reset"},
+      { name: "errors"}
     ]},
-    { name: "submitPop", kind: "onyx.Popup", centered: true, floating: true }
+    { name: "submitPop", kind: "onyx.Popup", centered: true, floating: true },
+    { name: "getSchema", kind: "WebService", url: 'sample/schema.js', onResponse: "onSchema", handleAs: "text" },
+    { name: "getHelp", kind: "WebService", url: 'sample/help.html', onResponse: "onHelp", handleAs: "text" }
   ],
   handlers: {
     onValidation: "onValidation"
@@ -84,6 +100,21 @@ enyo.kind({
   },
   onReset: function() {
     this.$.contacts.setValue(DATA, {forceReset: true});
+  },
+  onSchema: function(inSender, inEvent) {
+    data = inEvent.data;
+    this.$.source.setContent(data);
+  },
+  onHelp: function(inSender, inEvent) {
+    data = inEvent.data;
+    this.$.help.setContent(data);
+  },
+  onPanelSelect: function(inSender, inEvent) {
+    if (!inEvent.originator.getActive()) return;
+    var i = inEvent.originator.val;
+    this.$.appPanels.setIndex(i);
+    this.$.submitBtn.setShowing(!i);
+    this.$.resetBtn.setShowing(!i);
   },
   startup: 1,
   toggleWidgets: function(inSender, inEvent) {
