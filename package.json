@@ -1,6 +1,6 @@
 {
   "name": "doccontrol",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "An enyo controller for nested documents on both the client and server",
   "keywords": [],
   "homepage": "",
