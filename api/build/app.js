@@ -1,7 +1,7 @@
 
 // minifier: path aliases
 
-enyo.path.addPaths({layout: "/Users/bencombee/git/enyojs/api-tool/enyo/tools/../../lib/layout/"});
+enyo.path.addPaths({layout: "/home/enyojs/git/api-tool/enyo/tools/../../lib/layout/"});
 
 // FittableLayout.js
 
@@ -76,14 +76,18 @@ enyo.kind({
 name: "enyo.FlyweightRepeater",
 published: {
 count: 0,
+noSelect: !1,
 multiSelect: !1,
 toggleSelected: !1,
 clientClasses: "",
-clientStyle: ""
+clientStyle: "",
+rowOffset: 0
 },
 events: {
-onSetupItem: ""
+onSetupItem: "",
+onRenderRow: ""
 },
+bottomUp: !1,
 components: [ {
 kind: "Selection",
 onSelect: "selectDeselect",
@@ -91,10 +95,11 @@ onDeselect: "selectDeselect"
 }, {
 name: "client"
 } ],
-rowOffset: 0,
-bottomUp: !1,
 create: function() {
-this.inherited(arguments), this.multiSelectChanged(), this.clientClassesChanged(), this.clientStyleChanged();
+this.inherited(arguments), this.noSelectChanged(), this.multiSelectChanged(), this.clientClassesChanged(), this.clientStyleChanged();
+},
+noSelectChanged: function() {
+this.noSelect && this.$.selection.clear();
 },
 multiSelectChanged: function() {
 this.$.selection.setMulti(this.multiSelect);
@@ -114,7 +119,7 @@ selected: this.isSelected(e)
 generateChildHtml: function() {
 var e = "";
 this.index = null;
-for (var t = 0, n = 0; t < this.count; t++) n = this.rowOffset + (this.bottomUp ? this.count - t - 1 : t), this.setupItem(n), this.$.client.setAttribute("index", n), e += this.inherited(arguments), this.$.client.teardownRender();
+for (var t = 0, n = 0; t < this.count; t++) n = this.rowOffset + (this.bottomUp ? this.count - t - 1 : t), this.setupItem(n), this.$.client.setAttribute("data-enyo-index", n), e += this.inherited(arguments), this.$.client.teardownRender();
 return e;
 },
 previewDomEvent: function(e) {
@@ -126,6 +131,7 @@ var r = t && t.index != null ? t.index : this.index;
 t && r != null && (t.index = r, t.flyweight = this), this.inherited(arguments);
 },
 tap: function(e, t) {
+if (this.noSelect || t.index === -1) return;
 this.toggleSelected ? this.$.selection.toggle(t.index) : this.$.selection.select(t.index);
 },
 selectDeselect: function(e, t) {
@@ -138,25 +144,29 @@ isSelected: function(e) {
 return this.getSelection().isSelected(e);
 },
 renderRow: function(e) {
+if (e < this.rowOffset || e >= this.count + this.rowOffset) return;
+this.setupItem(e);
 var t = this.fetchRowNode(e);
-t && (this.setupItem(e), t.innerHTML = this.$.client.generateChildHtml(), this.$.client.teardownChildren());
+t && (enyo.dom.setInnerHtml(t, this.$.client.generateChildHtml()), this.$.client.teardownChildren(), this.doRenderRow({
+rowIndex: e
+}));
 },
 fetchRowNode: function(e) {
-if (this.hasNode()) {
-var t = this.node.querySelectorAll('[index="' + e + '"]');
-return t && t[0];
-}
+if (this.hasNode()) return this.node.querySelector('[data-enyo-index="' + e + '"]');
 },
 rowForEvent: function(e) {
-var t = e.target, n = this.hasNode().id;
-while (t && t.parentNode && t.id != n) {
-var r = t.getAttribute && t.getAttribute("index");
-if (r !== null) return Number(r);
+if (!this.hasNode()) return -1;
+var t = e.target;
+while (t && t !== this.node) {
+var n = t.getAttribute && t.getAttribute("data-enyo-index");
+if (n !== null) return Number(n);
 t = t.parentNode;
 }
 return -1;
 },
 prepareRow: function(e) {
+if (e < 0 || e >= this.count) return;
+this.setupItem(e);
 var t = this.fetchRowNode(e);
 enyo.FlyweightRepeater.claimNode(this.$.client, t);
 },
@@ -164,12 +174,13 @@ lockRow: function() {
 this.$.client.teardownChildren();
 },
 performOnRow: function(e, t, n) {
+if (e < 0 || e >= this.count) return;
 t && (this.prepareRow(e), enyo.call(n || null, t), this.lockRow());
 },
 statics: {
 claimNode: function(e, t) {
-var n = t && t.querySelectorAll("#" + e.id);
-n = n && n[0], e.generated = Boolean(n || !e.tag), e.node = n, e.node && e.rendered();
+var n;
+t && (t.id !== e.id ? n = t.querySelector("#" + e.id) : n = t), e.generated = Boolean(n || !e.tag), e.node = n, e.node && e.rendered();
 for (var r = 0, i = e.children, s; s = i[r]; r++) this.claimNode(s, t);
 }
 }
@@ -185,15 +196,36 @@ published: {
 count: 0,
 rowsPerPage: 50,
 bottomUp: !1,
+noSelect: !1,
 multiSelect: !1,
 toggleSelected: !1,
-fixedHeight: !1
+fixedHeight: !1,
+reorderable: !1,
+centerReorderContainer: !0,
+reorderComponents: [],
+pinnedReorderComponents: [],
+swipeableComponents: [],
+enableSwipe: !1,
+persistSwipeableItem: !1
 },
 events: {
-onSetupItem: ""
+onSetupItem: "",
+onSetupReorderComponents: "",
+onSetupPinnedReorderComponents: "",
+onReorder: "",
+onSetupSwipeItem: "",
+onSwipeDrag: "",
+onSwipe: "",
+onSwipeComplete: ""
 },
 handlers: {
-onAnimateFinish: "animateFinish"
+onAnimateFinish: "animateFinish",
+onRenderRow: "rowRendered",
+ondragstart: "dragstart",
+ondrag: "drag",
+ondragfinish: "dragfinish",
+onup: "up",
+onholdpulse: "holdpulse"
 },
 rowHeight: 0,
 listTools: [ {
@@ -208,6 +240,10 @@ tag: null,
 name: "client"
 } ]
 }, {
+name: "holdingarea",
+allowHtml: !0,
+classes: "enyo-list-holdingarea"
+}, {
 name: "page0",
 allowHtml: !0,
 classes: "enyo-list-page"
@@ -215,13 +251,64 @@ classes: "enyo-list-page"
 name: "page1",
 allowHtml: !0,
 classes: "enyo-list-page"
+}, {
+name: "placeholder"
+}, {
+name: "swipeableComponents",
+style: "position:absolute; display:block; top:-1000px; left:0;"
 } ]
 } ],
+reorderHoldTimeMS: 600,
+draggingRowIndex: -1,
+draggingRowNode: null,
+placeholderRowIndex: -1,
+dragToScrollThreshold: .1,
+prevScrollTop: 0,
+autoScrollTimeoutMS: 20,
+autoScrollTimeout: null,
+autoscrollPageY: 0,
+pinnedReorderMode: !1,
+initialPinPosition: -1,
+itemMoved: !1,
+currentPageNumber: -1,
+completeReorderTimeout: null,
+swipeIndex: null,
+swipeDirection: null,
+persistentItemVisible: !1,
+persistentItemOrigin: null,
+swipeComplete: !1,
+completeSwipeTimeout: null,
+completeSwipeDelayMS: 500,
+normalSwipeSpeedMS: 200,
+fastSwipeSpeedMS: 100,
+percentageDraggedThreshold: .2,
+importProps: function(e) {
+e && e.reorderable && (this.touch = !0), this.inherited(arguments);
+},
 create: function() {
-this.pageHeights = [], this.inherited(arguments), this.getStrategy().translateOptimized = !0, this.bottomUpChanged(), this.multiSelectChanged(), this.toggleSelectedChanged();
+this.pageHeights = [], this.inherited(arguments), this.getStrategy().translateOptimized = !0, this.bottomUpChanged(), this.noSelectChanged(), this.multiSelectChanged(), this.toggleSelectedChanged(), this.$.generator.setRowOffset(0), this.$.generator.setCount(this.count);
+},
+initComponents: function() {
+this.createReorderTools(), this.inherited(arguments), this.createSwipeableComponents();
+},
+createReorderTools: function() {
+this.createComponent({
+name: "reorderContainer",
+classes: "enyo-list-reorder-container",
+ondown: "sendToStrategy",
+ondrag: "sendToStrategy",
+ondragstart: "sendToStrategy",
+ondragfinish: "sendToStrategy",
+onflick: "sendToStrategy"
+});
 },
 createStrategy: function() {
 this.controlParentName = "strategy", this.inherited(arguments), this.createChrome(this.listTools), this.controlParentName = "client", this.discoverControlParent();
+},
+createSwipeableComponents: function() {
+for (var e = 0; e < this.swipeableComponents.length; e++) this.$.swipeableComponents.createComponent(this.swipeableComponents[e], {
+owner: this.owner
+});
 },
 rendered: function() {
 this.inherited(arguments), this.$.generator.node = this.$.port.hasNode(), this.$.generator.generated = !0, this.reset();
@@ -232,6 +319,9 @@ this.inherited(arguments), this.refresh();
 bottomUpChanged: function() {
 this.$.generator.bottomUp = this.bottomUp, this.$.page0.applyStyle(this.pageBound, null), this.$.page1.applyStyle(this.pageBound, null), this.pageBound = this.bottomUp ? "bottom" : "top", this.hasNode() && this.reset();
 },
+noSelectChanged: function() {
+this.$.generator.setNoSelect(this.noSelect);
+},
 multiSelectChanged: function() {
 this.$.generator.setMultiSelect(this.multiSelect);
 },
@@ -241,25 +331,71 @@ this.$.generator.setToggleSelected(this.toggleSelected);
 countChanged: function() {
 this.hasNode() && this.updateMetrics();
 },
+sendToStrategy: function(e, t) {
+this.$.strategy.dispatchEvent("on" + t.type, t, e);
+},
 updateMetrics: function() {
 this.defaultPageHeight = this.rowsPerPage * (this.rowHeight || 100), this.pageCount = Math.ceil(this.count / this.rowsPerPage), this.portSize = 0;
 for (var e = 0; e < this.pageCount; e++) this.portSize += this.getPageHeight(e);
 this.adjustPortSize();
 },
+holdpulse: function(e, t) {
+if (!this.getReorderable() || this.isReordering()) return;
+if (t.holdTime >= this.reorderHoldTimeMS && this.shouldStartReordering(e, t)) return t.preventDefault(), this.startReordering(t), !1;
+},
+dragstart: function(e, t) {
+if (this.isReordering()) return !0;
+if (this.isSwipeable()) return this.swipeDragStart(e, t);
+},
+drag: function(e, t) {
+if (this.shouldDoReorderDrag(t)) return t.preventDefault(), this.reorderDrag(t), !0;
+if (this.isSwipeable()) return t.preventDefault(), this.swipeDrag(e, t), !0;
+},
+dragfinish: function(e, t) {
+this.isReordering() ? this.finishReordering(e, t) : this.isSwipeable() && this.swipeDragFinish(e, t);
+},
+up: function(e, t) {
+this.isReordering() && this.finishReordering(e, t);
+},
 generatePage: function(e, t) {
 this.page = e;
-var n = this.$.generator.rowOffset = this.rowsPerPage * this.page, r = this.$.generator.count = Math.min(this.count - n, this.rowsPerPage), i = this.$.generator.generateChildHtml();
-t.setContent(i);
+var n = this.rowsPerPage * this.page;
+this.$.generator.setRowOffset(n);
+var r = Math.min(this.count - n, this.rowsPerPage);
+this.$.generator.setCount(r);
+var i = this.$.generator.generateChildHtml();
+t.setContent(i), this.getReorderable() && this.draggingRowIndex > -1 && this.hideReorderingRow();
 var s = t.getBounds().height;
 !this.rowHeight && s > 0 && (this.rowHeight = Math.floor(s / r), this.updateMetrics());
 if (!this.fixedHeight) {
 var o = this.getPageHeight(e);
-o != s && s > 0 && (this.pageHeights[e] = s, this.portSize += s - o);
+this.pageHeights[e] = s, this.portSize += s - o;
 }
 },
+pageForRow: function(e) {
+return Math.floor(e / this.rowsPerPage);
+},
+preserveDraggingRowNode: function(e) {
+this.draggingRowNode && this.pageForRow(this.draggingRowIndex) === e && (this.$.holdingarea.hasNode().appendChild(this.draggingRowNode), this.draggingRowNode = null, this.removedInitialPage = !0);
+},
 update: function(e) {
-var t = !1, n = this.positionToPageInfo(e), r = n.pos + this.scrollerHeight / 2, i = Math.floor(r / Math.max(n.height, this.scrollerHeight) + .5) + n.no, s = i % 2 == 0 ? i : i - 1;
-this.p0 != s && this.isPageInRange(s) && (this.generatePage(s, this.$.page0), this.positionPage(s, this.$.page0), this.p0 = s, t = !0), s = i % 2 == 0 ? Math.max(1, i - 1) : i, this.p1 != s && this.isPageInRange(s) && (this.generatePage(s, this.$.page1), this.positionPage(s, this.$.page1), this.p1 = s, t = !0), t && !this.fixedHeight && (this.adjustBottomPage(), this.adjustPortSize());
+var t = !1, n = this.positionToPageInfo(e), r = n.pos + this.scrollerHeight / 2, i = Math.floor(r / Math.max(n.height, this.scrollerHeight) + .5) + n.no, s = i % 2 === 0 ? i : i - 1;
+this.p0 != s && this.isPageInRange(s) && (this.preserveDraggingRowNode(this.p0), this.generatePage(s, this.$.page0), this.positionPage(s, this.$.page0), this.p0 = s, t = !0, this.p0RowBounds = this.getPageRowHeights(this.$.page0)), s = i % 2 === 0 ? Math.max(1, i - 1) : i, this.p1 != s && this.isPageInRange(s) && (this.preserveDraggingRowNode(this.p1), this.generatePage(s, this.$.page1), this.positionPage(s, this.$.page1), this.p1 = s, t = !0, this.p1RowBounds = this.getPageRowHeights(this.$.page1)), t && (this.$.generator.setRowOffset(0), this.$.generator.setCount(this.count), this.fixedHeight || (this.adjustBottomPage(), this.adjustPortSize()));
+},
+getPageRowHeights: function(e) {
+var t = {}, n = e.hasNode().querySelectorAll("div[data-enyo-index]");
+for (var r = 0, i, s; r < n.length; r++) i = n[r].getAttribute("data-enyo-index"), i !== null && (s = enyo.dom.getBounds(n[r]), t[parseInt(i, 10)] = {
+height: s.height,
+width: s.width
+});
+return t;
+},
+updateRowBounds: function(e) {
+this.p0RowBounds[e] ? this.updateRowBoundsAtIndex(e, this.p0RowBounds, this.$.page0) : this.p1RowBounds[e] && this.updateRowBoundsAtIndex(e, this.p1RowBounds, this.$.page1);
+},
+updateRowBoundsAtIndex: function(e, t, n) {
+var r = n.hasNode().querySelector('div[data-enyo-index="' + e + '"]'), i = enyo.dom.getBounds(r);
+t[e].height = i.height, t[e].width = i.width;
 },
 updateForPosition: function(e) {
 this.update(this.calcPos(e));
@@ -289,30 +425,34 @@ return t;
 positionToPageInfo: function(e) {
 var t = -1, n = this.calcPos(e), r = this.defaultPageHeight;
 while (n >= 0) t++, r = this.getPageHeight(t), n -= r;
-return {
+return t = Math.max(t, 0), {
 no: t,
 height: r,
-pos: n + r
+pos: n + r,
+startRow: t * this.rowsPerPage,
+endRow: Math.min((t + 1) * this.rowsPerPage - 1, this.count - 1)
 };
 },
 isPageInRange: function(e) {
 return e == Math.max(0, Math.min(this.pageCount - 1, e));
 },
 getPageHeight: function(e) {
-return this.pageHeights[e] || this.defaultPageHeight;
+var t = this.pageHeights[e];
+if (!t) {
+var n = this.rowsPerPage * e, r = Math.min(this.count - n, this.rowsPerPage);
+t = this.defaultPageHeight * (r / this.rowsPerPage);
+}
+return Math.max(1, t);
 },
 invalidatePages: function() {
-this.p0 = this.p1 = null, this.$.page0.setContent(""), this.$.page1.setContent("");
+this.p0 = this.p1 = null, this.p0RowBounds = {}, this.p1RowBounds = {}, this.$.page0.setContent(""), this.$.page1.setContent("");
 },
 invalidateMetrics: function() {
 this.pageHeights = [], this.rowHeight = 0, this.updateMetrics();
 },
 scroll: function(e, t) {
-var n = this.inherited(arguments);
-return this.update(this.getScrollTop()), n;
-},
-scrollToBottom: function() {
-this.update(this.getScrollBounds().maxTop), this.inherited(arguments);
+var n = this.inherited(arguments), r = this.getScrollTop();
+return this.lastPos === r ? n : (this.lastPos = r, this.update(r), this.pinnedReorderMode && this.reorderScroll(e, t), n);
 },
 setScrollTop: function(e) {
 this.update(e), this.inherited(arguments), this.twiddle();
@@ -323,8 +463,11 @@ return this.calcPos(this.getScrollTop());
 setScrollPosition: function(e) {
 this.setScrollTop(this.calcPos(e));
 },
+scrollToBottom: function() {
+this.update(this.getScrollBounds().maxTop), this.inherited(arguments);
+},
 scrollToRow: function(e) {
-var t = Math.floor(e / this.rowsPerPage), n = e % this.rowsPerPage, r = this.pageToPosition(t);
+var t = this.pageForRow(e), n = e % this.rowsPerPage, r = this.pageToPosition(t);
 this.updateForPosition(r), r = this.pageToPosition(t), this.setScrollPosition(r);
 if (t == this.p0 || t == this.p1) {
 var i = this.$.generator.fetchRowNode(e);
@@ -354,11 +497,17 @@ return this.$.generator.getSelection();
 select: function(e, t) {
 return this.getSelection().select(e, t);
 },
+deselect: function(e) {
+return this.getSelection().deselect(e);
+},
 isSelected: function(e) {
 return this.$.generator.isSelected(e);
 },
 renderRow: function(e) {
 this.$.generator.renderRow(e);
+},
+rowRendered: function(e, t) {
+this.updateRowBounds(t.rowIndex);
 },
 prepareRow: function(e) {
 this.$.generator.prepareRow(e);
@@ -375,6 +524,355 @@ return this.twiddle(), !0;
 twiddle: function() {
 var e = this.getStrategy();
 enyo.call(e, "twiddle");
+},
+pageForPageNumber: function(e, t) {
+return e % 2 === 0 ? !t || e === this.p0 ? this.$.page0 : null : !t || e === this.p1 ? this.$.page1 : null;
+},
+shouldStartReordering: function(e, t) {
+return !!this.getReorderable() && t.rowIndex >= 0 && !this.pinnedReorderMode && e === this.$.strategy && t.index >= 0 ? !0 : !1;
+},
+startReordering: function(e) {
+this.$.strategy.listReordering = !0, this.buildReorderContainer(), this.doSetupReorderComponents(e), this.styleReorderContainer(e), this.draggingRowIndex = this.placeholderRowIndex = e.rowIndex, this.draggingRowNode = e.target, this.removedInitialPage = !1, this.itemMoved = !1, this.initialPageNumber = this.currentPageNumber = this.pageForRow(e.rowIndex), this.prevScrollTop = this.getScrollTop(), this.replaceNodeWithPlaceholder(e.rowIndex);
+},
+buildReorderContainer: function() {
+this.$.reorderContainer.destroyClientControls();
+for (var e = 0; e < this.reorderComponents.length; e++) this.$.reorderContainer.createComponent(this.reorderComponents[e], {
+owner: this.owner
+});
+this.$.reorderContainer.render();
+},
+styleReorderContainer: function(e) {
+this.setItemPosition(this.$.reorderContainer, e.rowIndex), this.setItemBounds(this.$.reorderContainer, e.rowIndex), this.$.reorderContainer.setShowing(!0), this.centerReorderContainer && this.centerReorderContainerOnPointer(e);
+},
+appendNodeToReorderContainer: function(e) {
+this.$.reorderContainer.createComponent({
+allowHtml: !0,
+content: e.innerHTML
+}).render();
+},
+centerReorderContainerOnPointer: function(e) {
+var t = enyo.dom.calcNodePosition(this.hasNode()), n = e.pageX - t.left - parseInt(this.$.reorderContainer.domStyles.width, 10) / 2, r = e.pageY - t.top + this.getScrollTop() - parseInt(this.$.reorderContainer.domStyles.height, 10) / 2;
+this.getStrategyKind() != "ScrollStrategy" && (n -= this.getScrollLeft(), r -= this.getScrollTop()), this.positionReorderContainer(n, r);
+},
+positionReorderContainer: function(e, t) {
+this.$.reorderContainer.addClass("enyo-animatedTopAndLeft"), this.$.reorderContainer.addStyles("left:" + e + "px;top:" + t + "px;"), this.setPositionReorderContainerTimeout();
+},
+setPositionReorderContainerTimeout: function() {
+this.clearPositionReorderContainerTimeout(), this.positionReorderContainerTimeout = setTimeout(enyo.bind(this, function() {
+this.$.reorderContainer.removeClass("enyo-animatedTopAndLeft"), this.clearPositionReorderContainerTimeout();
+}), 100);
+},
+clearPositionReorderContainerTimeout: function() {
+this.positionReorderContainerTimeout && (clearTimeout(this.positionReorderContainerTimeout), this.positionReorderContainerTimeout = null);
+},
+shouldDoReorderDrag: function() {
+return !this.getReorderable() || this.draggingRowIndex < 0 || this.pinnedReorderMode ? !1 : !0;
+},
+reorderDrag: function(e) {
+this.positionReorderNode(e), this.checkForAutoScroll(e), this.updatePlaceholderPosition(e.pageY);
+},
+updatePlaceholderPosition: function(e) {
+var t = this.getRowIndexFromCoordinate(e);
+t !== -1 && (t >= this.placeholderRowIndex ? this.movePlaceholderToIndex(Math.min(this.count, t + 1)) : this.movePlaceholderToIndex(t));
+},
+positionReorderNode: function(e) {
+var t = this.$.reorderContainer.getBounds(), n = t.left + e.ddx, r = t.top + e.ddy;
+r = this.getStrategyKind() == "ScrollStrategy" ? r + (this.getScrollTop() - this.prevScrollTop) : r, this.$.reorderContainer.addStyles("top: " + r + "px ; left: " + n + "px"), this.prevScrollTop = this.getScrollTop();
+},
+checkForAutoScroll: function(e) {
+var t = enyo.dom.calcNodePosition(this.hasNode()), n = this.getBounds(), r;
+this.autoscrollPageY = e.pageY, e.pageY - t.top < n.height * this.dragToScrollThreshold ? (r = 100 * (1 - (e.pageY - t.top) / (n.height * this.dragToScrollThreshold)), this.scrollDistance = -1 * r) : e.pageY - t.top > n.height * (1 - this.dragToScrollThreshold) ? (r = 100 * ((e.pageY - t.top - n.height * (1 - this.dragToScrollThreshold)) / (n.height - n.height * (1 - this.dragToScrollThreshold))), this.scrollDistance = 1 * r) : this.scrollDistance = 0, this.scrollDistance === 0 ? this.stopAutoScrolling() : this.autoScrollTimeout || this.startAutoScrolling();
+},
+stopAutoScrolling: function() {
+this.autoScrollTimeout && (clearTimeout(this.autoScrollTimeout), this.autoScrollTimeout = null);
+},
+startAutoScrolling: function() {
+this.autoScrollTimeout = setInterval(enyo.bind(this, this.autoScroll), this.autoScrollTimeoutMS);
+},
+autoScroll: function() {
+this.scrollDistance === 0 ? this.stopAutoScrolling() : this.autoScrollTimeout || this.startAutoScrolling(), this.setScrollPosition(this.getScrollPosition() + this.scrollDistance), this.positionReorderNode({
+ddx: 0,
+ddy: 0
+}), this.updatePlaceholderPosition(this.autoscrollPageY);
+},
+movePlaceholderToIndex: function(e) {
+var t, n;
+if (e < 0) return;
+e >= this.count ? (t = null, n = this.pageForPageNumber(this.pageForRow(this.count - 1)).hasNode()) : (t = this.$.generator.fetchRowNode(e), n = t.parentNode);
+var r = this.pageForRow(e);
+r >= this.pageCount && (r = this.currentPageNumber), n.insertBefore(this.placeholderNode, t), this.currentPageNumber !== r && (this.updatePageHeight(this.currentPageNumber), this.updatePageHeight(r), this.updatePagePositions(r)), this.placeholderRowIndex = e, this.currentPageNumber = r, this.itemMoved = !0;
+},
+finishReordering: function(e, t) {
+if (!this.isReordering() || this.pinnedReorderMode || this.completeReorderTimeout) return;
+return this.stopAutoScrolling(), this.$.strategy.listReordering = !1, this.moveReorderedContainerToDroppedPosition(t), this.completeReorderTimeout = setTimeout(enyo.bind(this, this.completeFinishReordering, t), 100), t.preventDefault(), !0;
+},
+moveReorderedContainerToDroppedPosition: function() {
+var e = this.getRelativeOffset(this.placeholderNode, this.hasNode()), t = this.getStrategyKind() == "ScrollStrategy" ? e.top : e.top - this.getScrollTop(), n = e.left - this.getScrollLeft();
+this.positionReorderContainer(n, t);
+},
+completeFinishReordering: function(e) {
+this.completeReorderTimeout = null, this.placeholderRowIndex > this.draggingRowIndex && (this.placeholderRowIndex = Math.max(0, this.placeholderRowIndex - 1));
+if (this.draggingRowIndex == this.placeholderRowIndex && this.pinnedReorderComponents.length && !this.pinnedReorderMode && !this.itemMoved) {
+this.beginPinnedReorder(e);
+return;
+}
+this.removeDraggingRowNode(), this.removePlaceholderNode(), this.emptyAndHideReorderContainer(), this.pinnedReorderMode = !1, this.reorderRows(e), this.draggingRowIndex = this.placeholderRowIndex = -1, this.refresh();
+},
+beginPinnedReorder: function(e) {
+this.buildPinnedReorderContainer(), this.doSetupPinnedReorderComponents(enyo.mixin(e, {
+index: this.draggingRowIndex
+})), this.pinnedReorderMode = !0, this.initialPinPosition = e.pageY;
+},
+emptyAndHideReorderContainer: function() {
+this.$.reorderContainer.destroyComponents(), this.$.reorderContainer.setShowing(!1);
+},
+buildPinnedReorderContainer: function() {
+this.$.reorderContainer.destroyClientControls();
+for (var e = 0; e < this.pinnedReorderComponents.length; e++) this.$.reorderContainer.createComponent(this.pinnedReorderComponents[e], {
+owner: this.owner
+});
+this.$.reorderContainer.render();
+},
+reorderRows: function(e) {
+this.doReorder(this.makeReorderEvent(e)), this.positionReorderedNode(), this.updateListIndices();
+},
+makeReorderEvent: function(e) {
+return e.reorderFrom = this.draggingRowIndex, e.reorderTo = this.placeholderRowIndex, e;
+},
+positionReorderedNode: function() {
+if (!this.removedInitialPage) {
+var e = this.$.generator.fetchRowNode(this.placeholderRowIndex);
+e && (e.parentNode.insertBefore(this.hiddenNode, e), this.showNode(this.hiddenNode)), this.hiddenNode = null;
+if (this.currentPageNumber != this.initialPageNumber) {
+var t, n, r = this.pageForPageNumber(this.currentPageNumber), i = this.pageForPageNumber(this.currentPageNumber + 1);
+this.initialPageNumber < this.currentPageNumber ? (t = r.hasNode().firstChild, i.hasNode().appendChild(t)) : (t = r.hasNode().lastChild, n = i.hasNode().firstChild, i.hasNode().insertBefore(t, n)), this.correctPageHeights(), this.updatePagePositions(this.initialPageNumber);
+}
+}
+},
+updateListIndices: function() {
+if (this.shouldDoRefresh()) {
+this.refresh(), this.correctPageHeights();
+return;
+}
+var e = Math.min(this.draggingRowIndex, this.placeholderRowIndex), t = Math.max(this.draggingRowIndex, this.placeholderRowIndex), n = this.draggingRowIndex - this.placeholderRowIndex > 0 ? 1 : -1, r, i, s, o;
+if (n === 1) {
+r = this.$.generator.fetchRowNode(this.draggingRowIndex), r && r.setAttribute("data-enyo-index", "reordered");
+for (i = t - 1, s = t; i >= e; i--) {
+r = this.$.generator.fetchRowNode(i);
+if (!r) continue;
+o = parseInt(r.getAttribute("data-enyo-index"), 10), s = o + 1, r.setAttribute("data-enyo-index", s);
+}
+r = this.hasNode().querySelector('[data-enyo-index="reordered"]'), r.setAttribute("data-enyo-index", this.placeholderRowIndex);
+} else {
+r = this.$.generator.fetchRowNode(this.draggingRowIndex), r && r.setAttribute("data-enyo-index", this.placeholderRowIndex);
+for (i = e + 1, s = e; i <= t; i++) {
+r = this.$.generator.fetchRowNode(i);
+if (!r) continue;
+o = parseInt(r.getAttribute("data-enyo-index"), 10), s = o - 1, r.setAttribute("data-enyo-index", s);
+}
+}
+},
+shouldDoRefresh: function() {
+return Math.abs(this.initialPageNumber - this.currentPageNumber) > 1;
+},
+getNodeStyle: function(e) {
+var t = this.$.generator.fetchRowNode(e);
+if (!t) return;
+var n = this.getRelativeOffset(t, this.hasNode()), r = enyo.dom.getBounds(t);
+return {
+h: r.height,
+w: r.width,
+left: n.left,
+top: n.top
+};
+},
+getRelativeOffset: function(e, t) {
+var n = {
+top: 0,
+left: 0
+};
+if (e !== t && e.parentNode) do n.top += e.offsetTop || 0, n.left += e.offsetLeft || 0, e = e.offsetParent; while (e && e !== t);
+return n;
+},
+replaceNodeWithPlaceholder: function(e) {
+var t = this.$.generator.fetchRowNode(e);
+if (!t) {
+enyo.log("No node - " + e);
+return;
+}
+this.placeholderNode = this.createPlaceholderNode(t), this.hiddenNode = this.hideNode(t);
+var n = this.pageForPageNumber(this.currentPageNumber);
+n.hasNode().insertBefore(this.placeholderNode, this.hiddenNode);
+},
+createPlaceholderNode: function(e) {
+var t = this.$.placeholder.hasNode().cloneNode(!0), n = enyo.dom.getBounds(e);
+return t.style.height = n.height + "px", t.style.width = n.width + "px", t;
+},
+removePlaceholderNode: function() {
+this.removeNode(this.placeholderNode), this.placeholderNode = null;
+},
+removeDraggingRowNode: function() {
+this.draggingRowNode = null;
+var e = this.$.holdingarea.hasNode();
+e.innerHTML = "";
+},
+removeNode: function(e) {
+if (!e || !e.parentNode) return;
+e.parentNode.removeChild(e);
+},
+updatePageHeight: function(e) {
+if (e < 0) return;
+var t = this.pageForPageNumber(e, !0);
+if (t) {
+var n = this.pageHeights[e], r = Math.max(1, t.getBounds().height);
+this.pageHeights[e] = r, this.portSize += r - n;
+}
+},
+updatePagePositions: function(e) {
+this.positionPage(this.currentPageNumber, this.pageForPageNumber(this.currentPageNumber)), this.positionPage(e, this.pageForPageNumber(e));
+},
+correctPageHeights: function() {
+this.updatePageHeight(this.currentPageNumber), this.initialPageNumber != this.currentPageNumber && this.updatePageHeight(this.initialPageNumber);
+},
+hideNode: function(e) {
+return e.style.display = "none", e;
+},
+showNode: function(e) {
+return e.style.display = "block", e;
+},
+dropPinnedRow: function(e) {
+this.moveReorderedContainerToDroppedPosition(e), this.completeReorderTimeout = setTimeout(enyo.bind(this, this.completeFinishReordering, e), 100);
+return;
+},
+cancelPinnedMode: function(e) {
+this.placeholderRowIndex = this.draggingRowIndex, this.dropPinnedRow(e);
+},
+getRowIndexFromCoordinate: function(e) {
+var t = this.getScrollTop() + e - enyo.dom.calcNodePosition(this.hasNode()).top;
+if (t < 0) return -1;
+var n = this.positionToPageInfo(t), r = n.no == this.p0 ? this.p0RowBounds : this.p1RowBounds;
+if (!r) return this.count;
+var i = n.pos, s = this.placeholderNode ? enyo.dom.getBounds(this.placeholderNode).height : 0, o = 0;
+for (var u = n.startRow; u <= n.endRow; ++u) {
+if (u === this.placeholderRowIndex) {
+o += s;
+if (o >= i) return -1;
+}
+if (u !== this.draggingRowIndex) {
+o += r[u].height;
+if (o >= i) return u;
+}
+}
+return u;
+},
+getIndexPosition: function(e) {
+return enyo.dom.calcNodePosition(this.$.generator.fetchRowNode(e));
+},
+setItemPosition: function(e, t) {
+var n = this.getNodeStyle(t), r = this.getStrategyKind() == "ScrollStrategy" ? n.top : n.top - this.getScrollTop(), i = "top:" + r + "px; left:" + n.left + "px;";
+e.addStyles(i);
+},
+setItemBounds: function(e, t) {
+var n = this.getNodeStyle(t), r = "width:" + n.w + "px; height:" + n.h + "px;";
+e.addStyles(r);
+},
+reorderScroll: function(e, t) {
+this.getStrategyKind() == "ScrollStrategy" && this.$.reorderContainer.addStyles("top:" + (this.initialPinPosition + this.getScrollTop() - this.rowHeight) + "px;"), this.updatePlaceholderPosition(this.initialPinPosition);
+},
+hideReorderingRow: function() {
+var e = this.hasNode().querySelector('[data-enyo-index="' + this.draggingRowIndex + '"]');
+e && (this.hiddenNode = this.hideNode(e));
+},
+isReordering: function() {
+return this.draggingRowIndex > -1;
+},
+isSwiping: function() {
+return this.swipeIndex != null && !this.swipeComplete && this.swipeDirection != null;
+},
+swipeDragStart: function(e, t) {
+return t.index == null || t.vertical ? !0 : (this.completeSwipeTimeout && this.completeSwipe(t), this.swipeComplete = !1, this.swipeIndex != t.index && (this.clearSwipeables(), this.swipeIndex = t.index), this.swipeDirection = t.xDirection, this.persistentItemVisible || this.startSwipe(t), this.draggedXDistance = 0, this.draggedYDistance = 0, !0);
+},
+swipeDrag: function(e, t) {
+return this.persistentItemVisible ? (this.dragPersistentItem(t), this.preventDragPropagation) : this.isSwiping() ? (this.dragSwipeableComponents(this.calcNewDragPosition(t.ddx)), this.draggedXDistance = t.dx, this.draggedYDistance = t.dy, !0) : !1;
+},
+swipeDragFinish: function(e, t) {
+if (this.persistentItemVisible) this.dragFinishPersistentItem(t); else {
+if (!this.isSwiping()) return !1;
+var n = this.calcPercentageDragged(this.draggedXDistance);
+n > this.percentageDraggedThreshold && t.xDirection === this.swipeDirection ? this.swipe(this.fastSwipeSpeedMS) : this.backOutSwipe(t);
+}
+return this.preventDragPropagation;
+},
+isSwipeable: function() {
+return this.enableSwipe && this.$.swipeableComponents.controls.length !== 0 && !this.isReordering() && !this.pinnedReorderMode;
+},
+positionSwipeableContainer: function(e, t) {
+var n = this.$.generator.fetchRowNode(e);
+if (!n) return;
+var r = this.getRelativeOffset(n, this.hasNode()), i = enyo.dom.getBounds(n), s = t == 1 ? -1 * i.width : i.width;
+this.$.swipeableComponents.addStyles("top: " + r.top + "px; left: " + s + "px; height: " + i.height + "px; width: " + i.width + "px;");
+},
+calcNewDragPosition: function(e) {
+var t = this.$.swipeableComponents.getBounds(), n = t.left, r = this.$.swipeableComponents.getBounds(), i = this.swipeDirection == 1 ? 0 : -1 * r.width, s = this.swipeDirection == 1 ? n + e > i ? i : n + e : n + e < i ? i : n + e;
+return s;
+},
+dragSwipeableComponents: function(e) {
+this.$.swipeableComponents.applyStyle("left", e + "px");
+},
+startSwipe: function(e) {
+e.index = this.swipeIndex, this.positionSwipeableContainer(this.swipeIndex, e.xDirection), this.$.swipeableComponents.setShowing(!0), this.setPersistentItemOrigin(e.xDirection), this.doSetupSwipeItem(e);
+},
+dragPersistentItem: function(e) {
+var t = 0, n = this.persistentItemOrigin == "right" ? Math.max(t, t + e.dx) : Math.min(t, t + e.dx);
+this.$.swipeableComponents.applyStyle("left", n + "px");
+},
+dragFinishPersistentItem: function(e) {
+var t = this.calcPercentageDragged(e.dx) > .2, n = e.dx > 0 ? "right" : e.dx < 0 ? "left" : null;
+this.persistentItemOrigin == n ? t ? this.slideAwayItem() : this.bounceItem(e) : this.bounceItem(e);
+},
+setPersistentItemOrigin: function(e) {
+this.persistentItemOrigin = e == 1 ? "left" : "right";
+},
+calcPercentageDragged: function(e) {
+return Math.abs(e / this.$.swipeableComponents.getBounds().width);
+},
+swipe: function(e) {
+this.swipeComplete = !0, this.animateSwipe(0, e);
+},
+backOutSwipe: function(e) {
+var t = this.$.swipeableComponents.getBounds(), n = this.swipeDirection == 1 ? -1 * t.width : t.width;
+this.animateSwipe(n, this.fastSwipeSpeedMS), this.swipeDirection = null;
+},
+bounceItem: function(e) {
+var t = this.$.swipeableComponents.getBounds();
+t.left != t.width && this.animateSwipe(0, this.normalSwipeSpeedMS);
+},
+slideAwayItem: function() {
+var e = this.$.swipeableComponents, t = e.getBounds().width, n = this.persistentItemOrigin == "left" ? -1 * t : t;
+this.animateSwipe(n, this.normalSwipeSpeedMS), this.persistentItemVisible = !1, this.setPersistSwipeableItem(!1);
+},
+clearSwipeables: function() {
+this.$.swipeableComponents.setShowing(!1), this.persistentItemVisible = !1, this.setPersistSwipeableItem(!1);
+},
+completeSwipe: function(e) {
+this.completeSwipeTimeout && (clearTimeout(this.completeSwipeTimeout), this.completeSwipeTimeout = null), this.getPersistSwipeableItem() ? this.persistentItemVisible = !0 : (this.$.swipeableComponents.setShowing(!1), this.swipeComplete && this.doSwipeComplete({
+index: this.swipeIndex,
+xDirection: this.swipeDirection
+})), this.swipeIndex = null, this.swipeDirection = null;
+},
+animateSwipe: function(e, t) {
+var n = enyo.now(), r = 0, i = this.$.swipeableComponents, s = parseInt(i.domStyles.left, 10), o = e - s;
+this.stopAnimateSwipe();
+var u = enyo.bind(this, function() {
+var e = enyo.now() - n, r = e / t, a = s + o * Math.min(r, 1);
+i.applyStyle("left", a + "px"), this.job = enyo.requestAnimationFrame(u), e / t >= 1 && (this.stopAnimateSwipe(), this.completeSwipeTimeout = setTimeout(enyo.bind(this, function() {
+this.completeSwipe();
+}), this.completeSwipeDelayMS));
+});
+this.job = enyo.requestAnimationFrame(u);
+},
+stopAnimateSwipe: function() {
+this.job && (this.job = enyo.cancelRequestAnimationFrame(this.job));
 }
 });
 
@@ -422,7 +920,10 @@ onCreate: "setPully"
 this.listTools.splice(0, 0, e), this.inherited(arguments), this.setPulling();
 },
 initComponents: function() {
-this.createChrome(this.pulldownTools), this.accel = enyo.dom.canAccelerate(), this.translation = this.accel ? "translate3d" : "translate", this.inherited(arguments);
+this.createChrome(this.pulldownTools), this.accel = enyo.dom.canAccelerate(), this.translation = this.accel ? "translate3d" : "translate", this.strategyKind = this.resetStrategyKind(), this.inherited(arguments);
+},
+resetStrategyKind: function() {
+return enyo.platform.android >= 3 ? "TranslateScrollStrategy" : "TouchScrollStrategy";
 },
 setPully: function(e, t) {
 this.pully = t.originator;
@@ -433,7 +934,7 @@ this.firedPullStart = !1, this.firedPull = !1, this.firedPullCancel = !1;
 scroll: function(e, t) {
 var n = this.inherited(arguments);
 this.completingPull && this.pully.setShowing(!1);
-var r = this.getStrategy().$.scrollMath, i = r.y;
+var r = this.getStrategy().$.scrollMath || this.getStrategy(), i = -1 * this.getScrollTop();
 return r.isInOverScroll() && i > 0 && (enyo.dom.transformValue(this.$.pulldown, this.translation, "0," + i + "px" + (this.accel ? ",0" : "")), this.firedPullStart || (this.firedPullStart = !0, this.pullStart(), this.pullHeight = this.$.pulldown.getBounds().height), i > this.pullHeight && !this.firedPull && (this.firedPull = !0, this.firedPullCancel = !1, this.pull()), this.firedPull && !this.firedPullCancel && i < this.pullHeight && (this.firedPullCancel = !0, this.firedPull = !1, this.pullCancel())), n;
 },
 scrollStopHandler: function() {
@@ -441,12 +942,14 @@ this.completingPull && (this.completingPull = !1, this.doPullComplete());
 },
 dragfinish: function() {
 if (this.firedPull) {
-var e = this.getStrategy().$.scrollMath;
-e.setScrollY(e.y - this.pullHeight), this.pullRelease();
+var e = this.getStrategy().$.scrollMath || this.getStrategy();
+e.setScrollY(-1 * this.getScrollTop() - this.pullHeight), this.pullRelease();
 }
 },
 completePull: function() {
-this.completingPull = !0, this.$.strategy.$.scrollMath.setScrollY(this.pullHeight), this.$.strategy.$.scrollMath.start();
+this.completingPull = !0;
+var e = this.getStrategy().$.scrollMath || this.getStrategy();
+e.setScrollY(this.pullHeight), e.start();
 },
 pullStart: function() {
 this.setPulling(), this.pully.setShowing(!1), this.$.puller.setShowing(!0), this.doPullStart();
@@ -491,6 +994,69 @@ this.$.text.setContent(this.text);
 },
 iconClassChanged: function() {
 this.$.icon.setClasses(this.iconClass);
+}
+});
+
+// AroundList.js
+
+enyo.kind({
+name: "enyo.AroundList",
+kind: "enyo.List",
+listTools: [ {
+name: "port",
+classes: "enyo-list-port enyo-border-box",
+components: [ {
+name: "aboveClient"
+}, {
+name: "generator",
+kind: "FlyweightRepeater",
+canGenerate: !1,
+components: [ {
+tag: null,
+name: "client"
+} ]
+}, {
+name: "holdingarea",
+allowHtml: !0,
+classes: "enyo-list-holdingarea"
+}, {
+name: "page0",
+allowHtml: !0,
+classes: "enyo-list-page"
+}, {
+name: "page1",
+allowHtml: !0,
+classes: "enyo-list-page"
+}, {
+name: "belowClient"
+}, {
+name: "placeholder"
+}, {
+name: "swipeableComponents",
+style: "position:absolute; display:block; top:-1000px; left:0px;"
+} ]
+} ],
+aboveComponents: null,
+initComponents: function() {
+this.inherited(arguments), this.aboveComponents && this.$.aboveClient.createComponents(this.aboveComponents, {
+owner: this.owner
+}), this.belowComponents && this.$.belowClient.createComponents(this.belowComponents, {
+owner: this.owner
+});
+},
+updateMetrics: function() {
+this.defaultPageHeight = this.rowsPerPage * (this.rowHeight || 100), this.pageCount = Math.ceil(this.count / this.rowsPerPage), this.aboveHeight = this.$.aboveClient.getBounds().height, this.belowHeight = this.$.belowClient.getBounds().height, this.portSize = this.aboveHeight + this.belowHeight;
+for (var e = 0; e < this.pageCount; e++) this.portSize += this.getPageHeight(e);
+this.adjustPortSize();
+},
+positionPage: function(e, t) {
+t.pageNo = e;
+var n = this.pageToPosition(e), r = this.bottomUp ? this.belowHeight : this.aboveHeight;
+n += r, t.applyStyle(this.pageBound, n + "px");
+},
+scrollToContentStart: function() {
+var e = this.bottomUp ? this.belowHeight : this.aboveHeight;
+this.setScrollPosition(e);
 }
 });
 
@@ -693,6 +1259,7 @@ while (r >= 0) i += t < e ? -1 : 1, n.push(i), r--;
 n.push(this.container.toIndex);
 },
 finish: function() {},
+calcArrangementDifference: function(e, t, n, r) {},
 canDragEvent: function(e) {
 return e[this.canDragProp];
 },
@@ -710,7 +1277,6 @@ measureArrangementDelta: function(e, t, n, r, i) {
 var s = this.calcArrangementDifference(t, n, r, i), o = s ? e / Math.abs(s) : 0;
 return o *= this.container.fromIndex > this.container.toIndex ? -1 : 1, o;
 },
-calcArrangementDifference: function(e, t, n, r) {},
 _arrange: function(e) {
 this.containerBounds || this.reflow();
 var t = this.getOrderedControls(e);
@@ -753,9 +1319,9 @@ return this.controlsIndex = t, i;
 statics: {
 positionControl: function(e, t, n) {
 var r = n || "px";
-if (!this.updating) if (enyo.dom.canTransform() && !enyo.platform.android) {
-var i = t.left, s = t.top, i = enyo.isString(i) ? i : i && i + r, s = enyo.isString(s) ? s : s && s + r;
-enyo.dom.transform(e, {
+if (!this.updating) if (enyo.dom.canTransform() && !enyo.platform.android && enyo.platform.ie !== 10) {
+var i = t.left, s = t.top;
+i = enyo.isString(i) ? i : i && i + r, s = enyo.isString(s) ? s : s && s + r, enyo.dom.transform(e, {
 translateX: i || null,
 translateY: s || null
 });
@@ -778,7 +1344,7 @@ calcArrangementDifference: function(e, t, n, r) {
 return this.containerBounds.width;
 },
 arrange: function(e, t) {
-for (var n = 0, r, i, s; r = e[n]; n++) s = n == 0 ? 1 : 0, this.arrangeControl(r, {
+for (var n = 0, r, i, s; r = e[n]; n++) s = n === 0 ? 1 : 0, this.arrangeControl(r, {
 opacity: s
 });
 },
@@ -813,8 +1379,8 @@ for (var t = 0, n; n = e[t]; t++) {
 var r = n.showing;
 n.setShowing(t == this.container.fromIndex || t == this.container.toIndex), n.showing && !r && n.resized();
 }
-var i = this.container.fromIndex, t = this.container.toIndex;
-this.container.transitionPoints = [ t + "." + i + ".s", t + "." + i + ".f" ];
+var i = this.container.fromIndex;
+t = this.container.toIndex, this.container.transitionPoints = [ t + "." + i + ".s", t + "." + i + ".f" ];
 },
 finish: function() {
 this.inherited(arguments);
@@ -842,15 +1408,15 @@ enyo.kind({
 name: "enyo.CarouselArranger",
 kind: "Arranger",
 size: function() {
-var e = this.container.getPanels(), t = this.containerPadding = this.container.hasNode() ? enyo.dom.calcPaddingExtents(this.container.node) : {}, n = this.containerBounds;
+var e = this.container.getPanels(), t = this.containerPadding = this.container.hasNode() ? enyo.dom.calcPaddingExtents(this.container.node) : {}, n = this.containerBounds, r, i, s, o, u;
 n.height -= t.top + t.bottom, n.width -= t.left + t.right;
-var r;
-for (var i = 0, s = 0, o, u; u = e[i]; i++) o = enyo.dom.calcMarginExtents(u.hasNode()), u.width = u.getBounds().width, u.marginWidth = o.right + o.left, s += (u.fit ? 0 : u.width) + u.marginWidth, u.fit && (r = u);
-if (r) {
-var a = n.width - s;
-r.width = a >= 0 ? a : r.width;
+var a;
+for (r = 0, s = 0; u = e[r]; r++) o = enyo.dom.calcMarginExtents(u.hasNode()), u.width = u.getBounds().width, u.marginWidth = o.right + o.left, s += (u.fit ? 0 : u.width) + u.marginWidth, u.fit && (a = u);
+if (a) {
+var f = n.width - s;
+a.width = f >= 0 ? f : a.width;
 }
-for (var i = 0, f = t.left, o, u; u = e[i]; i++) u.setBounds({
+for (r = 0, i = t.left; u = e[r]; r++) u.setBounds({
 top: t.top,
 bottom: t.bottom,
 width: u.fit ? u.width : null
@@ -860,27 +1426,28 @@ arrange: function(e, t) {
 this.container.wrap ? this.arrangeWrap(e, t) : this.arrangeNoWrap(e, t);
 },
 arrangeNoWrap: function(e, t) {
-var n = this.container.getPanels(), r = this.container.clamp(t), i = this.containerBounds.width;
-for (var s = r, o = 0, u; u = n[s]; s++) {
-o += u.width + u.marginWidth;
-if (o > i) break;
+var n, r, i, s, o = this.container.getPanels(), u = this.container.clamp(t), a = this.containerBounds.width;
+for (n = u, i = 0; s = o[n]; n++) {
+i += s.width + s.marginWidth;
+if (i > a) break;
 }
-var a = i - o, f = 0;
-if (a > 0) {
-var l = r;
-for (var s = r - 1, c = 0, u; u = n[s]; s--) {
-c += u.width + u.marginWidth;
-if (a - c <= 0) {
-f = a - c, r = s;
+var f = a - i, l = 0;
+if (f > 0) {
+var c = u;
+for (n = u - 1, r = 0; s = o[n]; n--) {
+r += s.width + s.marginWidth;
+if (f - r <= 0) {
+l = f - r, u = n;
 break;
 }
 }
 }
-for (var s = 0, h = this.containerPadding.left + f, p, u; u = n[s]; s++) p = u.width + u.marginWidth, s < r ? this.arrangeControl(u, {
-left: -p
-}) : (this.arrangeControl(u, {
-left: Math.floor(h)
-}), h += p);
+var h, p;
+for (n = 0, p = this.containerPadding.left + l; s = o[n]; n++) h = s.width + s.marginWidth, n < u ? this.arrangeControl(s, {
+left: -h
+}) : (this.arrangeControl(s, {
+left: Math.floor(p)
+}), p += h);
 },
 arrangeWrap: function(e, t) {
 for (var n = 0, r = this.containerPadding.left, i, s; s = e[n]; n++) this.arrangeControl(s, {
@@ -906,17 +1473,23 @@ this.inherited(arguments);
 enyo.kind({
 name: "enyo.CollapsingArranger",
 kind: "CarouselArranger",
+peekWidth: 0,
 size: function() {
 this.clearLastSize(), this.inherited(arguments);
 },
 clearLastSize: function() {
 for (var e = 0, t = this.container.getPanels(), n; n = t[e]; e++) n._fit && e != t.length - 1 && (n.applyStyle("width", null), n._fit = null);
 },
+constructor: function() {
+this.inherited(arguments), this.peekWidth = this.container.peekWidth != null ? this.container.peekWidth : this.peekWidth;
+},
 arrange: function(e, t) {
 var n = this.container.getPanels();
-for (var r = 0, i = this.containerPadding.left, s, o; o = n[r]; r++) this.arrangeControl(o, {
+for (var r = 0, i = this.containerPadding.left, s, o, u = 0; o = n[r]; r++) o.getShowing() ? (this.arrangeControl(o, {
+left: i + u * this.peekWidth
+}), r >= t && (i += o.width + o.marginWidth - this.peekWidth), u++) : (this.arrangeControl(o, {
 left: i
-}), r >= t && (i += o.width + o.marginWidth), r == n.length - 1 && t < 0 && this.arrangeControl(o, {
+}), r >= t && (i += o.width + o.marginWidth)), r == n.length - 1 && t < 0 && this.arrangeControl(o, {
 left: i - t
 });
 },
@@ -943,6 +1516,83 @@ e._fit = !0, e.applyStyle("width", this.containerBounds.width - t + "px"), e.res
 }
 });
 
+// DockRightArranger.js
+
+enyo.kind({
+name: "enyo.DockRightArranger",
+kind: "Arranger",
+basePanel: !1,
+overlap: 0,
+layoutWidth: 0,
+constructor: function() {
+this.inherited(arguments), this.overlap = this.container.overlap != null ? this.container.overlap : this.overlap, this.layoutWidth = this.container.layoutWidth != null ? this.container.layoutWidth : this.layoutWidth;
+},
+size: function() {
+var e = this.container.getPanels(), t = this.containerPadding = this.container.hasNode() ? enyo.dom.calcPaddingExtents(this.container.node) : {}, n = this.containerBounds, r, i, s;
+n.width -= t.left + t.right;
+var o = n.width, u = e.length;
+this.container.transitionPositions = {};
+for (r = 0; s = e[r]; r++) s.width = r === 0 && this.container.basePanel ? o : s.getBounds().width;
+for (r = 0; s = e[r]; r++) {
+r === 0 && this.container.basePanel && s.setBounds({
+width: o
+}), s.setBounds({
+top: t.top,
+bottom: t.bottom
+});
+for (j = 0; s = e[j]; j++) {
+var a;
+if (r === 0 && this.container.basePanel) a = 0; else if (j < r) a = o; else {
+if (r !== j) break;
+var f = o > this.layoutWidth ? this.overlap : 0;
+a = o - e[r].width + f;
+}
+this.container.transitionPositions[r + "." + j] = a;
+}
+if (j < u) {
+var l = !1;
+for (k = r + 1; k < u; k++) {
+var f = 0;
+if (l) f = 0; else if (e[r].width + e[k].width - this.overlap > o) f = 0, l = !0; else {
+f = e[r].width - this.overlap;
+for (i = r; i < k; i++) {
+var c = f + e[i + 1].width - this.overlap;
+if (!(c < o)) {
+f = o;
+break;
+}
+f = c;
+}
+f = o - f;
+}
+this.container.transitionPositions[r + "." + k] = f;
+}
+}
+}
+},
+arrange: function(e, t) {
+var n, r, i = this.container.getPanels(), s = this.container.clamp(t);
+for (n = 0; r = i[n]; n++) {
+var o = this.container.transitionPositions[n + "." + s];
+this.arrangeControl(r, {
+left: o
+});
+}
+},
+calcArrangementDifference: function(e, t, n, r) {
+var i = this.container.getPanels(), s = e < n ? i[n].width : i[e].width;
+return s;
+},
+destroy: function() {
+var e = this.container.getPanels();
+for (var t = 0, n; n = e[t]; t++) enyo.Arranger.positionControl(n, {
+left: null,
+top: null
+}), n.applyStyle("top", null), n.applyStyle("bottom", null), n.applyStyle("left", null), n.applyStyle("width", null);
+this.inherited(arguments);
+}
+});
+
 // OtherArrangers.js
 
 enyo.kind({
@@ -965,13 +1615,13 @@ var e = this.container.fromIndex, t = this.container.toIndex, n = this.getOrdere
 for (var i = 0, s; s = n[i]; i++) e > t ? i == n.length - r ? s.applyStyle("z-index", 0) : s.applyStyle("z-index", 1) : i == n.length - 1 - r ? s.applyStyle("z-index", 0) : s.applyStyle("z-index", 1);
 },
 arrange: function(e, t) {
+var n, r, i, s;
 if (this.container.getPanels().length == 1) {
-var n = {};
-n[this.axisPosition] = this.margin, this.arrangeControl(this.container.getPanels()[0], n);
+s = {}, s[this.axisPosition] = this.margin, this.arrangeControl(this.container.getPanels()[0], s);
 return;
 }
-var r = Math.floor(this.container.getPanels().length / 2), i = this.getOrderedControls(Math.floor(t) - r), s = this.containerBounds[this.axisSize] - this.margin - this.margin, o = this.margin - s * r;
-for (var u = 0, a, n, f; a = i[u]; u++) n = {}, n[this.axisPosition] = o, this.arrangeControl(a, n), o += s;
+var o = Math.floor(this.container.getPanels().length / 2), u = this.getOrderedControls(Math.floor(t) - o), a = this.containerBounds[this.axisSize] - this.margin - this.margin, f = this.margin - a * o;
+for (n = 0; r = u[n]; n++) s = {}, s[this.axisPosition] = f, this.arrangeControl(r, s), f += a;
 },
 calcArrangementDifference: function(e, t, n, r) {
 if (this.container.getPanels().length == 1) return 0;
@@ -1089,7 +1739,8 @@ onTransitionFinish: ""
 handlers: {
 ondragstart: "dragstart",
 ondrag: "drag",
-ondragfinish: "dragfinish"
+ondragfinish: "dragfinish",
+onscroll: "domScroll"
 },
 tools: [ {
 kind: "Animator",
@@ -1100,6 +1751,12 @@ fraction: 0,
 create: function() {
 this.transitionPoints = [], this.inherited(arguments), this.arrangerKindChanged(), this.narrowFitChanged(), this.indexChanged();
 },
+rendered: function() {
+this.inherited(arguments), enyo.makeBubble(this, "scroll");
+},
+domScroll: function(e, t) {
+this.hasNode() && this.node.scrollLeft > 0 && (this.node.scrollLeft = 0);
+},
 initComponents: function() {
 this.createChrome(this.tools), this.inherited(arguments);
 },
@@ -1109,8 +1766,11 @@ this.setLayoutKind(this.arrangerKind);
 narrowFitChanged: function() {
 this.addRemoveClass("enyo-panels-fit-narrow", this.narrowFit);
 },
+destroy: function() {
+this.destroying = !0, this.inherited(arguments);
+},
 removeControl: function(e) {
-this.inherited(arguments), this.controls.length > 1 && this.isPanel(e) && (this.setIndex(Math.max(this.index - 1, 0)), this.flow(), this.reflow());
+this.inherited(arguments), this.destroying && this.controls.length > 0 && this.isPanel(e) && (this.setIndex(Math.max(this.index - 1, 0)), this.flow(), this.reflow());
 },
 isPanel: function() {
 return !0;
@@ -1126,8 +1786,8 @@ var e = this.controlParent || this;
 return e.children;
 },
 getActive: function() {
-var e = this.getPanels();
-return e[this.index];
+var e = this.getPanels(), t = this.index % e.length;
+return t < 0 && (t += e.length), e[t];
 },
 getAnimator: function() {
 return this.$.animator;
@@ -1149,7 +1809,7 @@ var t = this.getPanels().length - 1;
 return this.wrap ? e : Math.max(0, Math.min(e, t));
 },
 indexChanged: function(e) {
-this.lastIndex = e, this.index = this.clamp(this.index), this.dragging || (this.$.animator.isAnimating() && this.completed(), this.$.animator.stop(), this.hasNode() && (this.animate ? (this.startTransition(), this.$.animator.play({
+this.lastIndex = e, this.index = this.clamp(this.index), !this.dragging && this.$.animator && (this.$.animator.isAnimating() && this.completed(), this.$.animator.stop(), this.hasNode() && (this.animate ? (this.startTransition(), this.$.animator.play({
 startValue: this.fraction
 })) : this.refresh()));
 },
@@ -1194,7 +1854,7 @@ n = r, r = i;
 n != this.fromIndex && (this.fraction = 1 - this.fraction), this.fromIndex = n, this.toIndex = r;
 },
 refresh: function() {
-this.$.animator.isAnimating() && this.$.animator.stop(), this.startTransition(), this.fraction = 1, this.stepTransition(), this.finishTransition();
+this.$.animator && this.$.animator.isAnimating() && this.$.animator.stop(), this.startTransition(), this.fraction = 1, this.stepTransition(), this.finishTransition();
 },
 startTransition: function() {
 this.fromIndex = this.fromIndex != null ? this.fromIndex : this.lastIndex || 0, this.toIndex = this.toIndex != null ? this.toIndex : this.index, this.layout && this.layout.start(), this.fireTransitionStart();
@@ -1385,6 +2045,340 @@ this.$.client && (this.expanded ? this._expand() : this._collapse());
 }
 });
 
+// ImageViewPin.js
+
+enyo.kind({
+name: "enyo.ImageViewPin",
+kind: "enyo.Control",
+published: {
+highlightAnchorPoint: !1,
+anchor: {
+top: 0,
+left: 0
+},
+position: {
+top: 0,
+left: 0
+}
+},
+style: "position:absolute;z-index:1000;width:0px;height:0px;",
+handlers: {
+onPositionPin: "reAnchor"
+},
+create: function() {
+this.inherited(arguments), this.styleClientControls(), this.positionClientControls(), this.highlightAnchorPointChanged(), this.anchorChanged();
+},
+styleClientControls: function() {
+var e = this.getClientControls();
+for (var t = 0; t < e.length; t++) e[t].applyStyle("position", "absolute");
+},
+positionClientControls: function() {
+var e = this.getClientControls();
+for (var t = 0; t < e.length; t++) for (var n in this.position) e[t].applyStyle(n, this.position[n] + "px");
+},
+highlightAnchorPointChanged: function() {
+this.addRemoveClass("pinDebug", this.highlightAnchorPoint);
+},
+anchorChanged: function() {
+var e = null, t = null;
+for (t in this.anchor) {
+e = this.anchor[t].toString().match(/^(\d+(?:\.\d+)?)(.*)$/);
+if (!e) continue;
+this.anchor[t + "Coords"] = {
+value: e[1],
+units: e[2] || "px"
+};
+}
+},
+reAnchor: function(e, t) {
+var n = t.scale, r = t.bounds, i = this.anchor.right ? this.anchor.rightCoords.units == "px" ? r.width + r.x - this.anchor.rightCoords.value * n : r.width * (100 - this.anchor.rightCoords.value) / 100 + r.x : this.anchor.leftCoords.units == "px" ? this.anchor.leftCoords.value * n + r.x : r.width * this.anchor.leftCoords.value / 100 + r.x, s = this.anchor.bottom ? this.anchor.bottomCoords.units == "px" ? r.height + r.y - this.anchor.bottomCoords.value * n : r.height * (100 - this.anchor.bottomCoords.value) / 100 + r.y : this.anchor.topCoords.units == "px" ? this.anchor.topCoords.value * n + r.y : r.height * this.anchor.topCoords.value / 100 + r.y;
+this.applyStyle("left", i + "px"), this.applyStyle("top", s + "px");
+}
+});
+
+// ImageView.js
+
+enyo.kind({
+name: "enyo.ImageView",
+kind: enyo.Scroller,
+touchOverscroll: !1,
+thumb: !1,
+animate: !0,
+verticalDragPropagation: !0,
+horizontalDragPropagation: !0,
+published: {
+scale: "auto",
+disableZoom: !1,
+src: undefined
+},
+events: {
+onZoom: ""
+},
+touch: !0,
+preventDragPropagation: !1,
+handlers: {
+ondragstart: "dragPropagation"
+},
+components: [ {
+name: "animator",
+kind: "Animator",
+onStep: "zoomAnimationStep",
+onEnd: "zoomAnimationEnd"
+}, {
+name: "viewport",
+style: "overflow:hidden;min-height:100%;min-width:100%;",
+classes: "enyo-fit",
+ongesturechange: "gestureTransform",
+ongestureend: "saveState",
+ontap: "singleTap",
+ondblclick: "doubleClick",
+onmousewheel: "mousewheel",
+components: [ {
+kind: "Image",
+ondown: "down"
+} ]
+} ],
+create: function() {
+this.inherited(arguments), this.canTransform = enyo.dom.canTransform(), this.canTransform || this.$.image.applyStyle("position", "relative"), this.canAccelerate = enyo.dom.canAccelerate(), this.bufferImage = new Image, this.bufferImage.onload = enyo.bind(this, "imageLoaded"), this.bufferImage.onerror = enyo.bind(this, "imageError"), this.srcChanged(), this.getStrategy().setDragDuringGesture(!1), this.getStrategy().$.scrollMath && this.getStrategy().$.scrollMath.start();
+},
+down: function(e, t) {
+t.preventDefault();
+},
+dragPropagation: function(e, t) {
+var n = this.getStrategy().getScrollBounds(), r = n.top === 0 && t.dy > 0 || n.top >= n.maxTop - 2 && t.dy < 0, i = n.left === 0 && t.dx > 0 || n.left >= n.maxLeft - 2 && t.dx < 0;
+return !(r && this.verticalDragPropagation || i && this.horizontalDragPropagation);
+},
+mousewheel: function(e, t) {
+t.pageX |= t.clientX + t.target.scrollLeft, t.pageY |= t.clientY + t.target.scrollTop;
+var n = (this.maxScale - this.minScale) / 10, r = this.scale;
+if (t.wheelDelta > 0 || t.detail < 0) this.scale = this.limitScale(this.scale + n); else if (t.wheelDelta < 0 || t.detail > 0) this.scale = this.limitScale(this.scale - n);
+return this.eventPt = this.calcEventLocation(t), this.transformImage(this.scale), r != this.scale && this.doZoom({
+scale: this.scale
+}), this.ratioX = this.ratioY = null, t.preventDefault(), !0;
+},
+srcChanged: function() {
+this.src && this.src.length > 0 && this.bufferImage && this.src != this.bufferImage.src && (this.bufferImage.src = this.src);
+},
+imageLoaded: function(e) {
+this.originalWidth = this.bufferImage.width, this.originalHeight = this.bufferImage.height, this.scaleChanged(), this.$.image.setSrc(this.bufferImage.src), enyo.dom.transformValue(this.getStrategy().$.client, "translate3d", "0px, 0px, 0"), this.positionClientControls(this.scale), this.alignImage();
+},
+resizeHandler: function() {
+this.inherited(arguments), this.$.image.src && this.scaleChanged();
+},
+scaleChanged: function() {
+var e = this.hasNode();
+if (e) {
+this.containerWidth = e.clientWidth, this.containerHeight = e.clientHeight;
+var t = this.containerWidth / this.originalWidth, n = this.containerHeight / this.originalHeight;
+this.minScale = Math.min(t, n), this.maxScale = this.minScale * 3 < 1 ? 1 : this.minScale * 3, this.scale == "auto" ? this.scale = this.minScale : this.scale == "width" ? this.scale = t : this.scale == "height" ? this.scale = n : this.scale == "fit" ? (this.fitAlignment = "center", this.scale = Math.max(t, n)) : (this.maxScale = Math.max(this.maxScale, this.scale), this.scale = this.limitScale(this.scale));
+}
+this.eventPt = this.calcEventLocation(), this.transformImage(this.scale);
+},
+imageError: function(e) {
+enyo.error("Error loading image: " + this.src), this.bubble("onerror", e);
+},
+alignImage: function() {
+if (this.fitAlignment && this.fitAlignment === "center") {
+var e = this.getScrollBounds();
+this.setScrollLeft(e.maxLeft / 2), this.setScrollTop(e.maxTop / 2);
+}
+},
+gestureTransform: function(e, t) {
+this.eventPt = this.calcEventLocation(t), this.transformImage(this.limitScale(this.scale * t.scale));
+},
+calcEventLocation: function(e) {
+var t = {
+x: 0,
+y: 0
+};
+if (e && this.hasNode()) {
+var n = this.node.getBoundingClientRect();
+t.x = Math.round(e.pageX - n.left - this.imageBounds.x), t.x = Math.max(0, Math.min(this.imageBounds.width, t.x)), t.y = Math.round(e.pageY - n.top - this.imageBounds.y), t.y = Math.max(0, Math.min(this.imageBounds.height, t.y));
+}
+return t;
+},
+transformImage: function(e) {
+this.tapped = !1;
+var t = this.imageBounds || this.innerImageBounds(e);
+this.imageBounds = this.innerImageBounds(e), this.scale > this.minScale ? this.$.viewport.applyStyle("cursor", "move") : this.$.viewport.applyStyle("cursor", null), this.$.viewport.setBounds({
+width: this.imageBounds.width + "px",
+height: this.imageBounds.height + "px"
+}), this.ratioX = this.ratioX || (this.eventPt.x + this.getScrollLeft()) / t.width, this.ratioY = this.ratioY || (this.eventPt.y + this.getScrollTop()) / t.height;
+var n, r;
+this.$.animator.ratioLock ? (n = this.$.animator.ratioLock.x * this.imageBounds.width - this.containerWidth / 2, r = this.$.animator.ratioLock.y * this.imageBounds.height - this.containerHeight / 2) : (n = this.ratioX * this.imageBounds.width - this.eventPt.x, r = this.ratioY * this.imageBounds.height - this.eventPt.y), n = Math.max(0, Math.min(this.imageBounds.width - this.containerWidth, n)), r = Math.max(0, Math.min(this.imageBounds.height - this.containerHeight, r));
+if (this.canTransform) {
+var i = {
+scale: e
+};
+this.canAccelerate ? i = enyo.mixin({
+translate3d: Math.round(this.imageBounds.left) + "px, " + Math.round(this.imageBounds.top) + "px, 0px"
+}, i) : i = enyo.mixin({
+translate: this.imageBounds.left + "px, " + this.imageBounds.top + "px"
+}, i), enyo.dom.transform(this.$.image, i);
+} else this.$.image.setBounds({
+width: this.imageBounds.width + "px",
+height: this.imageBounds.height + "px",
+left: this.imageBounds.left + "px",
+top: this.imageBounds.top + "px"
+});
+this.setScrollLeft(n), this.setScrollTop(r), this.positionClientControls(e);
+},
+limitScale: function(e) {
+return this.disableZoom ? e = this.scale : e > this.maxScale ? e = this.maxScale : e < this.minScale && (e = this.minScale), e;
+},
+innerImageBounds: function(e) {
+var t = this.originalWidth * e, n = this.originalHeight * e, r = {
+x: 0,
+y: 0,
+transX: 0,
+transY: 0
+};
+return t < this.containerWidth && (r.x += (this.containerWidth - t) / 2), n < this.containerHeight && (r.y += (this.containerHeight - n) / 2), this.canTransform && (r.transX -= (this.originalWidth - t) / 2, r.transY -= (this.originalHeight - n) / 2), {
+left: r.x + r.transX,
+top: r.y + r.transY,
+width: t,
+height: n,
+x: r.x,
+y: r.y
+};
+},
+saveState: function(e, t) {
+var n = this.scale;
+this.scale *= t.scale, this.scale = this.limitScale(this.scale), n != this.scale && this.doZoom({
+scale: this.scale
+}), this.ratioX = this.ratioY = null;
+},
+doubleClick: function(e, t) {
+enyo.platform.ie == 8 && (this.tapped = !0, t.pageX = t.clientX + t.target.scrollLeft, t.pageY = t.clientY + t.target.scrollTop, this.singleTap(e, t), t.preventDefault());
+},
+singleTap: function(e, t) {
+setTimeout(enyo.bind(this, function() {
+this.tapped = !1;
+}), 300), this.tapped ? (this.tapped = !1, this.smartZoom(e, t)) : this.tapped = !0;
+},
+smartZoom: function(e, t) {
+var n = this.hasNode(), r = this.$.image.hasNode();
+if (n && r && this.hasNode() && !this.disableZoom) {
+var i = this.scale;
+this.scale != this.minScale ? this.scale = this.minScale : this.scale = this.maxScale, this.eventPt = this.calcEventLocation(t);
+if (this.animate) {
+var s = {
+x: (this.eventPt.x + this.getScrollLeft()) / this.imageBounds.width,
+y: (this.eventPt.y + this.getScrollTop()) / this.imageBounds.height
+};
+this.$.animator.play({
+duration: 350,
+ratioLock: s,
+baseScale: i,
+deltaScale: this.scale - i
+});
+} else this.transformImage(this.scale), this.doZoom({
+scale: this.scale
+});
+}
+},
+zoomAnimationStep: function(e, t) {
+var n = this.$.animator.baseScale + this.$.animator.deltaScale * this.$.animator.value;
+this.transformImage(n);
+},
+zoomAnimationEnd: function(e, t) {
+this.doZoom({
+scale: this.scale
+}), this.$.animator.ratioLock = undefined;
+},
+positionClientControls: function(e) {
+this.waterfallDown("onPositionPin", {
+scale: e,
+bounds: this.imageBounds
+});
+}
+});
+
+// ImageCarousel.js
+
+enyo.kind({
+name: "enyo.ImageCarousel",
+kind: enyo.Panels,
+arrangerKind: "enyo.CarouselArranger",
+defaultScale: "auto",
+disableZoom: !1,
+lowMemory: !1,
+published: {
+images: []
+},
+handlers: {
+onTransitionStart: "transitionStart",
+onTransitionFinish: "transitionFinish"
+},
+create: function() {
+this.inherited(arguments), this.imageCount = this.images.length, this.images.length > 0 && (this.initContainers(), this.loadNearby());
+},
+initContainers: function() {
+for (var e = 0; e < this.images.length; e++) this.$["container" + e] || (this.createComponent({
+name: "container" + e,
+style: "height:100%; width:100%;"
+}), this.$["container" + e].render());
+for (e = this.images.length; e < this.imageCount; e++) this.$["image" + e] && this.$["image" + e].destroy(), this.$["container" + e].destroy();
+this.imageCount = this.images.length;
+},
+loadNearby: function() {
+var e = this.getBufferRange();
+for (var t in e) this.loadImageView(e[t]);
+},
+getBufferRange: function() {
+var e = [];
+if (this.layout.containerBounds) {
+var t = 1, n = this.layout.containerBounds, r, i, s, o, u, a;
+o = this.index - 1, u = 0, a = n.width * t;
+while (o >= 0 && u <= a) s = this.$["container" + o], u += s.width + s.marginWidth, e.unshift(o), o--;
+o = this.index, u = 0, a = n.width * (t + 1);
+while (o < this.images.length && u <= a) s = this.$["container" + o], u += s.width + s.marginWidth, e.push(o), o++;
+}
+return e;
+},
+reflow: function() {
+this.inherited(arguments), this.loadNearby();
+},
+loadImageView: function(e) {
+return this.wrap && (e = (e % this.images.length + this.images.length) % this.images.length), e >= 0 && e <= this.images.length - 1 && (this.$["image" + e] ? this.$["image" + e].src != this.images[e] && (this.$["image" + e].setSrc(this.images[e]), this.$["image" + e].setScale(this.defaultScale), this.$["image" + e].setDisableZoom(this.disableZoom)) : (this.$["container" + e].createComponent({
+name: "image" + e,
+kind: "ImageView",
+scale: this.defaultScale,
+disableZoom: this.disableZoom,
+src: this.images[e],
+verticalDragPropagation: !1,
+style: "height:100%; width:100%;"
+}, {
+owner: this
+}), this.$["image" + e].render())), this.$["image" + e];
+},
+setImages: function(e) {
+this.setPropertyValue("images", e, "imagesChanged");
+},
+imagesChanged: function() {
+this.initContainers(), this.loadNearby();
+},
+indexChanged: function() {
+this.loadNearby(), this.lowMemory && this.cleanupMemory(), this.inherited(arguments);
+},
+transitionStart: function(e, t) {
+if (t.fromIndex == t.toIndex) return !0;
+},
+transitionFinish: function(e, t) {
+this.loadNearby(), this.lowMemory && this.cleanupMemory();
+},
+getActiveImage: function() {
+return this.getImageByIndex(this.index);
+},
+getImageByIndex: function(e) {
+return this.$["image" + e] || this.loadImageView(e);
+},
+cleanupMemory: function() {
+var e = getBufferRange();
+for (var t = 0; t < this.images.length; t++) enyo.indexOf(t, e) === -1 && this.$["image" + t] && this.$["image" + t].destroy();
+}
+});
+
 // runtime-machine.js
 
 runtimeMachine = {
@@ -1439,6 +2433,68 @@ this._continue();
 }
 };
 
+// AnalyzerDebug.js
+
+enyo.kind({
+name: "AnalyzerDebug",
+kind: null,
+debug: !1,
+_level: 0,
+methodName: function(e) {
+var t = this.getStackInfo(3 + (e || 0));
+return t = t.replace(/ .http:.*$/g, ""), t = t.replace(/^.*.enyo.kind/g, this.kindName), t += "                                                                    ", t.substr(0, 30);
+},
+getCurrentStackInfo: function(e) {
+return " current: " + this.getStackInfo(3 + (e || 0));
+},
+getPreviousStackInfo: function(e) {
+return " previous: " + this.getStackInfo(4 + (e || 0));
+},
+getStackInfo: function(e) {
+try {
+throw new Error;
+} catch (t) {
+var n = t.stack;
+if (n) {
+var r = n.split("\n");
+return r[e];
+}
+return "(stack trace not available)";
+}
+},
+showLevel: function() {
+return "#####################################".substr(0, this._level) + " ";
+},
+incremLevel: function() {
+return this._level++, this.showLevel() + " --> ";
+},
+decremLevel: function() {
+var e = this.showLevel() + " <-- ";
+return this._level--, e;
+},
+showIterator: function(e) {
+return e ? "[" + e.ID + "/" + e.i + "] " : "";
+},
+logMethodEntry: function(e, t) {
+t = t || "", enyo.log(this.methodName(1) + this.incremLevel() + this.showIterator(e) + t + this.getPreviousStackInfo(1));
+},
+logMethodExit: function(e, t) {
+t = t || "", enyo.log(this.methodName(1) + this.decremLevel() + this.showIterator(e) + t + this.getCurrentStackInfo(1));
+},
+logProcessing: function(e, t) {
+enyo.log(this.methodName(1) + this.showLevel() + this.showIterator(e) + "PROCESSING kind: " + t.kind + " >>" + t.token + "<< line: " + t.line + this.getCurrentStackInfo(1));
+},
+logIterMsg: function(e, t) {
+enyo.log(this.methodName(1) + this.showLevel() + this.showIterator(e) + t + this.getPreviousStackInfo(1));
+},
+logMsg: function(e) {
+enyo.log(this.methodName(1) + this.showLevel() + e + this.getPreviousStackInfo(1));
+},
+statics: {
+_debugEnabled: !1
+}
+});
+
 // Walker.js
 
 enyo.kind({
@@ -1451,10 +2507,8 @@ events: {
 onProgress: "",
 onFinish: ""
 },
-walk: function(e) {
-this.loader = new enyo.loaderFactory(runtimeMachine), this.loader.loadScript = function() {}, this.loader.loadSheet = function() {}, this.loader.verbose = this.verbose, this.loader.report = enyo.bind(this, "walkReport"), this.loader.finish = enyo.bind(this, "walkFinish"), enyo.loader = this.loader;
-var t = enyo.path.rewrite(e);
-return enyo.asyncMethod(enyo.loader, "load", t), this.async = new enyo.Async;
+walk: function(e, t) {
+return this.verbose && this.log("inPath: " + e + " resolver: ", t), this.loader = new enyo.loaderFactory(runtimeMachine, t), this.loader.loadScript = function() {}, this.loader.loadSheet = function() {}, this.loader.verbose = this.verbose, this.loader.report = enyo.bind(this, "walkReport"), this.loader.finish = enyo.bind(this, "walkFinish"), enyo.loader = this.loader, t ? (path = t.rewrite(e), this.verbose && path !== e && this.log("inPathResolver: " + e + " ==> " + path)) : (path = enyo.path.rewrite(e), this.verbose && path !== e && this.log("enyo.path: " + e + " ==> " + path)), enyo.asyncMethod(this.loader, "load", path), this.async = new enyo.Async;
 },
 walkReport: function(e, t) {
 this.doProgress({
@@ -1510,7 +2564,10 @@ kind: null,
 i: -1,
 nodes: null,
 constructor: function(e) {
-this.stream = e;
+this.ID = Iterator._objectCount++, this.stream = e;
+},
+statics: {
+_objectCount: 0
 },
 next: function() {
 return this.i++, this._read();
@@ -1638,9 +2695,9 @@ this.pushToken("string", this.m[0].length);
 
 enyo.kind({
 name: "Parser",
-kind: null,
+kind: "AnalyzerDebug",
 constructor: function(e) {
-return this.parse(e);
+return this.debug = AnalyzerDebug._debugEnabled, this.parse(e);
 },
 parse: function(e) {
 var t = [], n = new Iterator(e);
@@ -1654,58 +2711,66 @@ for (var n = 0, r; r = e[n]; n++) t += r.token;
 return t;
 },
 walk: function(e, t) {
+this.debug && this.logMethodEntry(e, "inState " + t + " >>" + JSON.stringify(e.value) + "<<");
 var n = [], r;
 try {
 while (e.next()) {
-r = e.value;
+r = e.value, this.debug && this.logProcessing(e, r);
 if (r.kind == "ws") continue;
 if (r.kind == "comment") r.kind = "comment"; else if (t == "array") {
 if (r.kind == "terminal") continue;
-e.prev(), r = {
+e.prev();
+var i = e.value;
+r = {
 kind: "element",
 token: "expr",
 children: this.walk(e, "expression")
 };
-if (e.value && e.value.token == "]") return r.children.length && n.push(r), n;
-} else if (r.token == "[") r.kind = "array", r.children = this.walk(e, r.kind), e.value ? r.end = e.value.end : console.log("No end token for array?"); else {
-if (t == "expression" && r.token == "]") return n;
+if (e.value && e.value.token == "]" || e.value && e.value === i) return r.children.length && n.push(r), this.debug && this.logMethodExit(e), n;
+} else if (r.token == "[") r.kind = "array", r.children = this.walk(e, r.kind), e.value ? r.end = e.value.end : this.debug && this.logIterMsg(e, "No end token for array?"); else {
+if (t == "expression" && r.token == "]") return this.debug && this.logMethodExit(e), n;
 if (r.token == "var") r.kind = "var", r.children = this.walk(e, "expression"); else {
-if (r.kind == "terminal" && (t == "expression" || t == "var")) return n;
+if (r.kind == "terminal" && (t == "expression" || t == "var")) return this.debug && this.logMethodExit(e), n;
 if (r.kind == "terminal") continue;
 if (r.token == "{") {
-r.kind = "block", r.children = this.walk(e, r.kind), e.value ? r.end = e.value.end : console.log("No end token for block?");
-if (t == "expression" || t == "function") return n.push(r), n;
+r.kind = "block", this.debug && this.logIterMsg(e, "PROCESS BLOCK - START"), r.children = this.walk(e, r.kind), this.debug && this.logIterMsg(e, "PROCESS BLOCK - END"), e.value ? r.end = e.value.end : this.debug && this.logIterMsg(e, "No end token for block?"), r.commaTerminated = this.isCommaTerminated(e);
+if (t == "expression" || t == "function") return n.push(r), this.debug && this.logMethodExit(e), n;
 } else {
-if (t == "expression" && (r.token == "}" || r.token == ")")) return e.prev(), n;
-if (t == "block" && r.token == "}") return n;
+if (t == "expression" && (r.token == "}" || r.token == ")")) return e.prev(), this.debug && this.logMethodExit(e), n;
+if (t == "block" && r.token == "}") return this.debug && this.logMethodExit(e), n;
 if (r.token == "=" || r.token == ":" && t != "expression") {
-var i = n.pop();
-i.kind == "identifier" ? (i.op = r.token, i.kind = "assignment", i.children = this.walk(e, "expression"), e.value && e.value.kind == "terminal" && e.prev(), r = i) : n.push(i);
+var s = n.pop();
+s.kind == "identifier" ? (s.op = r.token, s.kind = "assignment", s.children = this.walk(e, "expression"), e.value && e.value.kind == "terminal" && (s.commaTerminated = e.value.token === ",", e.prev()), r = s) : n.push(s);
 } else if (r.token == "(") r.kind = "association", r.children = this.walk(e, r.kind); else {
-if (t == "association" && r.token == ")") return n;
+if (t == "association" && r.token == ")") return this.debug && this.logMethodExit(e), n;
 if (r.token == "function") {
-r.kind = "function", r.children = this.walk(e, r.kind);
+r.kind = "function", this.debug && this.logIterMsg(e, "PROCESS FUNCTION - START"), r.children = this.walk(e, r.kind), this.debug && this.logIterMsg(e, "PROCESS FUNCTION - END"), (!e.value || e.value.kind !== "symbol" || e.value.token !== "}") && this.debug && this.logIterMsg(e, "No end token for function?");
 if (t !== "expression" && r.children && r.children.length && r.children[0].kind == "identifier") {
-r.name = r.children[0].token, r.children.shift();
-var s = {
+this.debug && this.logIterMsg(e, "C-Style function"), r.name = r.children[0].token, r.children.shift();
+var o = {
 kind: "assignment",
 token: r.name,
 children: [ r ]
 };
-r = s;
+r = o;
 }
-if (t == "expression" || t == "function") return n.push(r), n;
-}
-}
+if (t == "expression" || t == "function") return r.commaTerminated = this.isCommaTerminated(e), n.push(r), this.debug && this.logMethodExit(e), n;
 }
 }
 }
-n.push(r);
 }
-} catch (o) {
-console.error(o);
 }
-return n;
+this.debug && this.logIterMsg(e, "PUSH NODE"), n.push(r);
+}
+} catch (u) {
+console.error(u);
+}
+return this.debug && this.logMethodExit(e), n;
+},
+isCommaTerminated: function(e) {
+commaPresent = !1;
+var t = e.next();
+return t && (commaPresent = t.kind === "terminal" && t.token === ","), e.prev(), commaPresent;
 }
 });
 
@@ -1713,10 +2778,10 @@ return n;
 
 enyo.kind({
 name: "Documentor",
-kind: null,
+kind: "AnalyzerDebug",
 group: "public",
 constructor: function(e) {
-return this.comment = [], this.parse(e);
+return this.comment = [], this.debug = AnalyzerDebug._debugEnabled, this.parse(e);
 },
 parse: function(e) {
 var t = new Iterator(e);
@@ -1724,8 +2789,9 @@ return this.walk(t);
 },
 walk: function(e, t) {
 var n = [], r, i;
+this.debug && this.logMethodEntry(e, "inState " + t + " >>" + JSON.stringify(e.value) + "<<");
 while (e.next()) {
-r = e.value;
+r = e.value, this.debug && this.logProcessing(e, r);
 if (r.kind == "comment") this.cook_comment(r.token); else if (r.token == "enyo.kind" && e.future.kind == "association") i = this.cook_kind(e); else if (r.kind == "assignment") i = this.cook_assignment(e); else if (r.kind == "association" && r.children && r.children.length == 1 && r.children[0].kind == "function") {
 var s = r.children[0];
 if (s.children && s.children.length == 2) {
@@ -1736,58 +2802,72 @@ e.next();
 }
 i && (n.push(i), i = null);
 }
-return n;
+return this.debug && this.logMethodExit(e), n;
 },
 cook_kind: function(e) {
+this.debug && this.logMethodEntry(e, ">>" + JSON.stringify(e.value) + "<<");
 var t = function(e, t) {
 var n = Documentor.indexByName(e, t), r;
 return n >= 0 && (r = e[n], e.splice(r, 1)), r && r.value && r.value.length && r.value[0].token;
 }, n = this.make("kind", e.value);
 e.next();
 var r = e.value.children;
-return r && r[0] && r[0].kind == "block" && (n.properties = this.cook_block(r[0].children), n.name = Documentor.stripQuotes(t(n.properties, "name") || ""), n.superkind = Documentor.stripQuotes(t(n.properties, "kind") || "enyo.Control"), n.superkind == "null" && (n.superkind = null)), n;
+return r && r[0] && r[0].kind == "block" && (n.properties = this.cook_block(r[0].children), n.name = Documentor.stripQuotes(t(n.properties, "name") || ""), n.superkind = Documentor.stripQuotes(t(n.properties, "kind") || "enyo.Control"), n.superkind == "null" && (n.superkind = null), n.block = {
+start: r[0].start,
+end: r[0].end
+}), this.debug && this.logMethodExit(e), n;
 },
 cook_block: function(e) {
+this.debug && this.logMethodEntry();
 var t = [];
-for (var n = 0, r; r = e[n]; n++) if (r.kind == "comment") this.cook_comment(r.token); else if (r.kind == "assignment") {
+for (var n = 0, r; r = e[n]; n++) {
+this.debug && this.logProcessing(null, r);
+if (r.kind == "comment") this.cook_comment(r.token); else if (r.kind == "assignment") {
 var i = this.make("property", r);
-r.children && (i.value = [ this.walkValue(new Iterator(r.children)) ]), t.push(i);
+r.children && (i.value = [ this.walkValue(new Iterator(r.children)) ], r.commaTerminated === undefined ? (i.commaTerminated = r.children[0].commaTerminated || !1, r.children[0].commaTerminated === undefined && this.debug && this.logMsg("NO COMMA TERMINATED INFO")) : i.commaTerminated = r.commaTerminated), t.push(i);
 }
-return t;
+}
+return this.debug && this.logMethodExit(), t;
 },
 walkValue: function(e, t) {
+this.debug && this.logMethodEntry(e, "inState: " + t + " >>" + JSON.stringify(e.value) + "<<");
 while (e.next()) {
 var n = e.value, r;
+this.debug && this.logProcessing(e, n);
 if (n.kind != "comment") {
-if (n.kind == "block") return r = this.make("block", n), r.properties = this.cook_block(n.children), r;
-if (n.kind == "array") return this.cook_array(e);
-if (n.kind == "function") return this.cook_function(e);
+if (n.kind == "block") return r = this.make("block", n), r.properties = this.cook_block(n.children), this.debug && this.logMethodExit(e, "inState: " + t + " >>" + JSON.stringify(e.value) + "<<"), r;
+if (n.kind == "array") return r = this.cook_array(e), this.debug && this.logMethodExit(e), r;
+if (n.kind == "function") return r = this.cook_function(e), this.debug && this.logMethodExit(e, "inState: " + t + " >>" + JSON.stringify(e.value) + "<<"), r;
 r = this.make("expression", n);
 var i = n.token;
 while (e.next()) i += e.value.token;
-return r.token = i, r;
+return r.token = i, this.debug && this.logMethodExit(e), r;
 }
 this.cook_comment(n.token);
 }
+this.debug && this.logMethodExit(e);
 },
 cook_function: function(e) {
+this.debug && this.logMethodEntry(e, ">>" + JSON.stringify(e.value) + "<<");
 var t = e.value, n = this.make("expression", t);
-return n.arguments = enyo.map(t.children[0].children, function(e) {
+return n.commaTerminated = t.commaTerminated, n.arguments = enyo.map(t.children[0].children, function(e) {
 return e.token;
-}), n;
+}), this.debug && this.logMethodExit(e), n;
 },
 cook_array: function(e) {
+this.debug && this.logMethodEntry(e, ">>" + JSON.stringify(e.value) + "<<");
 var t = e.value, n = this.make("array", t), r = t.children;
 if (r) {
 var i = [];
 for (var s = 0, o, u; o = r[s]; s++) o.children && (u = this.walkValue(new Iterator(o.children)), u && i.push(u));
 n.properties = i;
 }
-return n;
+return this.debug && this.logMethodExit(e), n;
 },
 cook_assignment: function(e) {
+this.debug && this.logMethodEntry(e, ">>" + JSON.stringify(e.value) + "<<");
 var t = e.value, n = this.make("global", t);
-return t.children && (t.children[0] && t.children[0].token == "function" && (n.type = "function"), n.value = [ this.walkValue(new Iterator(t.children)) ]), n;
+return t.children && (t.children[0] && t.children[0].token == "function" && (n.type = "function"), n.value = [ this.walkValue(new Iterator(t.children)) ]), this.debug && this.logMethodExit(), n;
 },
 make: function(e, t) {
 return {
@@ -1804,12 +2884,14 @@ comment: this.consumeComment()
 },
 commentRx: /\/\*\*([\s\S]*)\*\/|\/\/\*(.*)/m,
 cook_comment: function(e) {
+this.debug && this.logMethodEntry();
 var t = e.match(this.commentRx);
 if (t) {
 t = t[1] ? t[1] : t[2];
 var n = this.extractPragmas(t);
 this.honorPragmas(n);
 }
+this.debug && this.logMethodExit();
 },
 extractPragmas: function(e) {
 var t = /^[*\s]*@[\S\s]*/g, n = [], r = e;
@@ -1870,17 +2952,22 @@ group: "public",
 constructor: function() {
 this.objects = [];
 },
+debug: !1,
 findByName: function(e) {
 return Documentor.findByProperty(this.objects, "name", e);
 },
 findByTopic: function(e) {
 return Documentor.findByProperty(this.objects, "topic", e);
 },
+search: function(e, t, n) {
+var r = enyo.filter(this.objects, e, n);
+return enyo.map(r, t, n);
+},
 addModules: function(e) {
 enyo.forEach(e, this.addModule, this), this.objects.sort(Indexer.nameCompare);
 },
 addModule: function(e) {
-this.indexModule(e), this.mergeModule(e);
+this.debug && enyo.log("Indexer.addModule(): + " + e.path), this.indexModule(e), this.mergeModule(e);
 },
 mergeModule: function(e) {
 this.objects.push(e), this.objects = this.objects.concat(e.objects), enyo.forEach(e.objects, this.mergeProperties, this);
@@ -1889,7 +2976,7 @@ mergeProperties: function(e) {
 e.properties ? this.objects = this.objects.concat(e.properties) : e.value && e.value[0] && e.value[0].properties && (this.objects = this.objects.concat(e.value[0].properties));
 },
 indexModule: function(e) {
-e.type = "module", e.name = e.name || e.rawPath, e.objects = new Documentor(new Parser(new Lexer(e.code))), this.indexObjects(e);
+e.type = "module", e.name = e.path ? e.path.replace("lib/", "") : e.label + "/" + e.rawPath, e.objects = new Documentor(new Parser(new Lexer(e.code))), this.indexObjects(e);
 },
 indexObjects: function(e) {
 enyo.forEach(e.objects, function(t) {
@@ -1970,25 +3057,27 @@ return n < r ? -1 : n > r ? 1 : 0;
 enyo.kind({
 name: "Analyzer",
 kind: "Component",
+debug: !1,
 events: {
 onIndexReady: ""
 },
 create: function() {
 this.index = new Indexer, this.inherited(arguments);
 },
-analyze: function(e) {
-this.walk(e);
+analyze: function(e, t) {
+this.walk(e, t);
 },
-walk: function(e) {
-var t = [], n, r = function(i, s) {
-if (s) {
-for (var o = 0; o < s.modules.length; ++o) s.modules[o].label = n;
-t = t.concat(s.modules);
+walk: function(e, t) {
+var n = [], r, i = function(s, o) {
+if (o) {
+this.debug && enyo.log("Analyzer.walk.next() - inData: ", o);
+for (var u = 0; u < o.modules.length; ++u) o.modules[u].label = r;
+n = n.concat(o.modules);
 }
-var u = e.shift(), a = "";
-u ? (enyo.isString(u) || (n = u.label, u = u.path), (new Walker).walk(u).response(this, r)) : this.walkFinished(t);
+var a = e.shift(), f = "";
+a ? (this.debug && enyo.log("Analyzer.walk.next() - path: " + a), enyo.isString(a) || (r = a.label, a = a.path), (new Walker).walk(a, t).response(this, i)) : this.walkFinished(n);
 };
-r.call(this);
+i.call(this);
 },
 walkFinished: function(e) {
 this.read(e);
@@ -2002,6 +3091,45 @@ this.indexModules(t.modules);
 },
 indexModules: function(e) {
 this.index.addModules(e), this.doIndexReady();
+}
+});
+
+// KindHelper.js
+
+enyo.kind({
+name: "Analyzer.KindHelper",
+kind: "enyo.Component",
+published: {
+definition: null
+},
+checkDefAvail: function() {
+if (!this.definition) throw "No definition provided";
+},
+getEvents: function() {
+this.checkDefAvail();
+var e = [];
+obj = this.definition.properties;
+for (i = 0; i < obj.length; i++) if (obj[i].token === "events") {
+p = obj[i].value[0].properties;
+for (var t = 0; t < p.length; t++) {
+var n = p[t].name;
+e.push(n);
+}
+}
+return e;
+},
+getPublished: function() {
+this.checkDefAvail();
+var e = [];
+obj = this.definition.properties;
+for (i = 0; i < obj.length; i++) if (obj[i].token === "published") {
+p = obj[i].value[0].properties;
+for (var t = 0; t < p.length; t++) {
+var n = p[t].name;
+e.push(n);
+}
+}
+return e;
 }
 });
 
@@ -2698,22 +3826,25 @@ return this.presentProperty(e);
 }
 },
 presentObjects: function(e) {
-var t = this.groupFilter(e), n = "", r, i, s = this.getByType(t, "kind");
-if (s.length) {
+var t = this.groupFilter(e), n = "", r, i, s = !1, o = this.getByType(t, "kind");
+if (o.length) {
 n += "<h3>Kinds</h3>";
-for (r = 0; i = s[r]; r++) n += "<kind>" + i.name + "</kind><br/>", n += this.presentComment(i.comment);
+for (r = 0; i = o[r]; r++) n += "<kind>" + i.name + "</kind><br/>", n += this.presentComment(i.comment);
+s = !0;
 }
-s = this.getByType(t, "function");
-if (s.length) {
+o = this.getByType(t, "function");
+if (o.length) {
 n += "<h3>Functions</h3>";
-for (r = 0; i = s[r]; r++) n += this.presentComment(i.comment), i.group && (n += "<" + i.group + ">" + i.group + "</" + i.group + ">"), n += "<i>name:</i> <label>" + i.name + "(<arguments>" + i.value[0].arguments.join(", ") + "</arguments>)</label><br/>";
+for (r = 0; i = o[r]; r++) i.group && (n += "<" + i.group + ">" + i.group + "</" + i.group + ">"), n += "<label>" + i.name + "</label>: function(<arguments>" + i.value[0].arguments.join(", ") + "</arguments>)</label><br/>", n += this.presentComment(i.comment);
+s = !0;
 }
-s = this.getByType(t, "global");
-if (s.length) {
+o = this.getByType(t, "global");
+if (o.length) {
 n += "<h3>Variables</h3>";
-for (r = 0; i = s[r]; r++) n += this.presentComment(i.comment), i.group && (n += "<" + i.group + ">" + i.group + "</" + i.group + ">"), n += "<label>" + i.name + "</label> = ", n += this.presentExpression(i.value[0]), n += "<br/>";
+for (r = 0; i = o[r]; r++) n += this.presentComment(i.comment), i.group && (n += "<" + i.group + ">" + i.group + "</" + i.group + ">"), n += "<label>" + i.name + "</label> = ", n += this.presentExpression(i.value[0]), n += "<br/>";
+s = !0;
 }
-return n;
+return s || (n += "<h3>This module has no public properties or functions to display.</h3>"), n;
 },
 presentComment: function(e) {
 return e ? "<comment>" + this.markupToHtml(e) + "</comment>" : "";
@@ -2747,7 +3878,7 @@ return r;
 presentProperty: function(e, t) {
 var n = "", r = e;
 n += '<a name="' + r.name + '"></a>', r.group && (n += "<" + r.group + ">" + r.group + "</" + r.group + ">");
-var i = r.name;
+var i = r.name.replace(".prototype", "");
 return r.object && t && t != r.object && (i = "<prototype>" + r.object.name + "::</prototype>" + i), n += "<label>" + i + "</label>: ", r.value && r.value[0] && r.value[0].token == "function" ? n += "function(<arguments>" + r.value[0].arguments.join(", ") + "</arguments>)<br/>" : n += this.presentValue(r), n += this.presentComment(r.comment), n += "<hr/>", n;
 },
 presentValue: function(e) {
@@ -3112,13 +4243,22 @@ this.presentKinds(), this.presentModules(), this.presentIndex(), this.$.indexBus
 },
 indexalize: function(e, t, n) {
 var r = e ? enyo.filter(this.index.objects, e, this) : this.index.objects;
-r = this.nameFilter(r);
+e(r[0]) && r.sort(this.moduleCompare), r = this.nameFilter(r);
 var i = "", s;
 for (var o = 0, u; u = r[o]; o++) {
 var a = n(u).divider;
 a && s != a && (s = a, i += "<divider>" + a + "</divider>"), i += enyo.macroize(t, n(u));
 }
 return i;
+},
+moduleCompare: function(e, t) {
+var n, r;
+try {
+n = e.name.match("[^/]*.js$")[0], r = t.name.match("[^/]*.js$")[0];
+} catch (i) {
+n = e.name, r = t.name;
+}
+return n.toUpperCase() < r.toUpperCase() ? -1 : n.toUpperCase() > r.toUpperCase() ? 1 : 0;
 },
 nameFilter: function(e) {
 return enyo.filter(e, function(e) {
@@ -3129,10 +4269,10 @@ presentFilteredIndex: function(e) {
 var t = '<a href="#{$link}"><prototype>{$object}</prototype><topic>{$topic}</topic>{$module}</a><br/>', n = function(e) {
 return {
 link: e.topic || e.name,
-topic: e.name,
+topic: e.name.replace(".prototype", ""),
 divider: e.name[0].toUpperCase(),
 object: e.object && e.object.name ? e.object.name + "::" : "",
-module: !e.object && e.module && e.module.name ? " [" + e.module.name + "]" : ""
+module: !e.object && e.module && e.module.name ? " [" + e.module.name.match("[^/]*.js$") + "]" : ""
 };
 };
 this.$.index.setContent(this.indexalize(e, t, n));
@@ -3149,8 +4289,8 @@ return e.type == "module";
 }, t = '<a href="#{$link}"><topic>{$topic}</topic></a><br/>', n = function(e) {
 return {
 link: e.topic || e.name,
-topic: e.name,
-divider: e.name[0].toUpperCase()
+topic: e.name.match("[^/]*.js$"),
+divider: e.name.match("[^/]*.js$")[0][0].toUpperCase()
 };
 };
 this.$.modules.setContent(this.indexalize(e, t, n));

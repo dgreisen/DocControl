@@ -1,5 +1,6 @@
-widgets.Widget.prototype.defaultSkin = function() {
-  var components = [this.inputKind];
+/*
+widgets.Widget.prototype.onyx_defaultSkin = function() {
+  var components = [this.inputKind, this.requiredKind];
   if (!this.noHelpText) {
     var helpKind = enyo.clone(this.helpKind);
     helpKind.fit = true;
@@ -12,10 +13,10 @@ widgets.Widget.prototype.defaultSkin = function() {
     components: components
   };
   this.createComponents([comp]);
-  this.$.input.addStyles("width:"+(this.size*70-10)+"px;");
+  if (this.size) this.$.input.addStyles("width:"+(this.size*70-10)+"px;");
 };
 
-widgets.BaseContainerWidget.prototype.defaultSkin = function() {
+widgets.BaseContainerWidget.prototype.onyx_defaultSkin = function() {
   var components = [this.inputKind];
   if (!this.noHelpText) components.unshift(this.helpKind);
   if (this.containerControlKind) components.push(this.containerControlKind);
@@ -27,6 +28,7 @@ widgets.BaseContainerWidget.prototype.defaultSkin = function() {
   };
   this.createComponents([comp]);
 };
+*/
 
 enyo.kind({
   name: "widgets.onyx.Widget",
@@ -65,27 +67,34 @@ enyo.kind({
     this.inputKind = { components: [{ name: "input", kind: "onyx.Checkbox", onchange: "onInputChange", value: this.value }]};
     this.inherited(arguments);
   },
+  onyx_defaultSkin: function() {
+    widgets.Widget.prototype.defaultSkin.call(this);
+    if (this.$.label) this.$.label.addClass("checkbox");
+    if (this.$.helpText) this.$.helpText.addClass("checkbox");
+    this.$.input.addStyles("width:");
+  }
 });
+
 
 //* @public
 enyo.kind({
   name: "widgets.onyx.ChoiceWidget",
   kind: "widgets.ChoiceWidget",
   //* @protected
-  create: function() {
-    this.inherited(arguments);
-    this.setChoices(this.choices);
-  },
-  inputKind: {kind: "onyx.PickerDecorator", components: [
+  inputKind: {kind: "onyx.PickerDecorator", style:"display:inline-block", components: [
     {},
     { name: "input",
       kind: "onyx.Picker",
       components: []
     }
   ]},
-  labelKind: { name: "label", classes: "widget-label", style: "line-height:42px;" },
-  getValue: function() {
-    return this.value;
+  valueChanged: function() {
+    val = this.getValue();
+    val = (val === null || val === undefined) ? this.nullValue : val;
+    if (this.choicesIndex && this.choicesIndex[val]) {
+      this.$.input.setSelected(this.choicesIndex[val]);
+      this.doValueChanged({value:this.getValue()});
+    }
   },
   setChoices: function(val) {
     val = enyo.clone(val);
@@ -100,18 +109,73 @@ enyo.kind({
     var that = this;
     var choices = {};
     iterChoices = function(x) {
-      if (x[1] instanceof Array) x[1].forEach(iterChoices);
+      if (x[1] instanceof Array) enyo.forEach(x[1], iterChoices);
       else {
         choices[x[0]] = that.$.input.createComponent({ content: x[1], value: x[0], active: that.value===x[0]});
       }
     };
-    val.forEach(iterChoices);
+    enyo.forEach(val, iterChoices);
     this.choicesIndex = choices;
   },
   handlers: { onSelect: "itemSelected" },
   itemSelected: function(inSender, inEvent) {
-    this.value = inEvent.originator.value;
-    this.validate();
+    this.setValue(inEvent.originator.value);
+  },
+  defaultSkin: function() {
+    this.inherited(arguments);
+    this.$.pickerButton.setStyle("width:"+(this.size*70+8)+"px;");
+    if (this.$.label) this.$.label.addClass("picker");
+    if (this.$.helpText) this.$.helpText.addClass("picker");
+  }
+});
+
+
+enyo.kind({
+  name: "widgets.onyx.ChoiceCheckWidget",
+  kind: "widgets.onyx.ChoiceWidget",
+  //* @protected
+  create: function() {
+    this.inherited(arguments);
+    this.setChoices(this.choices);
+  },
+  inputKind: { name: "input", kind: "Group", classes: "onyx-sample-tools group", onActivate:"itemSelected", highlander: true, components: []},
+  itemKind: {kind:"FittableColumns", style: "padding-top:5px;", components: [
+    { components: [{kind:"onyx.Checkbox", checked: true}]},
+    { classes: "widget-help checkbox", allowHtml: true }
+  ]},
+  labelKind: { name: "label", classes: "widget-label checkbox" },
+  setChoices: function(val) {
+    val = enyo.clone(val);
+    if (this.choicesIndex) {
+      this.$.input.destroyComponents();
+      this.choicesIndex = undefined;
+    }
+    var that = this;
+    var choices = {};
+    iterChoices = function(x, i) {
+      if (x[1] instanceof Array) enyo.forEach(x[1], iterChoices);
+      else {
+        var comp = enyo.clone(that.itemKind);
+        comp.components[0].components[0].value = x[0];
+        comp.components[0].components[0].checked = (that.value === x[0]);
+        comp.components[1].content = x[1];
+        if (!i) delete comp.style;
+        choices[x[0]] = that.$.input.createComponent(comp).children[0].children[0];
+      }
+    };
+    enyo.forEach(val, iterChoices);
+    this.choicesIndex = choices;
+  },
+  valueChanged: function() {
+    val = this.getValue();
+    val = (val === null || val === undefined) ? this.nullValue : val;
+    if (this.choicesIndex && this.choicesIndex[val]) {
+      this.choicesIndex[val].setChecked(true);
+      this.doValueChanged({value:this.getValue()});
+    }
+  },
+  itemSelected: function(inSender, inEvent) {
+    if (inEvent.originator.getChecked()) this.setValue(inEvent.originator.value);
   },
   defaultSkin: function() {
     widgets.Widget.prototype.defaultSkin.call(this);
@@ -133,9 +197,15 @@ enyo.kind({
   name: "widgets.onyx.ListWidget",
   kind: "widgets.ListWidget",
   //* @protected
-  containerControlKind: { kind: "onyx.IconButton", src:"assets/plus.png", ontap: "addField", style:"margin-top:17px"},
+  containerControlKind: {
+    components: [
+      { tag: "hr" },
+      { kind: "onyx.IconButton", src:"assets/plus.png", ontap: "handleAdd", style:"float:right;" },
+      { content: "&nbsp;", allowHtml: true, style: "line-height: 32px;" }
+  ]},
   itemKind: { kind: "widgets.onyx.ListItem" }
 });
+
 
 //* @public
 //* wrapper for subfields of a _widgets.ListWidget_. You can subclass and specify it in `ListWidget.itemKind`.
@@ -143,8 +213,11 @@ enyo.kind({
   name: "widgets.onyx.ListItem",
   kind: "widgets.ListItem",
   components: [
-    { name: "_content", kind: "enyo.Control", fit: true },
-    { components: [{ kind: "onyx.IconButton", src:"assets/cross.png", ontap: "handleDelete", style:"margin-top:15px;"}] }
+    { tag: "hr" },
+    { kind: "enyo.FittableColumns", components: [
+      { name: "_content", kind: "enyo.Control", fit: true },
+      { components: [{ kind: "onyx.IconButton", src:"assets/cross.png", ontap: "handleDelete", style:"margin-top:15px;"}] }
+    ]}
   ]
 });
 

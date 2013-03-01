@@ -1,0 +1,29 @@
+{
+  "name": "doccontrol",
+  "version": "0.1.0",
+  "description": "An enyo controller for nested documents on both the client and server",
+  "keywords": [],
+  "homepage": "",
+  "author": "David Greisen <dgreisen@gmail.com>",
+  "main": "source/index.js",
+  "bin": {},
+  "dependencies": {
+    "underscore": ">=1.4"
+  },
+  "devDependencies": {
+    "jasmine-node": "1.0.26"
+  },
+  "engine": "node >= 0.6",
+  "scripts": {
+    "build": "cake build",
+    "watch": "cake watch"
+  },
+  "licenses": [{
+    "type": "Apache 2.0",
+    "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+  }],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dgreisen/DocControl"
+  }
+}

@@ -1,137 +1,97 @@
-// SCHEMA
-// ======
-
-// Phone Field
-// -----------
-enyo.kind({
-  name: "phoneField",
-  kind: "fields.ContainerField",
-  widgetAttrs: { noLabel: true, noHelpText: true },
-  schema: [
-  { name: "label",
-    kind: "fields.ChoiceField",
-    choices: [['h', 'Home'], ['w', 'Work'], ['m', 'Mobile']],
-    widgetAttrs: { label: "Label", compact: true, noLabel: true, size:1 },
-    inputClasses:"input-medium"
-  },
-  { name: "phone",
-    kind: "local.en.USPhoneNumberField",
-    widgetAttrs: { label: "Number", compact: true, noLabel: true, helpText: "enter 10 digit phone", size:2 }
-  }]
-});
-
-// ContactField
-// ------------
-enyo.kind({
-  name: "ContactField",
-  kind: "fields.ContainerField",
-  widgetAttrs: { skin: "horizontal", noLabel: true, noHelpText: true },
-  schema: [
-    { name: "name",
-      kind: "fields.CharField",
-      maxLength: 40,
-      widgetAttrs: { label: "Name" }
-    },
-    { name: "phones",
-      kind: "fields.ListField",
-      schema: { kind: phoneField },
-      widgetAttrs: { label: "Phone Numbers", noHelpText: true }
-    },
-    { name: "address",
-      kind: "local.en.USAddressField",
-      widgetAttrs: { noLabel: true }
-    },
-    { name: "type",
-      kind: "fields.ChoiceField",
-      choices: [[0, "Friend"],[1, "Family"], [2, "Coworker"], [3, "Acquaintance"]],
-      widgetAttrs: { label: "Contact Type" }
-
-    },
-    { name: "private",
-      kind: "fields.BooleanField",
-      required: false,
-      widgetAttrs: { label: "Private", initial: true }
-    },
-    { name: "emails",
-      kind: "fields.ListField",
-      schema: { kind: "fields.EmailField", widgetAttrs: { label: "Email", compact: true, noLabel: true } },
-      widgetAttrs: {
-        label: "Emails",
-        unnested: true
-      }
-    },
-    { name: "children",
-      kind: "fields.IntegerField",
-      maxValue: 30,
-      minValue: 0,
-      widgetAttrs: { label: "# of Children", initial: 0 }
-    }
-  ]
-});
-
-// INITIAL DATA
-// ============
-DATA = [
-  { name: "John Doe",
-    "private": true,
-    emails: ["jdoe@example.com"],
-    phones: [{ label: "h", phone: "403-555-9832" }],
-    address: {
-      street1: "1 Mulberry Ln.",
-      city: "Springfield",
-      state: "ND",
-      zip: "00093"
-    },
-    type: 0,
-    children:3
-  }
-];
-
 // APPLICATION
 // ===========
 enyo.kind({
   name: "App",
   classes: "enyo-fit",
   kind: "FittableRows",
+  create: function() {
+    this.inherited(arguments);
+    this.$.getSchema.send();
+    this.$.getHelp.send();
+  },
   components: [
+    // Top Toolbar
+    // -----------
     { name: "topTB", kind: "onyx.Toolbar", components: [
       {content: "Widgets:"},
-      {kind: "onyx.ToggleButton", value: true, onChange: "toggleWidgets" },
+      {kind: "onyx.PickerDecorator", onSelect: "selectWidgetSet", components: [
+        {},
+        {kind: "onyx.Picker", components: [
+          {content: "onyx", active: true},
+          {content: "enyo"},
+          {content: "none"}
+        ]}
+      ]},
+      {content: "Skins:"},
+      {kind: "onyx.PickerDecorator", onSelect: "selectSkin", components: [
+        {},
+        {kind: "onyx.Picker", components: [
+          {content: "default", active: true},
+          {content: "horizontal"}
+        ]}
+      ]},
       {content: "Validation Strategy:"},
       {kind: "onyx.PickerDecorator", onSelect: "selectValidationStrategy", components: [
         {},
         {kind: "onyx.Picker", components: [
-          {content: "Default", active: true},
-          {content: "Always"}
+          {content: "default", active: true},
+          {content: "always"}
         ]}
       ]},
       {content: "Instant Validation:"},
-      {kind: "onyx.ToggleButton", value: false, onChange: "toggleInstant" },
-      {kind: "onyx.Button", content: "help", ontap: "displayHelp"}
+      {kind: "onyx.ToggleButton", value: false, onChange: "toggleInstant" }
     ]},
-    { kind: "Scroller", fit: true, components: [
-      { classes: "main-content", content: "You can inspect the contacts in the debugger by looking at 'window.contacts', even when there are no widgets"},
-      { name: "contactsForm", kind: "fields.ListField", classes: "main-content form-horizontal",
-        schema: { kind: "ContactField" },
-        widget: "widgets.ListWidget",
-        value: DATA,
-        widgetSet: "onyx",
-        widgetAttrs: {
-          noLabel: true, noHelpText: true
-      }}
+    // Application Panels
+    { name: "appPanels",
+      kind: "Panels",
+      fit: true,
+      arrangerKind: "CardArranger",
+      draggable: false,
+      wrap: false,
+      components: [
+        // Main sample panel
+        // ------------------
+        { name: "samplePanel", kind: "Scroller", components: [
+          { classes: "main-content", content: "You can inspect the contacts in the debugger by looking at 'window.form', even when there are no widgets"},
+          { name: "contacts",
+            kind: "widgets.Form",
+            classes: "main-content",
+            schema: contactsSchema,
+            value: DATA,
+            skin: "default",
+            widgetSet: "onyx"
+          }
+        ]},
+        // Help panel
+        { name: "helpPanel", kind: "Scroller", components: [
+            { name: "help", allowHtml: true, content: "Please serve from a server such as Nginx or Apache to view help and source", classes: "main-content" }
+        ]},
+        // Source panel
+        { name: "sourcePanel", kind: "Scroller", components: [
+            { name: "source", tag: "pre", allowHtml: true, content: "Please serve from a server such as Nginx or Apache to view help and source" }
+        ]}
     ]},
+    // Bottom Toolbar
+    // --------------
     { kind: "onyx.Toolbar", components: [
-      { kind: "onyx.Button", ontap: "onSubmit", content: "Submit"},
-      { kind: "onyx.Button", ontap: "onReset", content: "Reset"},
-      { name: "errors" }
+      {kind: "Group", onActivate:"onPanelSelect", style:"float:right;", defaultKind: "onyx.Button", highlander: true, components: [
+        {content: "Sample", val: 0, active: true},
+        {content: "Help", val: 1 },
+        {content: "Schema", val: 2 }
+      ]},
+      { name: "submitBtn", kind: "onyx.Button", ontap: "onSubmit", content: "Submit"},
+      { name: "resetBtn", kind: "onyx.Button", ontap: "onReset", content: "Reset"},
+      { name: "errors"}
     ]},
-    { name: "submitPop", kind: "onyx.Popup", centered: true, floating: true }
+    { name: "submitPop", kind: "onyx.Popup", centered: true, floating: true },
+    { name: "getSchema", kind: "WebService", url: 'sample/schema.js', onResponse: "onSchema", handleAs: "text" },
+    { name: "getHelp", kind: "WebService", url: 'sample/help.html', onResponse: "onHelp", handleAs: "text" }
   ],
   handlers: {
     onValidation: "onValidation"
   },
   onSubmit: function() {
-    if (this.$.contactsForm.isValid()) {
+    if (this.$.contacts.isValid()) {
       this.$.submitPop.setContent('Successfull Contacts Submission');
     } else {
       this.$.submitPop.setContent('Submission Failure - invalid form');
@@ -139,20 +99,42 @@ enyo.kind({
     this.$.submitPop.show();
   },
   onReset: function() {
-    this.$.contactsForm.setValue(DATA, true);
+    this.$.contacts.setValue(DATA, {forceReset: true});
   },
-  startup: 2,
+  onSchema: function(inSender, inEvent) {
+    data = inEvent.data;
+    this.$.source.setContent(data);
+  },
+  onHelp: function(inSender, inEvent) {
+    data = inEvent.data;
+    this.$.help.setContent(data);
+  },
+  onPanelSelect: function(inSender, inEvent) {
+    if (!inEvent.originator.getActive()) return;
+    var i = inEvent.originator.val;
+    this.$.appPanels.setIndex(i);
+    this.$.submitBtn.setShowing(!i);
+    this.$.resetBtn.setShowing(!i);
+  },
+  startup: 1,
   toggleWidgets: function(inSender, inEvent) {
     if (this.startup-- > 0) return;
-    this.$.contactsForm.setNoWidget(!inSender.value);
+    this.$.contacts.setNoWidget(!inSender.value);
+  },
+  selectWidgetSet: function(inSender, inEvent) {
+    if (inEvent.content == "none") return this.$.contacts.setShowing(false);
+    this.$.contacts.setShowing(true);
+    this.$.contacts.setWidgetSet(inEvent.content);
+  },
+  selectSkin: function(inSender, inEvent) {
+    this.$.contacts.setSkin(inEvent.content);
   },
   selectValidationStrategy: function(inSender, inEvent) {
-    console.log('x');
-    this.$.contactsForm.setWidgetAttrs({validationStrategy: inEvent.content.toLowerCase()});
+    this.$.contacts.setValidationStrategy(inEvent.content);
   },
   toggleInstant: function(inSender, inEvent) {
     if (this.startup-- > 0) return;
-    this.$.contactsForm.setWidgetAttrs({validationInstant: inSender.value});
+    this.$.contacts.setInstantUpdate(inSender.value);
   },
   onValidation: function(inSender, inEvent) {
     if (inEvent.valid) {

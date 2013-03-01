@@ -1,0 +1,32 @@
+<h2>Highlights</h2>
+<ul>
+	<li>Use the same schema in browser and node.js</li>
+	<li>Arbitrary nested schemas for easy validation of documents stored in NoSql dbs</li>
+	<li>Incredibly flexible; you don't have to use our widgets. simply hook your ui up to the form events</li>
+</ul>
+
+<h2>Options</h2>
+<dl>
+	<dt>WidgetSet</dt>
+	<dd>Which widgetSet the form uses to render its fields. Currently:
+		<ul><li>Enyo</li><li>Onyx</li></ul>
+	</dd>
+	<dt>Skin</dt>
+	<dd>Which skin to use to display each widget. There are currently two skins; both supported by both widgetSets:
+		<ul>
+			<li><b>default</b>: traditional form, everything layed out one after the other vertically with nesting for subfields</li>
+			<li><b>horizontal</b>: forms arranged so label and form are next to each other.</li>
+		</ul>
+	</dd>
+	<dt>Validation Strategy</dt>
+	<dd>How and when to perform automatic validation. Every time the fields in the form change, the validation strategy
+		is called. If the validation strategy returns true, the form is validated and errors displayed as appropriate. There are currently two validation strategies:
+		<ul>
+			<li><b>default</b>: Only start validating after the form has been manually validated once (usually by hitting the submit button)</li>
+			<li><b>always</b>: perform validation every time the form changes</li>
+		</ul>
+	</dd>
+	<dt>Instant Validation</dt>
+	<dd>While validation strategy determines whether to validate once a change is detected, instant validation determines when to notify the form that a widget value has changed. If true, then the widget will notify the form after every key stroke. If false, it will only notify the form when the widget is left.
+	</dd>
+</dl>

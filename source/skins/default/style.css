@@ -1,0 +1,60 @@
+.error {
+	border-color: #B94A48;
+	color: #B94A48;
+}
+
+.error .onyx-input-decorator {
+	border-color: #B94A48;
+}
+
+.error .widget-help {
+	color: #B94A48;	
+}
+
+.widget-help.none {
+	display:none;
+}
+
+.widget-help {
+	color: #595959;
+}
+.widget-help em {
+	font-weight: normal;
+	font-style: normal;
+	color: black;
+}
+
+.skin-default .widget-required {
+	display: inline-block;
+}
+
+.skin-default .widget {
+	margin-top: 15px;
+}
+
+.skin-default .contents {
+	margin-left: 30px;
+	margin-top: 0px;
+}
+
+.skin-horizontal .widget-label {
+	width: 160px;
+	text-align: right;
+	margin-right: 20px;
+}
+
+.skin-horizontal .widget-required {
+	display: inline-block;
+}
+
+.skin-horizontal .widget {
+	margin-top: 15px;
+}
+
+.skin-horizontal .widget.widget-container {
+	margin-top: 0;
+}
+
+.skin-horizontal .widget-help {
+	margin-left: 10px;
+}

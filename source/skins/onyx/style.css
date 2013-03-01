@@ -1,41 +1,24 @@
-.widget-label {
-	width: 160px;
-	text-align: right;
-	margin-right: 20px;
-	line-height:38px;
-}
 
-.container.widget-label {
-	padding-top: 15px;
-}
-
-.widget {
-	margin-top: 15px;
-}
-
-.error {
-	border-color: #B94A48;
-	color: #B94A48;
-}
-
-.error .onyx-input-decorator {
+.onyx .error .onyx-input-decorator {
 	border-color: #B94A48;
 }
 
-.widget-help {
-	margin-left: 10px;
+.skin-horizontal.widgetset-onyx .widget-help {
 	padding-top: 9px;
-	color: #595959;
 }
 
-.error .widget-help {
-	color: #B94A48;	
+.skin-horizontal.widgetset-onyx .widget-required {
+	font-weight: bold;
+	padding: 6px;
 }
 
-.widget-help.none {
-	display:none;
+.skin-horizontal.widgetset-onyx .widget-help.checkbox, .skin-horizontal.widgetset-onyx .widget-label.checkbox {
+	padding-top: 6px;
 }
 
-.large {
-	width: 250px;
+.skin-horizontal.widgetset-onyx .widget-help.picker, .skin-horizontal.widgetset-onyx .widget-label.picker {
+	padding-top: 11px;
+}
+.skin-horizontal.widgetset-onyx .widget-label {
+	padding-top: 9px;
 }
