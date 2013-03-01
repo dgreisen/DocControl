@@ -2,9 +2,6 @@
 	"version": "0.1",
 	"packages": [
 		{"name": "widgets", "path": "../source/Widgets.js"},
-		{"name": "containerwidgets", "path": "../source/ContainerWidgets.js"},
-		{"name": "fields", "path": "../source/Fields.js"},
-		{"name": "containerfields", "path": "../source/ContainerFields.js"},
-		{"name": "localized.en", "path": "../source/localized/en/Fields.js"}
+		{"name": "containerwidgets", "path": "../source/ContainerWidgets.js"}
 	]
 }
