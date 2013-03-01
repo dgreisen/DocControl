@@ -1,8 +1,12 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<<<<<<< HEAD:sample.html
 		<title>DocControl Sample</title>
+=======
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<title>Enyo Bootplate App</title>
+>>>>>>> 5d1a779a62aad5b37f32b0cdcb9baaf98229e0ac:debug.html
 		<link rel="shortcut icon" href="assets/favicon.ico"/>
 		<!-- -->
 		<meta http-equiv="Content-Type" content="text/html; charset=utf8"/>
