@@ -201,7 +201,7 @@ enyo.kind({
     components: [
       { tag: "hr" },
       { kind: "onyx.IconButton", src:"assets/plus.png", ontap: "handleAdd", style:"float:right;" },
-      { content: "&nbsp;", allowHtml: true, style: "margin-top:15px;line-height: 38px;" }
+      { content: "&nbsp;", allowHtml: true, style: "line-height: 32px;" }
   ]},
   itemKind: { kind: "widgets.onyx.ListItem" }
 });

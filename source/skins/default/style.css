@@ -15,13 +15,14 @@
 	display:none;
 }
 
+.widget-help {
+	color: #595959;
+}
 .widget-help em {
 	font-weight: normal;
 	font-style: normal;
 	color: black;
 }
-
-
 
 .skin-default .widget-required {
 	display: inline-block;

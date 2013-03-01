@@ -111,7 +111,7 @@ enyo.kind({
           {content: "none"}
         ]}
       ]},
-      {content: "Spins:"},
+      {content: "Skins:"},
       {kind: "onyx.PickerDecorator", onSelect: "selectSkin", components: [
         {},
         {kind: "onyx.Picker", components: [
@@ -138,8 +138,8 @@ enyo.kind({
         classes: "main-content",
         schema: contactsSchema,
         value: DATA,
-        skin: "horizontal",
-        widgetSet: "enyo"
+        skin: "default",
+        widgetSet: "onyx"
       }
     ]},
     { kind: "onyx.Toolbar", components: [
@@ -163,12 +163,14 @@ enyo.kind({
   onReset: function() {
     this.$.contacts.setValue(DATA);
   },
-  startup: 2,
+  startup: 1,
   toggleWidgets: function(inSender, inEvent) {
     if (this.startup-- > 0) return;
     this.$.contacts.setNoWidget(!inSender.value);
   },
   selectWidgetSet: function(inSender, inEvent) {
+    if (inEvent.content == "none") return this.$.contacts.setShowing(false);
+    this.$.contacts.setShowing(true);
     this.$.contacts.setWidgetSet(inEvent.content);
   },
   selectSkin: function(inSender, inEvent) {

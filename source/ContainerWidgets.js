@@ -175,6 +175,7 @@ enyo.kind({
   containerControlKind: {
     components: [
       { tag: "hr" },
-      { kind: "enyo.Button", ontap: "handleAdd", content: "Add" }
+      { kind: "enyo.Button", content:"Add", ontap: "handleAdd", style:"float:right;" },
+      { content: "&nbsp;", allowHtml: true, style: "line-height: 26px;" }
   ]}
 });

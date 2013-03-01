@@ -56,9 +56,7 @@ enyo.kind({
     //* a string designating a widget style. e.g. "onyx"
     widgetSet: "",
     //* the widgetSet skin to apply to the widget
-    skin: "default",
-    // whether to create widgets
-    noWidgets: false
+    skin: "default"
   },
   create: function() {
     this.inherited(arguments);
@@ -157,6 +155,18 @@ enyo.kind({
     var path = inEvent.originator.getPath();
     this.fields.getField(path).addField();
   },
+  skinChanged: function(oldSkin) {
+    if (oldSkin) this.removeClass("skin-" + oldSkin);
+    this.addClass("skin-" + this.skin);
+    this.value = this.getValue();
+    this.schemaChanged();
+  },
+  widgetSetChanged: function(oldSet) {
+    if (oldSet) this.removeClass("widgetset-" + oldSet);
+    if (this.widgetSet) this.addClass("widgetset-" + this.widgetSet);
+    this.value = this.getValue();
+    this.schemaChanged();
+  },
   schemaChanged: function() {
     this.schema = enyo.clone(this.schema);
     this._widgets = [];
@@ -251,10 +261,6 @@ enyo.kind({
     instantUpdate: undefined,
     //* whether to display the widget in its compact form TODO: only partially implemented
     compact: false,
-    //* whether or not to save room for a label.
-    noLabel: undefined,
-    //* whether or not to save room for helpText
-    noHelpText: undefined,
     //* positive integer size. regular is 3. skin handles converting unitless size into actual size.
     size: 3,
     //* a string designating a widget style. e.g. "onyx"
@@ -305,6 +311,7 @@ enyo.kind({
     if (this.helpKind) this.helpKind = enyo.clone(this.helpKind);
     if (this.requiredKind) this.requiredKind = enyo.clone(this.requiredKind);
     if (this.containerControlKind) this.containerControlKind = enyo.clone(this.containerControlKind);
+
 
     // skin will actually generate the components
     var widgetSet = this.widgetSet || "";
