@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>Fields.coffee</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <link rel="stylesheet" media="all" href="../resources/base.css" />
+  <link rel="stylesheet" media="all" href="../resources/module.css" />
+</head>
+<body>
+  <header>
+    <h1>Fields.coffee</h1>
+  </header>
+  <div id="content">
+    <div id="sidebar">
+      
+      <h4>Classes</h4>
+      <ul class="classlist">
+        
+        <li><a href="#Field">Field</a></li>
+        
+        <li><a href="#CharField">CharField</a></li>
+        
+        <li><a href="#IntegerField">IntegerField</a></li>
+        
+        <li><a href="#FloatField">FloatField</a></li>
+        
+        <li><a href="#RegexField">RegexField</a></li>
+        
+        <li><a href="#EmailField">EmailField</a></li>
+        
+        <li><a href="#BooleanField">BooleanField</a></li>
+        
+        <li><a href="#NullBooleanField">NullBooleanField</a></li>
+        
+        <li><a href="#ChoiceField">ChoiceField</a></li>
+        
+      </ul>
+      
+      
+    </div>
+    <div id="main">
+      
+      <div id="module_docstring">
+        <p>the base Field class and most of the core fields.</p>
+      </div>
+      
+      
+      <div id="classes">
+        <h2>Classes</h2>
+        
+        <div class="class">
+          <div class="header">
+            <a id="Field"><h3>Field</h3></a>
+            
+          </div>
+          <div class="class_content">
+            <p>Baseclass for all fields. Fields are defined by a schema. You can override attributes and methods within the schema. For example:</p>
+
+<pre><code>var schema = { name: "firstField", field: "Field", required: false };
+</code></pre>
+
+<p>creates a basic field that is not required. This is not particularly useful. But we can create useful fields using subclasses of Field:</p>
+
+<pre><code>var schema = { name: "badPasswordField" field: "CharField", maxLength: 8, minLength: 4, widget: "Widgets.PasswordWidget" };
+</code></pre>
+
+<p>Now we have created a very insecure password field. We have overridden the Charfield's default widget with a password widget.</p>
+
+<p>We can create a raw field instance on the frontend or backend by calling <code>fields.genField(contactSchema)</code>. Or we can create a frontend
+form by using the schema in a widget.Form constructor as the schema attribute.</p>
+
+<p>Attributes:</p>
+
+<ul>
+<li><code>clean</code>: the cleaned widget value accessed via <code>getClean()</code>; raises error if invalid; this will be a javascript datatype and 
+should be used for any calculations, etc. Use the toJSON() method to get a version appropriate for serialization.</li>
+<li><code>validators</code>: array of validators; If overriding a parent class, you must include all parent class validators</li>
+<li><code>errorMessages</code>: hash of error message codes and keys. You can override any error message by setting a new message for the code.</li>
+<li><code>listeners</code>: hash of listeners of one of the following forms:
+<ul><li><code>'event': (inSender, inEvent) -&gt;</code></li>
+<li><code>'event': "handlerMethod"</code></li>
+<li><code>'*': "handlerMethod"</code>
+wildcard will handle all incoming events</li></ul></li>
+<li><code>widget</code>: kind definition for widget to display (eg { kind: "widget.Widget"}, or simply the string name of the widget kind)</li>
+<li><code>name</code>: the name/identifier for this field</li>
+<li><code>required</code>: whether the current field is required</li>
+<li><code>value</code>: the current value of the field. access via <code>getValue()</code></li>
+<li><code>initial</code>: the initial value of the field (for validation)</li>
+<li><code>default</code>: the default value of the field. if the set value is undefined, the value will be changed to the default value</li>
+</ul>
+
+<p>Default widget: Widget</p>
+            <div class="methods">
+              
+              
+              <div class="instancemethods">
+                <h3>Instance Methods</h3>
+                
+                <div class="method">
+                  <h4>constructor(opts)</h4>
+                  
+                </div>
+                
+                <div class="method">
+                  <h4>getErrors()</h4>
+                  <p>get the errors for this field. returns null if no errors. </p>
+                </div>
+                
+                <div class="method">
+                  <h4>toJavascript(value)</h4>
+                  <p>First function called in validation process.<br />
+this function converts the raw value to javascript. <code>value</code> is the raw value from
+<code>@getValue()</code>. The function returns the value in the proper javascript format,<br />
+this function should be able to convert from any type that a widget might supply to the type needed for validation</p>
+                </div>
+                
+                <div class="method">
+                  <h4>validate(value)</h4>
+                  <p>Second function called in validation process.<br />
+Any custom validation logic should be placed here. receives the input, <code>value</code>, from <code>toJavascript</code>'s output.
+return the value with any modifications. When validation fails, throw a utils.ValidationError. with a 
+default error message, a unique error code, and any attributes for string interpolation of the error message
+be sure to call `@super <br />
+default action is to check if the field is required</p>
+                </div>
+                
+                <div class="method">
+                  <h4>runValidators(value)</h4>
+                  <p>Third function called in validation process.<br />
+You should not have to override this function. simply add validators to @validators.</p>
+                </div>
+                
+                <div class="method">
+                  <h4>isValid(opts)</h4>
+                  <p>primary validation function<br />
+calls all other validation subfunctions and emits a <code>validChanged</code> event if the valid state has changed.
+returns <code>true</code> or <code>false</code>
+only precesses the full validation if hasChanged is true, which is only true if something has changed since the last call to isValid()
+emits the <code>validChanged</code> event if the valid state has changed.</p>
+                </div>
+                
+                <div class="method">
+                  <h4>getClean(opts)</h4>
+                  <p>return the fild's cleaned data if there are no errors. throws an error if there are validation errors.
+you will likely have to override this in Field subclasses</p>
+                </div>
+                
+                <div class="method">
+                  <h4>toJSON(opts)</h4>
+                  <p>return the field's cleaned data in serializable form if there are no errors. throws an error if there are validation errors. <br />
+you might have to override this in Field subclasses.</p>
+                </div>
+                
+                <div class="method">
+                  <h4>setRequired(val)</h4>
+                  
+                </div>
+                
+                <div class="method">
+                  <h4>setValue(val, opts)</h4>
+                  <p>You should not have to override this in Field subclasses </p>
+                </div>
+                
+                <div class="method">
+                  <h4>getValue()</h4>
+                  <p>You should not have to override this in Field subclasses </p>
+                </div>
+                
+                <div class="method">
+                  <h4>getPath()</h4>
+                  <p>Get an array of the unique path to the field. A ListField's subfields are denoted by an integer representing the index of the subfield.
+A ContainerField's subfields are denoted by a string or integer representing the key of the subfield.
+Example:
+{parent: {child1: hello, child2: [the, quick, brown, fox]}}
+["parent", "child2", 1] points to "quick"
+[] points to {parent: {child1: hello, child2: [the, quick, brown, fox]}}</p>
+                </div>
+                
+                <div class="method">
+                  <h4>getField(path)</h4>
+                  <p>get a field given a path </p>
+                </div>
+                
+                <div class="method">
+                  <h4>emit(eventName, inEvent)</h4>
+                  <p>emit an event that bubbles up the field tree.</p>
+
+<ul>
+<li><code>eventName</code>: name of the event to emit</li>
+<li><code>inEvent</code>: optional hash of data to send with the event</li>
+</ul>
+                </div>
+                
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        <div class="class">
+          <div class="header">
+            <a id="CharField"><h3>CharField</h3></a>
+            
+            
+            <a class="parent" href="#Field"><h3>extends Field</h3></a>
+            
+            
+          </div>
+          <div class="class_content">
+            <p>a field that contains a string. <br />
+Attributes:</p>
+
+<ul>
+<li><code>maxLength</code>: The maximum length of the string (optional)</li>
+<li><code>minLength</code>: The minimum length of the string (optional)</li>
+</ul>
+
+<p>Default widget: Widget</p>
+            <div class="methods">
+              
+              
+              <div class="instancemethods">
+                <h3>Instance Methods</h3>
+                
+                <div class="method">
+                  <h4>constructor(opts)</h4>
+                  
+                </div>
+                
+                <div class="method">
+                  <h4>toJavascript(value)</h4>
+                  
+                </div>
+                
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        <div class="class">
+          <div class="header">
+            <a id="IntegerField"><h3>IntegerField</h3></a>
+            
+            
+            <a class="parent" href="#Field"><h3>extends Field</h3></a>
+            
+            
+          </div>
+          <div class="class_content">
+            <p>a field that contains a whole number. <br />
+Attributes:  </p>
+
+<ul>
+<li><code>maxValue</code>: Maximum value of integer</li>
+<li><code>minValue</code>: Minimum value of integer</li>
+</ul>
+
+<p>Default widget: Widget</p>
+            <div class="methods">
+              
+              
+              <div class="instancemethods">
+                <h3>Instance Methods</h3>
+                
+                <div class="method">
+                  <h4>constructor(opts)</h4>
+                  
+                </div>
+                
+                <div class="method">
+                  <h4>toJavascript(value)</h4>
+                  
+                </div>
+                
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        <div class="class">
+          <div class="header">
+            <a id="FloatField"><h3>FloatField</h3></a>
+            
+            
+            <a class="parent" href="#IntegerField"><h3>extends IntegerField</h3></a>
+            
+            
+          </div>
+          <div class="class_content">
+            <p>A field that contains a floating point number. <br />
+Attributes:</p>
+
+<ul>
+<li><code>maxDecimals</code>: Maximum number of digits after the decimal point</li>
+<li><code>minDecimals</code>: Minimum number of digits after the decimal point</li>
+<li><code>maxDigits</code>: Maximum number of total digits before and after the decimal point</li>
+</ul>
+
+<p>Default widget: Widget</p>
+            <div class="methods">
+              
+              
+              <div class="instancemethods">
+                <h3>Instance Methods</h3>
+                
+                <div class="method">
+                  <h4>constructor(opts)</h4>
+                  
+                </div>
+                
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        <div class="class">
+          <div class="header">
+            <a id="RegexField"><h3>RegexField</h3></a>
+            
+            
+            <a class="parent" href="#Field"><h3>extends Field</h3></a>
+            
+            
+          </div>
+          <div class="class_content">
+            <p>A baseclass for subclassing.
+Attributes:</p>
+
+<ul>
+<li><code>regex</code>: the compiled regex to test against</li>
+<li><code>errorMessage</code>: the error message to display when the regex fails</li>
+</ul>
+
+<p>Default widget: Widget</p>
+            <div class="methods">
+              
+              
+              <div class="instancemethods">
+                <h3>Instance Methods</h3>
+                
+                <div class="method">
+                  <h4>constructor(opts)</h4>
+                  
+                </div>
+                
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        <div class="class">
+          <div class="header">
+            <a id="EmailField"><h3>EmailField</h3></a>
+            
+            
+            <a class="parent" href="#RegexField"><h3>extends RegexField</h3></a>
+            
+            
+          </div>
+          <div class="class_content">
+            <p>A field that contains a valid email. <br />
+Attributes:</p>
+
+<ul>
+<li>None</li>
+</ul>
+
+<p>Default widget: EmailWidget</p>
+            <div class="methods">
+              
+              
+            </div>
+          </div>
+        </div>
+        
+        <div class="class">
+          <div class="header">
+            <a id="BooleanField"><h3>BooleanField</h3></a>
+            
+            
+            <a class="parent" href="#Field"><h3>extends Field</h3></a>
+            
+            
+          </div>
+          <div class="class_content">
+            <p>A field that contains a Boolean value. Must be true or false.
+if you want to be able to store null us <code>NullBooleanField</code>
+Attributes:</p>
+
+<ul>
+<li>none</li>
+</ul>
+
+<p>Default widget: CheckboxWidget</p>
+            <div class="methods">
+              
+              
+              <div class="instancemethods">
+                <h3>Instance Methods</h3>
+                
+                <div class="method">
+                  <h4>toJavascript(value)</h4>
+                  
+                </div>
+                
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        <div class="class">
+          <div class="header">
+            <a id="NullBooleanField"><h3>NullBooleanField</h3></a>
+            
+            
+            <a class="parent" href="#BooleanField"><h3>extends BooleanField</h3></a>
+            
+            
+          </div>
+          <div class="class_content">
+            <p>A field that contains a Boolean value. The value can be 
+true, false, or null. <br />
+Attributes:</p>
+
+<ul>
+<li>none</li>
+</ul>
+
+<p>Default widget: CheckboxWidget</p>
+            <div class="methods">
+              
+              
+              <div class="instancemethods">
+                <h3>Instance Methods</h3>
+                
+                <div class="method">
+                  <h4>toJavascript(value)</h4>
+                  
+                </div>
+                
+                <div class="method">
+                  <h4>validate(value)</h4>
+                  
+                </div>
+                
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        <div class="class">
+          <div class="header">
+            <a id="ChoiceField"><h3>ChoiceField</h3></a>
+            
+            
+            <a class="parent" href="#Field"><h3>extends Field</h3></a>
+            
+            
+          </div>
+          <div class="class_content">
+            <p>A field that contains value from a list of values. <br />
+Attributes:</p>
+
+<ul>
+<li><code>choices</code>: Array of 2-arrays specifying valid choices. if 2-arrays, first value is value, second is display. create optgroups by setting display If display value to a 2-array. MUST USE <code>setChoices</code>.</li>
+</ul>
+
+<p>Default widget: ChoiceWidget</p>
+            <div class="methods">
+              
+              
+              <div class="instancemethods">
+                <h3>Instance Methods</h3>
+                
+                <div class="method">
+                  <h4>constructor(opts)</h4>
+                  
+                </div>
+                
+                <div class="method">
+                  <h4>setChoices(val)</h4>
+                  
+                </div>
+                
+                <div class="method">
+                  <h4>toJavascript(value)</h4>
+                  
+                </div>
+                
+                <div class="method">
+                  <h4>validate(value)</h4>
+                  
+                </div>
+                
+                <div class="method">
+                  <h4>validValue(val)</h4>
+                  
+                </div>
+                
+                <div class="method">
+                  <h4>getDisplay()</h4>
+                  
+                </div>
+                
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+      </div>
+      
+      
+    </div>
+  </div>
+</body>
+</html>

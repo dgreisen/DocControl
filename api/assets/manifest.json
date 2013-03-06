@@ -1,7 +1,0 @@
-{
-	"version": "0.1",
-	"packages": [
-		{"name": "widgets", "path": "../source/Widgets.js"},
-		{"name": "containerwidgets", "path": "../source/ContainerWidgets.js"}
-	]
-}

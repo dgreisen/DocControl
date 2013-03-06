@@ -1,3 +1,8 @@
+###
+These function are used throughout the library. Many provide cross-platform (server and browser)
+support for frequently-used functions.
+###
+
 if exports?
   _ = require "underscore"
 
@@ -6,8 +11,11 @@ if exports?
 _i = (s) -> return s
 
 
-# string interpolation (thanks http:#djangosnippets.org/snippets/2074/)
 interpolate = (s, args) ->
+  ###
+  simple string interpolation (thanks http:#djangosnippets.org/snippets/2074/)
+  interpolate("%s %s", ["hello", "world"]) returns "hello world"
+  ###
   i = 0
   return s.replace(
     /%(?:\(([^)]+)\))?([%diouxXeEfFgGcrs])/g,
@@ -17,6 +25,12 @@ interpolate = (s, args) ->
   )
 
 ValidationError = (message, code, args...) ->
+  ###
+  raised by fields during validation
+   * `message`:  the default error message to display
+   * `code`: the code used to look up an overriding message in the `errorMessages` hash
+   * `args...`: arguments used for interpolation with the error message.
+  ###
   return {message: message, code: code, data: args }
 
 includes = (a, s) ->
@@ -27,8 +41,8 @@ isEmpty = (obj) ->
     return false
   return true
 
-# a very naive comparison of two objects - will only work with the equivalent of json
 isEqual = (v1, v2) ->
+  ### a very naive comparison of two objects - will only work with the equivalent of json ###
   if v1 instanceof Array
     if v2 not instanceof Array or v1.length != v2.length then return false
     for item, i in v1
@@ -45,6 +59,7 @@ isEqual = (v1, v2) ->
 
 
 strip = (str) ->
+  ### remove leading and trailing white space ###
   return String(str).replace(/^\s*|\s*$/g, '')
 
 utils = 
