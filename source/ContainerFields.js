@@ -13,23 +13,9 @@
       utils = window.utils;
     }
     /*
-        _fields.BaseContainerField_ is the baseKind for all container-type fields.
-        DocControl allows you to create, validate and display arbitrarily complex
-        nested data structures. container-type fields contain other fields. There
-        are currently two types. A `ContainerField`, analogous to a hash of subfields,
-        and a `ListField`, analogous to a list of subfields. container-type fields
-        act in most ways like a regular field. You can set them, and all their subfields
-        with `setValue`, you can get their, and all their subfields', data with
-        `getClean` or `toJSON`.
-    
-        When a subfield is invalid, the containing field will also be invalid.
-    
-        You specify a container's subfields in the `schema` attribute. Each container type
-        accepts a different format for the `schema`.
-    
-        DocControl schemas are fully recursive - that is, containers can contain containers,
-        allowing you to model and validate highly nested datastructures like you might find
-        in a document database.
+      DocControl allows you to create arbitrarily nested forms, to validate arbitrary data structures.
+      You do this by using ContainerFields. create a nested form by creating a containerField
+      then adding subfields to the schema. See example in README.md.
     */
 
     BaseContainerField = (function(_super) {
@@ -39,6 +25,27 @@
       function BaseContainerField() {
         return BaseContainerField.__super__.constructor.apply(this, arguments);
       }
+
+      /*
+            _fields.BaseContainerField_ is the baseKind for all container-type fields.
+            DocControl allows you to create, validate and display arbitrarily complex
+            nested data structures. container-type fields contain other fields. There
+            are currently two types. A `ContainerField`, analogous to a hash of subfields,
+            and a `ListField`, analogous to a list of subfields. container-type fields
+            act in most ways like a regular field. You can set them, and all their subfields
+            with `setValue`, you can get their, and all their subfields', data with
+            `getClean` or `toJSON`.
+      
+            When a subfield is invalid, the containing field will also be invalid.
+      
+            You specify a container's subfields in the `schema` attribute. Each container type
+            accepts a different format for the `schema`.
+      
+            DocControl schemas are fully recursive - that is, containers can contain containers,
+            allowing you to model and validate highly nested datastructures like you might find
+            in a document database.
+      */
+
 
       BaseContainerField.prototype.schema = void 0;
 
@@ -56,11 +63,16 @@
       };
 
       BaseContainerField.prototype.subfieldChanged = function(inSender, inEvent) {
+        /* if an immediate subfield has changed, then we want to perform validation next time inValid called
+        */
         this._hasChanged = true;
         return false;
       };
 
       BaseContainerField.prototype.isValid = function(opts) {
+        /* custom isvalid method that validates all child fields as well.
+        */
+
         var oldErrors, valid, value, _ref,
           _this = this;
         if (opts != null ? (_ref = opts.path) != null ? _ref.length : void 0 : void 0) {
@@ -105,6 +117,9 @@
       BaseContainerField.prototype._querySubfields = function() {
         var args, fn;
         fn = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
+        /* get data from each subfield `fn` and put it into the appropriate data structure
+        */
+
         return utils.map(this.getFields(), function(x) {
           return x[fn].apply(x, args);
         });
@@ -119,6 +134,11 @@
       };
 
       BaseContainerField.prototype.getField = function(path) {
+        /*
+              return an arbitrarily deep subfield given a path. Path can be an array
+              of indexes/names, or it can be a dot-delimited string
+        */
+
         var subfield;
         if (!path || path.length === 0) {
           return this;
@@ -230,17 +250,6 @@
       return BaseContainerField;
 
     })(fields.Field);
-    /*
-        A ContainerField contains a number of heterogeneous
-        subfields. When data is extracted from it using `toJSON`, or `getClean`, the
-        returned data is in a hash object where the key is the name of the subfield
-        and the value is the value of the subfield.
-    
-        the schema for a ContainerField is an Array of kind definition objects such as
-        `[{kind: "CharField", maxLength: 50 }, {kind:IntegerField }`.
-        The ContainerField will contain the specified array of heterogenious fields.
-    */
-
     ContainerField = (function(_super) {
 
       __extends(ContainerField, _super);
@@ -248,6 +257,18 @@
       function ContainerField() {
         return ContainerField.__super__.constructor.apply(this, arguments);
       }
+
+      /*
+            A ContainerField contains a number of heterogeneous
+            subfields. When data is extracted from it using `toJSON`, or `getClean`, the
+            returned data is in a hash object where the key is the name of the subfield
+            and the value is the value of the subfield.
+      
+            the schema for a ContainerField is an Array of kind definition objects such as
+            `[{kind: "CharField", maxLength: 50 }, {kind:IntegerField }`.
+            The ContainerField will contain the specified array of heterogenious fields.
+      */
+
 
       ContainerField.prototype.widget = "widgets.ContainerWidget";
 
@@ -347,19 +368,6 @@
       return ContainerField;
 
     })(BaseContainerField);
-    /*
-          A HashField contains an arbitrary number of identical subfields in a hash
-          (javascript object). When data is extracted from it using `toJSON`, or 
-          `getClean`, the returned data is in an object where each value is the value 
-          of the subfield at the corresponding key.
-    
-          A HashField's `schema` consists of a single field definition, such as
-          `{ kind: "email" }`.
-    
-          This doesn't really seem to have a use case for a widget, just for arbitrary
-          json validation. so no widget is provided
-    */
-
     HashField = (function(_super) {
 
       __extends(HashField, _super);
@@ -367,6 +375,20 @@
       function HashField() {
         return HashField.__super__.constructor.apply(this, arguments);
       }
+
+      /*
+              A HashField contains an arbitrary number of identical subfields in a hash
+              (javascript object). When data is extracted from it using `toJSON`, or 
+              `getClean`, the returned data is in an object where each value is the value 
+              of the subfield at the corresponding key.
+      
+              A HashField's `schema` consists of a single field definition, such as
+              `{ kind: "email" }`.
+      
+              This doesn't really seem to have a use case for a widget, just for arbitrary
+              json validation. so no widget is provided
+      */
+
 
       HashField.prototype.widget = null;
 
@@ -425,6 +447,9 @@
       };
 
       HashField.prototype.addField = function(key, value) {
+        /* add the field at key with value
+        */
+
         var schema;
         schema = utils.clone(this.schema);
         schema.name = key;
@@ -432,6 +457,9 @@
       };
 
       HashField.prototype.removeField = function(index) {
+        /* remove the field at `index`.
+        */
+
         var value;
         this._getField(index).emit("onFieldDelete");
         value = this.getValue();
@@ -447,16 +475,6 @@
       return HashField;
 
     })(ContainerField);
-    /*
-          A ListField contains an arbitrary number of identical subfields in a
-          list. When data is extracted from it using `toJSON`, or `getClean`, the
-          returned data is in a list where each value is the value of the subfield at
-          the corresponding index.
-    
-          A ListField's `schema` consists of a single field definition, such as
-          `{ kind: "email" }`.
-    */
-
     ListField = (function(_super) {
 
       __extends(ListField, _super);
@@ -464,6 +482,17 @@
       function ListField() {
         return ListField.__super__.constructor.apply(this, arguments);
       }
+
+      /*
+              A ListField contains an arbitrary number of identical subfields in a
+              list. When data is extracted from it using `toJSON`, or `getClean`, the
+              returned data is in a list where each value is the value of the subfield at
+              the corresponding index.
+      
+              A ListField's `schema` consists of a single field definition, such as
+              `{ kind: "email" }`.
+      */
+
 
       ListField.prototype.widget = "widgets.ListWidget";
 
@@ -483,6 +512,11 @@
       };
 
       ListField.prototype.setValue = function(val, opts) {
+        /*
+              accepts an array, where each element in the array is the value for a subfield.
+              if the optional value `reset` is truthy, then validation state will be reset.
+        */
+
         var value, _i, _len, _ref;
         opts = this._procOpts(opts);
         if (opts != null ? (_ref = opts.path) != null ? _ref.length : void 0 : void 0) {
@@ -518,6 +552,9 @@
       };
 
       ListField.prototype.removeField = function(index) {
+        /* remove the field at `index`.
+        */
+
         var value;
         this._getField(index).emit("onFieldDelete");
         value = this.getValue();
@@ -531,6 +568,8 @@
       };
 
       ListField.prototype._getField = function(index) {
+        /* get an immediate subfield by index
+        */
         return this.getFields()[index];
       };
 
