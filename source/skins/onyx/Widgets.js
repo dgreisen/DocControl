@@ -200,7 +200,7 @@ enyo.kind({
   containerControlKind: {
     components: [
       { tag: "hr" },
-      { kind: "onyx.IconButton", src:"assets/plus.png", ontap: "handleAdd", style:"float:right;" },
+      { kind: "onyx.IconButton", src:"../assets/plus.png", ontap: "handleAdd", style:"float:right;" },
       { content: "&nbsp;", allowHtml: true, style: "line-height: 32px;" }
   ]},
   itemKind: { kind: "widgets.onyx.ListItem" }
@@ -216,7 +216,7 @@ enyo.kind({
     { tag: "hr" },
     { kind: "enyo.FittableColumns", components: [
       { name: "_content", kind: "enyo.Control", fit: true },
-      { components: [{ kind: "onyx.IconButton", src:"assets/cross.png", ontap: "handleDelete", style:"margin-top:15px;"}] }
+      { components: [{ kind: "onyx.IconButton", src:"../assets/cross.png", ontap: "handleDelete", style:"margin-top:15px;"}] }
     ]}
   ]
 });
