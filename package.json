@@ -11,7 +11,8 @@
     "underscore": ">=1.4"
   },
   "devDependencies": {
-    "jasmine-node": "1.0.26"
+    "jasmine-node": "1.0.26",
+    "coffeedoc-lm"
   },
   "engine": "node >= 0.6",
   "scripts": {

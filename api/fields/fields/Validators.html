@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>Validators.coffee</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <link rel="stylesheet" media="all" href="../resources/base.css" />
+  <link rel="stylesheet" media="all" href="../resources/module.css" />
+</head>
+<body>
+  <header>
+    <h1>Validators.coffee</h1>
+  </header>
+  <div id="content">
+    <div id="sidebar">
+      
+      <h4>Classes</h4>
+      <ul class="classlist">
+        
+        <li><a href="#RegexValidator">RegexValidator</a></li>
+        
+        <li><a href="#URLValidator">URLValidator</a></li>
+        
+        <li><a href="#IntegerValidator">IntegerValidator</a></li>
+        
+        <li><a href="#EmailValidator">EmailValidator</a></li>
+        
+        <li><a href="#SlugValidator">SlugValidator</a></li>
+        
+        <li><a href="#IPv4AddressValidator">IPv4AddressValidator</a></li>
+        
+        <li><a href="#IPv6AddressValidator">IPv6AddressValidator</a></li>
+        
+        <li><a href="#IPv46AddressValidator">IPv46AddressValidator</a></li>
+        
+        <li><a href="#CommaSeparatedIntegerListValidator">CommaSeparatedIntegerListValidator</a></li>
+        
+        <li><a href="#BaseValidator">BaseValidator</a></li>
+        
+        <li><a href="#MaxValueValidator">MaxValueValidator</a></li>
+        
+        <li><a href="#MinValueValidator">MinValueValidator</a></li>
+        
+        <li><a href="#MinLengthValidator">MinLengthValidator</a></li>
+        
+        <li><a href="#MaxLengthValidator">MaxLengthValidator</a></li>
+        
+        <li><a href="#MaxDecimalPlacesValidator">MaxDecimalPlacesValidator</a></li>
+        
+        <li><a href="#MinDecimalPlacesValidator">MinDecimalPlacesValidator</a></li>
+        
+        <li><a href="#MaxDigitsValidator">MaxDigitsValidator</a></li>
+        
+      </ul>
+      
+      
+      <h4>Functions</h4>
+      <ul class="functionlist">
+        
+        <li><a href="#ip_address_validators">ip_address_validators</a></li>
+        
+        <li><a href="#isEmpty">isEmpty</a></li>
+        
+        <li><a href="#utils._is_shorthand_ip">utils._is_shorthand_ip</a></li>
+        
+      </ul>
+      
+    </div>
+    <div id="main">
+      
+      <div id="module_docstring">
+        <p>Validators are small classes that have a <code>validate</code> method. the validate method
+  takes a single value. if the value is invalid throw a utils.ValidationError</p>
+      </div>
+      
+      
+      <div id="classes">
+        <h2>Classes</h2>
+        
+        <div class="class">
+          <div class="header">
+            <a id="RegexValidator"><h3>RegexValidator</h3></a>
+            
+          </div>
+          <div class="class_content">
+            <p>base regex validator. <br />
+Attributes:</p>
+
+<ul>
+<li><code>regex</code></li>
+<li><code>message</code></li>
+<li><code>code</code> defaults to "invalid"</li>
+</ul>
+            <div class="methods">
+              
+              
+              <div class="instancemethods">
+                <h3>Instance Methods</h3>
+                
+                <div class="method">
+                  <h4>constructor(@regex, @message, @code)</h4>
+                  
+                </div>
+                
+                <div class="method">
+                  <h4>validate(value)</h4>
+                  <p>Validates that the input matches the regular expression.</p>
+                </div>
+                
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        <div class="class">
+          <div class="header">
+            <a id="URLValidator"><h3>URLValidator</h3></a>
+            
+            
+            <a class="parent" href="#RegexValidator"><h3>extends RegexValidator</h3></a>
+            
+            
+          </div>
+          <div class="class_content">
+            
+            <div class="methods">
+              
+              
+            </div>
+          </div>
+        </div>
+        
+        <div class="class">
+          <div class="header">
+            <a id="IntegerValidator"><h3>IntegerValidator</h3></a>
+            
+          </div>
+          <div class="class_content">
+            
+            <div class="methods">
+              
+              
+              <div class="instancemethods">
+                <h3>Instance Methods</h3>
+                
+                <div class="method">
+                  <h4>validate(value)</h4>
+                  
+                </div>
+                
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        <div class="class">
+          <div class="header">
+            <a id="EmailValidator"><h3>EmailValidator</h3></a>
+            
+            
+            <a class="parent" href="#RegexValidator"><h3>extends RegexValidator</h3></a>
+            
+            
+          </div>
+          <div class="class_content">
+            
+            <div class="methods">
+              
+              
+            </div>
+          </div>
+        </div>
+        
+        <div class="class">
+          <div class="header">
+            <a id="SlugValidator"><h3>SlugValidator</h3></a>
+            
+            
+            <a class="parent" href="#RegexValidator"><h3>extends RegexValidator</h3></a>
+            
+            
+          </div>
+          <div class="class_content">
+            
+            <div class="methods">
+              
+              
+            </div>
+          </div>
+        </div>
+        
+        <div class="class">
+          <div class="header">
+            <a id="IPv4AddressValidator"><h3>IPv4AddressValidator</h3></a>
+            
+            
+            <a class="parent" href="#RegexValidator"><h3>extends RegexValidator</h3></a>
+            
+            
+          </div>
+          <div class="class_content">
+            
+            <div class="methods">
+              
+              
+            </div>
+          </div>
+        </div>
+        
+        <div class="class">
+          <div class="header">
+            <a id="IPv6AddressValidator"><h3>IPv6AddressValidator</h3></a>
+            
+          </div>
+          <div class="class_content">
+            
+            <div class="methods">
+              
+              
+              <div class="instancemethods">
+                <h3>Instance Methods</h3>
+                
+                <div class="method">
+                  <h4>validate(value)</h4>
+                  
+                </div>
+                
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        <div class="class">
+          <div class="header">
+            <a id="IPv46AddressValidator"><h3>IPv46AddressValidator</h3></a>
+            
+          </div>
+          <div class="class_content">
+            
+            <div class="methods">
+              
+              
+              <div class="instancemethods">
+                <h3>Instance Methods</h3>
+                
+                <div class="method">
+                  <h4>validate(value)</h4>
+                  
+                </div>
+                
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        <div class="class">
+          <div class="header">
+            <a id="CommaSeparatedIntegerListValidator"><h3>CommaSeparatedIntegerListValidator</h3></a>
+            
+            
+            <a class="parent" href="#RegexValidator"><h3>extends RegexValidator</h3></a>
+            
+            
+          </div>
+          <div class="class_content">
+            
+            <div class="methods">
+              
+              
+            </div>
+          </div>
+        </div>
+        
+        <div class="class">
+          <div class="header">
+            <a id="BaseValidator"><h3>BaseValidator</h3></a>
+            
+          </div>
+          <div class="class_content">
+            
+            <div class="methods">
+              
+              
+              <div class="instancemethods">
+                <h3>Instance Methods</h3>
+                
+                <div class="method">
+                  <h4>compare(a, b)</h4>
+                  
+                </div>
+                
+                <div class="method">
+                  <h4>clean(x)</h4>
+                  
+                </div>
+                
+                <div class="method">
+                  <h4>constructor(@limit_value)</h4>
+                  
+                </div>
+                
+                <div class="method">
+                  <h4>validate(value)</h4>
+                  
+                </div>
+                
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        <div class="class">
+          <div class="header">
+            <a id="MaxValueValidator"><h3>MaxValueValidator</h3></a>
+            
+            
+            <a class="parent" href="#BaseValidator"><h3>extends BaseValidator</h3></a>
+            
+            
+          </div>
+          <div class="class_content">
+            
+            <div class="methods">
+              
+              
+              <div class="instancemethods">
+                <h3>Instance Methods</h3>
+                
+                <div class="method">
+                  <h4>compare(a, b)</h4>
+                  
+                </div>
+                
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        <div class="class">
+          <div class="header">
+            <a id="MinValueValidator"><h3>MinValueValidator</h3></a>
+            
+            
+            <a class="parent" href="#BaseValidator"><h3>extends BaseValidator</h3></a>
+            
+            
+          </div>
+          <div class="class_content">
+            
+            <div class="methods">
+              
+              
+              <div class="instancemethods">
+                <h3>Instance Methods</h3>
+                
+                <div class="method">
+                  <h4>compare(a, b)</h4>
+                  
+                </div>
+                
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        <div class="class">
+          <div class="header">
+            <a id="MinLengthValidator"><h3>MinLengthValidator</h3></a>
+            
+            
+            <a class="parent" href="#BaseValidator"><h3>extends BaseValidator</h3></a>
+            
+            
+          </div>
+          <div class="class_content">
+            
+            <div class="methods">
+              
+              
+              <div class="instancemethods">
+                <h3>Instance Methods</h3>
+                
+                <div class="method">
+                  <h4>compare(a, b)</h4>
+                  
+                </div>
+                
+                <div class="method">
+                  <h4>clean(x)</h4>
+                  
+                </div>
+                
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        <div class="class">
+          <div class="header">
+            <a id="MaxLengthValidator"><h3>MaxLengthValidator</h3></a>
+            
+            
+            <a class="parent" href="#BaseValidator"><h3>extends BaseValidator</h3></a>
+            
+            
+          </div>
+          <div class="class_content">
+            
+            <div class="methods">
+              
+              
+              <div class="instancemethods">
+                <h3>Instance Methods</h3>
+                
+                <div class="method">
+                  <h4>compare(a, b)</h4>
+                  
+                </div>
+                
+                <div class="method">
+                  <h4>clean(x)</h4>
+                  
+                </div>
+                
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        <div class="class">
+          <div class="header">
+            <a id="MaxDecimalPlacesValidator"><h3>MaxDecimalPlacesValidator</h3></a>
+            
+            
+            <a class="parent" href="#BaseValidator"><h3>extends BaseValidator</h3></a>
+            
+            
+          </div>
+          <div class="class_content">
+            
+            <div class="methods">
+              
+              
+              <div class="instancemethods">
+                <h3>Instance Methods</h3>
+                
+                <div class="method">
+                  <h4>compare(a, b)</h4>
+                  
+                </div>
+                
+                <div class="method">
+                  <h4>clean(x)</h4>
+                  
+                </div>
+                
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        <div class="class">
+          <div class="header">
+            <a id="MinDecimalPlacesValidator"><h3>MinDecimalPlacesValidator</h3></a>
+            
+            
+            <a class="parent" href="#BaseValidator"><h3>extends BaseValidator</h3></a>
+            
+            
+          </div>
+          <div class="class_content">
+            
+            <div class="methods">
+              
+              
+              <div class="instancemethods">
+                <h3>Instance Methods</h3>
+                
+                <div class="method">
+                  <h4>compare(a, b)</h4>
+                  
+                </div>
+                
+                <div class="method">
+                  <h4>clean(x)</h4>
+                  
+                </div>
+                
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        <div class="class">
+          <div class="header">
+            <a id="MaxDigitsValidator"><h3>MaxDigitsValidator</h3></a>
+            
+            
+            <a class="parent" href="#BaseValidator"><h3>extends BaseValidator</h3></a>
+            
+            
+          </div>
+          <div class="class_content">
+            
+            <div class="methods">
+              
+              
+              <div class="instancemethods">
+                <h3>Instance Methods</h3>
+                
+                <div class="method">
+                  <h4>compare(a, b)</h4>
+                  
+                </div>
+                
+                <div class="method">
+                  <h4>clean(x)</h4>
+                  
+                </div>
+                
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+      </div>
+      
+      
+      <div id="functions">
+        <h2>Functions</h2>
+        
+        <div class="function">
+          <div class="header">
+            <a id="ip_address_validators"><h3>ip_address_validators(protocol, unpack_ipv4)</h3></a>
+          </div>
+          
+          <div>
+            <p>Depending on the given parameters returns the appropriate validators for
+the GenericIPAddressField.</p>
+
+<p>This code is here, because it is exactly the same for the model and the form field.</p>
+          </div>
+          
+        </div>
+        
+        <div class="function">
+          <div class="header">
+            <a id="isEmpty"><h3>isEmpty(val)</h3></a>
+          </div>
+          
+        </div>
+        
+        <div class="function">
+          <div class="header">
+            <a id="utils._is_shorthand_ip"><h3>utils._is_shorthand_ip(ip_str)</h3></a>
+          </div>
+          
+          <div>
+            <p>Determine if the address is shortened.</p>
+
+<p>Args:
+    ip_str: A string, the IPv6 address.</p>
+
+<p>Returns:
+    A boolean, True if the address is shortened.</p>
+          </div>
+          
+        </div>
+        
+      </div>
+      
+    </div>
+  </div>
+</body>
+</html>

@@ -39,9 +39,6 @@ is available in the repository by opening `api/index.html` in a browser. To
 work properly, you must serve the `api`  directory from your favorite web server. The 
 easiest way is to create a symlink in your `www` directory to the `api` directory.
 
-Fields are not available through the api, because they are not written in Enyo (so they work
-in node.js). I am working to figure out the best way to document the Field api.
-
 What it Does
 ------------
 
@@ -118,7 +115,7 @@ The following will create a simple user field:
         helpText: "Add as many users as you like" }
     }
 
-    // To create a form kind on the frontend:
+    // To create a form kind to display the field on the frontend:
 
     enyo.kind({
       name: "contacts",
@@ -166,11 +163,11 @@ do it.
 
 Development
 -----------
-Anything that can run on node.js, i.e. `Fields` and `Validators`, is written in coffeescript.Coffeescript source is kept in `/coffee`. You can compile the coffeescript by running:
+Anything that can run on node.js, i.e. `Fields` and `Validators`, is written in coffeescript. Coffeescript source is kept in `/coffee`. You can compile the coffeescript by running:
 
     cake build
 
-or you can build on change by running:
+or you can watch the coffee directory and build on change by running:
     
     cake watch
 
@@ -181,6 +178,12 @@ You can run both the field and widget jasmine tests by running:
     /SpecRunner/index.html
 
 in your browser.
+
+Finally, you can rebuild the fields API by running
+
+    cake docs
+
+The frontend widget api does not have to be compiled.
 
 
 Feedback

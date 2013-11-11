@@ -1,3 +1,7 @@
+###
+the base Field class and most of the core fields.
+###
+
 if exports?
   utils = require "./utils"
   validators = require "./Validators"
@@ -8,6 +12,41 @@ else if window?
 ValidationError = utils.ValidationError
 
 class Field
+  ###
+  Baseclass for all fields. Fields are defined by a schema. You can override attributes and methods within the schema. For example:
+
+      var schema = { name: "firstField", field: "Field", required: false };
+
+  creates a basic field that is not required. This is not particularly useful. But we can create useful fields using subclasses of Field:
+
+      var schema = { name: "badPasswordField" field: "CharField", maxLength: 8, minLength: 4, widget: "Widgets.PasswordWidget" };
+
+  Now we have created a very insecure password field. We have overridden the Charfield's default widget with a password widget.
+
+  We can create a raw field instance on the frontend or backend by calling `fields.genField(contactSchema)`. Or we can create a frontend
+  form by using the schema in a widget.Form constructor as the schema attribute.
+
+  Attributes:
+
+    * `clean`: the cleaned widget value accessed via `getClean()`; raises error if invalid; this will be a javascript datatype and 
+    should be used for any calculations, etc. Use the toJSON() method to get a version appropriate for serialization.
+    * `validators`: array of validators; If overriding a parent class, you must include all parent class validators
+    * `errorMessages`: hash of error message codes and keys. You can override any error message by setting a new message for the code.
+    * `listeners`: hash of listeners of one of the following forms:
+      * `'event': (inSender, inEvent) ->`
+      * `'event': "handlerMethod"`
+      * `'*': "handlerMethod"`
+      wildcard will handle all incoming events
+    * `widget`: kind definition for widget to display (eg { kind: "widget.Widget"}, or simply the string name of the widget kind)
+    * `name`: the name/identifier for this field
+    * `required`: whether the current field is required
+    * `value`: the current value of the field. access via `getValue()`
+    * `initial`: the initial value of the field (for validation)
+    * `default`: the default value of the field. if the set value is undefined, the value will be changed to the default value
+
+  Default widget: Widget
+  ###
+
   # the cleaned value accessed via `getClean()`; raises error if invalid; this will be a javascript datatype and should be used for any calculations, etc. Use the toJSON() method to get a version appropriate for serialization.
   clean: undefined,
   # a list of errors for this field.
@@ -17,11 +56,13 @@ class Field
   # hash of error messages; If overriding a parent class, you must include all parent class errorMessages
   errorMessages:
     required: utils._i('This field is required.')
-  # hash of listeners of the form
-  # `'event': (inSender, inEvent) ->`
-  # `'event': "handlerMethod"`
-  # `'*': "handlerMethod"`
-  # wildcard will handle all incoming events
+  ###
+  hash of listeners of the form
+      * `'event': (inSender, inEvent) ->`
+      * `'event': "handlerMethod"`
+      * `'*': "handlerMethod"`
+  wildcard will handle all incoming events
+  ###
   listeners: {}
   # parent field, set by parent
   parent: undefined
@@ -65,51 +106,57 @@ class Field
       @setSchema(schema, {value: opts.value})
     #set initial value
     @setValue(opts.value)
-  # walks the prototype chain collecting all the values off attr and combining them in one.
   _walkProto: (attr) ->
+    ### walks the prototype chain collecting all the values off attr and combining them in one. ###
     sup = @constructor.__super__
     if sup?
       return utils.mixin(utils.clone(sup._walkProto(attr)), @[attr])
     else
       return this[attr]
-  # get the errors for this field. returns null if no errors.
   getErrors: () ->
+    ### get the errors for this field. returns null if no errors. ###
     @isValid()
     return if @errors.length then @errors else null
-  # First function called in validation process.<br />
-  # this function converts the raw value to javascript. `value` is the raw value from
-  # `@getValue()`. The function returns the value in the proper javascript format,<br />
-  # this function should be able to convert from any type that a widget might supply to the type needed for validation
   toJavascript: (value) ->
+    ###
+    First function called in validation process.<br />
+    this function converts the raw value to javascript. `value` is the raw value from
+    `@getValue()`. The function returns the value in the proper javascript format,<br />
+    this function should be able to convert from any type that a widget might supply to the type needed for validation
+    ###
     return value
   # for keeping track of whether to emit the validChanged event
   _valid: false
   # whether we need to run the full validation process
   _hasChanged: true
-  # Second function called in validation process.<br />
-  # Any custom validation logic should be placed here. receives the input, `value`, from `toJavascript`'s output.
-  # return the value with any modifications. When validation fails, push an error string
-  # from `@errorMessages` onto `@errors`. You can perform string interpolation using
-  # utils.utils.interpolate("%(arg)s", {arg: value, ...}).
-  # be sure to call `@super <br />
-  # default action is to check if the field is required
   validate: (value) ->
+    ###
+    Second function called in validation process.<br />
+    Any custom validation logic should be placed here. receives the input, `value`, from `toJavascript`'s output.
+    return the value with any modifications. When validation fails, throw a utils.ValidationError. with a 
+    default error message, a unique error code, and any attributes for string interpolation of the error message
+    be sure to call `@super <br />
+    default action is to check if the field is required
+    ###
     if (validators.isEmpty(value) && @required)
       throw ValidationError(@errorMessages.required, "required")
     return value
-  # Third function called in validation process.<br />
-  # You should not have to override this function
   runValidators: (value) ->
+    ###
+    Third function called in validation process.<br />
+    You should not have to override this function. simply add validators to @validators.
+    ###
     if (validators.isEmpty(value)) then return
     for v in @validators
       @_catchErrors(v, value)
     return value;
-  # primary validation function<br />
-  # calls all other validation subfunctions and passes validation info up to parent fields and down to widget, if it exists.<br />
-  # returns `true` or `false`
-  # only precesses the full validation if hasChanged is true, which is only true if something has changed since the last call to isValid()
-  # emits the `validChanged` event if the valid state has changed.
   isValid: (opts) ->
+    ### primary validation function<br />
+    calls all other validation subfunctions and emits a `validChanged` event if the valid state has changed.
+    returns `true` or `false`
+    only precesses the full validation if hasChanged is true, which is only true if something has changed since the last call to isValid()
+    emits the `validChanged` event if the valid state has changed.
+    ###
     if not @_hasChanged then return @_valid
     # reset the errors array
     oldErrors = utils.clone(@errors)
@@ -126,8 +173,8 @@ class Field
       @_valid = valid
     @_hasChanged = false
     return valid
-  # helper function for running an arbitrary function, capturing errors and placing in error array
   _catchErrors: (fn, value) ->
+    ### helper function for running an arbitrary function, capturing errors and placing in error array ###
     try
       if fn instanceof Function
         value = fn.call(this, value)
@@ -139,65 +186,74 @@ class Field
       @errors.push(message)
     return value
 
-  # return the fild's cleaned data if there are no errors. throws an error if there are validation errors.
-  # you will likely have to override this in Field subclasses
   getClean: (opts) ->
+    ###
+    return the fild's cleaned data if there are no errors. throws an error if there are validation errors.
+    you will likely have to override this in Field subclasses
+    ###
     valid = @isValid(opts)
     if not valid
       throw @errors
     return @clean
-  # return the field's cleaned data in serializable form if there are no errors. throws an error if there are validation errors.<br />
-  # you might have to override this in Field subclasses.
   toJSON: (opts) ->
+    ###
+    return the field's cleaned data in serializable form if there are no errors. throws an error if there are validation errors.  
+    you might have to override this in Field subclasses.
+    ###
     return @getClean(opts)
   setRequired: (val) ->
     if val != @required
       @_hasChanged = true
       @required = val
       @emit("onRequiredChanged", {required: @required})
-  # You should not have to override this in Field subclasses
   setValue: (val, opts) ->
+    ### You should not have to override this in Field subclasses ###
     if val == undefined then val = @default
     if val != @value
       @_hasChanged = true
       origValue = @value
       @value = val;
       @emit("onValueChanged", value: @getValue(), original: origValue)
-  # You should not have to override this in Field subclasses
   getValue: () ->
+    ### You should not have to override this in Field subclasses ###
     return @value;
-  # Get an array of the unique path to the field. A ListField's subfields are denoted by an integer representing the index of the subfield.
-  # A ContainerField's subfields are denoted by a string or integer representing the key of the subfield.
-  # Example:
-  # {parent: {child1: hello, child2: [the, quick, brown, fox]}}
-  # ["parent", "child2", 1] points to "quick"
-  # [] points to {parent: {child1: hello, child2: [the, quick, brown, fox]}}
   getPath: () ->
+    ###
+    Get an array of the unique path to the field. A ListField's subfields are denoted by an integer representing the index of the subfield.
+    A ContainerField's subfields are denoted by a string or integer representing the key of the subfield.
+    Example:
+    {parent: {child1: hello, child2: [the, quick, brown, fox]}}
+    ["parent", "child2", 1] points to "quick"
+    [] points to {parent: {child1: hello, child2: [the, quick, brown, fox]}}
+    ###
     # if no parent, then the path is siply the empty list
     if @parent
       return @parent.getPath(this)
     else
       return []
-  # get a field given a path 
   getField: (path) ->
+    ### get a field given a path ###
     return if path.length > 0 then undefined else this
-  # emit an event that bubbles up
-  # eventName: name of the event to emit
-  # inEvent: optional hash of data to send with the event
   emit: (eventName, inEvent) ->
+    ###
+    emit an event that bubbles up the field tree.
+    
+    * `eventName`: name of the event to emit
+    * `inEvent`: optional hash of data to send with the event
+    ###
     inEvent ?= {}
     inEvent.originator = this
     @_bubble(eventName, null, inEvent)
 
-  # handle bubbling to parent
   _bubble: (eventName, inSender, inEvent) ->
+    ### handle bubbling to parent ###
     for listener in @_getProtoListeners(eventName, true)
       if listener.apply(this, [inSender, inEvent]) == true then return
     if @parent
       @parent._bubble(eventName, this, inEvent)
 
-  # handle bubbling up the prototype chain
   _getProtoListeners: (eventName, start) ->
+    ### handle bubbling up the prototype chain ###
     sup = if start then @constructor.prototype else @constructor.__super__
     listener = @listeners[eventName] or @listeners["*"]
     listener = if listener instanceof Function then listener else this[listener]
@@ -210,9 +266,18 @@ class Field
 
 
 class CharField extends Field
+  ###
+  a field that contains a string.  
+  Attributes:
+
+   * `maxLength`: The maximum length of the string (optional)
+   * `minLength`: The minimum length of the string (optional)
+
+  Default widget: Widget
+  ###
   # The maximum length of the string (optional)
   maxLength: undefined
-  # The minimum length of the string (optional)
+  ### The minimum length of the string (optional) ###
   minLength: undefined
   constructor: (opts) ->
     super(opts)
@@ -228,6 +293,15 @@ class CharField extends Field
 
 
 class IntegerField extends Field
+  ###
+  a field that contains a whole number.  
+  Attributes:  
+
+   * `maxValue`: Maximum value of integer
+   * `minValue`: Minimum value of integer
+
+  Default widget: Widget
+  ###
   # Maximum value of integer
   maxValue: undefined
   # Minimum value of integer
@@ -253,6 +327,16 @@ class IntegerField extends Field
 
 
 class FloatField extends IntegerField
+  ###
+  A field that contains a floating point number.  
+  Attributes:
+
+    * `maxDecimals`: Maximum number of digits after the decimal point
+    * `minDecimals`: Minimum number of digits after the decimal point
+    * `maxDigits`: Maximum number of total digits before and after the decimal point
+  
+  Default widget: Widget
+  ###
   # Maximum number of digits after the decimal point
   maxDecimals: undefined,
   # Minimum number of digits after the decimal point
@@ -275,6 +359,15 @@ class FloatField extends IntegerField
 
 # a basic Regex Field for subclassing.
 class RegexField extends Field
+  ###
+  A baseclass for subclassing.
+  Attributes:
+
+    * `regex`: the compiled regex to test against
+    * `errorMessage`: the error message to display when the regex fails
+  
+  Default widget: Widget
+  ###
   # the compiled regex to test against.
   regex: undefined,
   # the error message to display when the regex fails
@@ -289,10 +382,27 @@ class RegexField extends Field
 
 
 class EmailField extends RegexField
+  ###
+  A field that contains a valid email.  
+  Attributes:
+
+    * None
+  
+  Default widget: EmailWidget
+  ###
   widget: "widgets.EmailWidget"
   validators: [new validators.EmailValidator()]
 
 class BooleanField extends Field
+  ###
+  A field that contains a Boolean value. Must be true or false.
+  if you want to be able to store null us `NullBooleanField`
+  Attributes:
+
+    * none
+  
+  Default widget: CheckboxWidget
+  ###
   widget: "widgets.CheckboxWidget"
   # @protected
   toJavascript: (value) ->
@@ -305,6 +415,15 @@ class BooleanField extends Field
     return value
 
 class NullBooleanField extends BooleanField
+  ###
+  A field that contains a Boolean value. The value can be 
+  true, false, or null.  
+  Attributes:
+
+    * none
+  
+  Default widget: CheckboxWidget
+  ###
   toJavascript: (value) ->
     if utils.includes([true, "True", "1"], value)
       value =  true
@@ -318,6 +437,14 @@ class NullBooleanField extends BooleanField
 
 
 class ChoiceField extends Field
+  ###
+  A field that contains value from a list of values.  
+  Attributes:
+
+    * `choices`: Array of 2-arrays specifying valid choices. if 2-arrays, first value is value, second is display. create optgroups by setting display If display value to a 2-array. MUST USE `setChoices`.
+  
+  Default widget: ChoiceWidget
+  ###
   widget: "widgets.ChoiceWidget"
   # Array of 2-arrays specifying valid choices. if 2-arrays, first value is value, second is display. create optgroups by setting display If display value to a 2-array. MUST USE SETTER.
   choices: []

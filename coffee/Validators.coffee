@@ -1,9 +1,22 @@
+###
+Validators are small classes that have a `validate` method. the validate method
+  takes a single value. if the value is invalid throw a utils.ValidationError
+###
+
 if exports?
   utils = require "./utils"
 else if window?
   utils = window.utils
-  
+
 class RegexValidator
+  ###
+  base regex validator.  
+  Attributes:
+
+    * `regex`
+    * `message`
+    * `code` defaults to "invalid"
+  ###
   regex: ''
   message: utils._i('Enter a valid value.')
   code: 'invalid'
